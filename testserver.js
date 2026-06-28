@@ -20,12 +20,12 @@ function hämtaPubData(pubId) {
       namn: `${pubId.toUpperCase()} Jukebox`,
       aktivtValv: "Standard Rock",
       qrKrav: false,
-      låtarPerBiljett: 1, // Standardinställning
+      låtarPerBiljett: 1,
       valv: {
         "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
         "Schlager & Party": ["Gyllene Tider - Sommartider", "Arvingarna - Eloise", "Fronda - Rullar fram"]
       },
-      användaKoder: {} // Ändrat till objekt för att räkna antal förbrukningar t.ex. {"1024": 2}
+      användaKoder: {}
     };
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
     fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
@@ -92,19 +92,39 @@ async function fyllPåMedRadiolåt(pubId) {
         isRadio: true
       });
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error("Fel vid hämtning av radiolåt:", err);
+  }
 }
 
 async function hanteraSpelning(pubId) {
   const pub = hämtaPubData(pubId);
-  if (pub.queue.length === 0) await fyllPåMedRadiolåt(pubId);
-  if (!pub.nowPlaying && pub.queue.length > 0) {
+
+  // 1. Om ingenting spelas just nu, leta efter nästa låt
+  if (!pub.nowPlaying) {
+    // Leta först efter en gästlåt (dvs där isRadio INTE är sant)
     let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
-    if (nastaLatIndex === -1) nastaLatIndex = 0;
-    pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
-    io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
+    
+    // Om det inte fanns några gästlåtar, ta den första radiolåten i listan istället
+    if (nastaLatIndex === -1 && pub.queue.length > 0) {
+      nastaLatIndex = 0;
+    }
+
+    // Om vi hittade en låt (gäst eller radio), spela den!
+    if (nastaLatIndex !== -1) {
+      pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
+      io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
+    }
   }
-  if (pub.queue.filter(l => l.isRadio).length < 2) await fyllPåMedRadiolåt(pubId);
+
+  // 2. Se till att det ALLTID finns minst 2 radiolåtar som ligger i slutet av kön i backup
+  let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
+  while (antalRadioIKon < 2) {
+    await fyllPåMedRadiolåt(pubId);
+    antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
+  }
+
+  // Skicka uppdaterad status till alla skärmar
   broadcastPubState(pubId);
 }
 
@@ -132,24 +152,25 @@ io.on('connection', (socket) => {
     if (!pubId || !pubar[pubId]) return;
     const pub = pubar[pubId];
     
+    let registreringGodkand = false;
+    let textKvar = 999;
+
     if (pub.config.qrKrav) {
       const fullKod = data.kupongKod ? data.kupongKod.trim().toUpperCase() : "";
-      
-      // Kodformat förväntas nu ha med max-antal: ID-MAX-SIGNATUR (t.ex. 1024-3-A1B2C3)
       const delar = fullKod.split("-");
+      
       if (delar.length !== 3) {
         return socket.emit("kupong_error", { msg: "Ogiltigt kodformat på lappen." });
       }
 
       const [kupongId, maxLåtarStr, inskickadSignatur] = delar;
       const maxLåtar = parseInt(maxLåtarStr) || 1;
-
       const användaGånger = pub.config.användaKoder[kupongId] || 0;
+
       if (användaGånger >= maxLåtar) {
-        return socket.emit("kupong_error", { msg: `Denna biljett är redan helt förbrukad (${maxLåtar}/${maxLåtar} låtar använda).` });
+        return socket.emit("kupong_error", { msg: `Denna biljett är redan förbrukad (${användaGånger}/${maxLåtar}).` });
       }
 
-      // Verifiera kryptografiskt baserat på ID + MAX_LÅTAR så man inte kan fuska med siffran
       const strängAttSignera = `${kupongId}-${maxLåtar}`;
       const förväntadMasterSig = crypto.createHmac('sha256', MASTER_SECRET).update(strängAttSignera).digest('hex').substr(0, 6).toUpperCase();
 
@@ -157,23 +178,40 @@ io.on('connection', (socket) => {
         return socket.emit("kupong_error", { msg: "Ogiltig signatur! Felaktig biljett." });
       }
 
-      // Spara förbrukning
+      // Godkänd kod! Öka räknaren
       pub.config.användaKoder[kupongId] = användaGånger + 1;
       fs.writeFileSync(path.join(DATA_DIR, `${pubId}.json`), JSON.stringify(pub.config, null, 2));
       
-      const kvar = maxLåtar - (användaGånger + 1);
-      socket.emit("kupong_success", { msg: `Låt tillagd! Du har ${kvar} låtar kvar på denna biljett.`, resterande: kvar });
+      textKvar = maxLåtar - (användaGånger + 1);
+      registreringGodkand = true;
     } else {
-      socket.emit("kupong_success", { msg: "Låten har lagts till i kön!", resterande: 999 });
+      registreringGodkand = true;
     }
 
-    pub.queue.push({
-      id: Math.random().toString(36).substr(2, 9),
-      videoId: data.videoId,
-      title: data.title,
-      addedBy: pub.config.qrKrav ? "Kupong" : "Fritt"
-    });
-    hanteraSpelning(pubId);
+    if (registreringGodkand) {
+      const nyGästLåt = {
+        id: Math.random().toString(36).substr(2, 9),
+        videoId: data.videoId,
+        title: data.title,
+        addedBy: pub.config.qrKrav ? "Kupong" : "Gäst",
+        isRadio: false // VIKTIGT: Sätts till false så att prioriteringen vet att det är en gäst
+      };
+
+      // HÄR SÄTTER VI PRIO: Hitta index för första radiolåten och skjut in gästlåten FÖRE den.
+      const förstaRadioIndex = pub.queue.findIndex(l => l.isRadio);
+      if (förstaRadioIndex !== -1) {
+        pub.queue.splice(förstaRadioIndex, 0, nyGästLåt);
+      } else {
+        pub.queue.push(nyGästLåt);
+      }
+
+      socket.emit("kupong_success", { 
+        msg: pub.config.qrKrav ? `Låt tillagd! Du har ${textKvar} låtar kvar på biljetten.` : "Låten har lagts till i kön!", 
+        resterande: textKvar 
+      });
+
+      hanteraSpelning(pubId);
+    }
   });
 
   socket.on("player:toggle_qr", (data) => {
@@ -190,11 +228,31 @@ io.on('connection', (socket) => {
     broadcastPubState(socket.pubId);
   });
 
-  socket.on("player:skip", () => { pubar[socket.pubId].nowPlaying = null; hanteraSpelning(socket.pubId); });
-  socket.on("player:remove_song", (data) => { pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => l.id !== data.id); hanteraSpelning(socket.pubId); });
-  socket.on("player:byt_valv", (data) => { pubar[socket.pubId].config.aktivtValv = data.valvNamn; pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => !l.isRadio); hanteraSpelning(socket.pubId); });
-  socket.on("player:ready_for_next", () => { pubar[socket.pubId].nowPlaying = null; hanteraSpelning(socket.pubId); });
+  socket.on("player:skip", () => { 
+    if(!socket.pubId || !pubar[socket.pubId]) return;
+    pubar[socket.pubId].nowPlaying = null; 
+    hanteraSpelning(socket.pubId); 
+  });
+
+  socket.on("player:remove_song", (data) => { 
+    if(!socket.pubId || !pubar[socket.pubId]) return;
+    pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => l.id !== data.id); 
+    hanteraSpelning(socket.pubId); 
+  });
+
+  socket.on("player:byt_valv", (data) => { 
+    if(!socket.pubId || !pubar[socket.pubId]) return;
+    pubar[socket.pubId].config.aktivtValv = data.valvNamn; 
+    pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => !l.isRadio); 
+    hanteraSpelning(socket.pubId); 
+  });
+
+  socket.on("player:ready_for_next", () => { 
+    if(!socket.pubId || !pubar[socket.pubId]) return;
+    pubar[socket.pubId].nowPlaying = null; 
+    hanteraSpelning(socket.pubId); 
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Jukebox rullar på ${PORT}`));
+http.listen(PORT, () => console.log(`Jukebox rullar på port ${PORT}`));
