@@ -2,73 +2,110 @@
 <html lang="sv">
 <head>
     <meta charset="utf-8">
-    <title>Test Spelare (Lokal)</title>
+    <title>Jukebox Spelare</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #000; color: white; font-family: system-ui, sans-serif; text-align: center; padding-top: 50px; margin: 0; }
-        #btn { padding: 15px 30px; font-size: 18px; background: #1db954; color: black; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3); }
-        #btn:active { opacity: 0.8; }
-        #status { font-size: 18px; color: #888; margin-top: 20px; }
-        #player-div { margin-top: 30px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body { background: #000; color: white; font-family: system-ui, sans-serif; text-align: center; padding: 30px; margin: 0; }
+        h1 { font-size: 28px; font-weight: 800; margin-bottom: 5px; }
+        .accent { color: #1db954; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
+        #start-btn { padding: 15px 30px; font-size: 18px; background: #1db954; color: black; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        #skip-btn { padding: 12px 25px; font-size: 16px; background: #ff4444; color: white; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; display: none; }
+        #status { font-size: 18px; color: #ffcc00; margin: 15px 0; font-weight: bold; }
+        #player-div { margin: 20px auto; border-radius: 8px; overflow: hidden; max-width: 640px; }
+        .playlist-box { max-width: 500px; margin: 30px auto; background: #111; border: 1px solid #222; border-radius: 12px; padding: 20px; text-align: left; }
+        .playlist-title { color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .queue-item { padding: 10px 0; border-bottom: 1px solid #1a1a1a; font-size: 15px; color: #ccc; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
 
-    <h2>Testmiljö - Spelare (Baren)</h2>
-    <button id="btn" onclick="starta()">STARTA SPELAREN</button>
-    <p id="status">Klicka på knappen för att aktivera ljudströmmen och ansluta</p>
+    <h1 id="player-titel">Jukebox <span class="accent">Spelare</span> 📻</h1>
+    
+    <div class="controls">
+        <button id="start-btn" onclick="starta()">STARTA MUSIKEN</button>
+        <button id="skip-btn" onclick="skipLat()">SKIP LÅT ⏭️</button>
+    </div>
+    
+    <p id="status">Klicka på knappen för att starta ljudet på denna pub</p>
 
     <div id="player-div"></div>
 
+    <div class="playlist-box">
+        <div class="playlist-title">Kommande spellista:</div>
+        <div id="bar-queue">Kön är tom.</div>
+    </div>
+
     <script>
-        // Startar socket utan parametrar vilket gör att den tvingas ansluta till samma 
-        // dator och port som den laddades ifrån (alltså din lokala laptop på port 3000)
         const socket = io(); 
         let player;
 
+        const pathParts = window.location.pathname.split('/');
+        const pubId = pathParts[pathParts.indexOf('pub') + 1];
+
+        socket.emit("join_pub", pubId);
+
         function starta() {
-            document.getElementById("btn").style.display = "none";
-            document.getElementById("status").innerText = "Ansluter till lokala servern och väntar på låtar...";
+            document.getElementById("start-btn").style.display = "none";
+            document.getElementById("skip-btn").style.display = "inline-block";
+            document.getElementById("status").innerText = "Ansluter ljudström...";
             
-            // Ladda YouTubes officiella IFrame API
             const tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
             document.getElementsByTagName('head')[0].appendChild(tag);
         }
 
-        // YouTubes API anropar denna automatiskt när det har laddats klart
+        function skipLat() {
+            if(confirm("Vill du hoppa över låten på den här puben?")) {
+                socket.emit("player:skip");
+            }
+        }
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player-div', {
-                height: '360',
-                width: '640',
-                videoId: '', // Startar tom
-                playerVars: { 
-                    'autoplay': 1, 
-                    'controls': 1,
-                    'rel': 0 
-                },
+                height: '240',
+                width: '400',
+                videoId: '', 
+                playerVars: { 'autoplay': 1, 'controls': 1 },
                 events: { 
                     'onStateChange': (e) => {
-                        // Status 0 betyder att låten har spelat klart till sista sekunden
                         if (e.data === YT.PlayerState.ENDED) {
-                            document.getElementById("status").innerText = "Låten slut. Ber servern om nästa...";
                             socket.emit("player:ready_for_next");
                         }
                     },
                     'onReady': () => {
-                        // Berätta för servern att vi är redo så fort spelaren startat
                         socket.emit("player:ready_for_next");
                     }
                 }
             });
         }
 
-        // Ta emot order från din testserver.js att byta låt
         socket.on("player:change_track", (data) => {
-            console.log("Byter låt till:", data.videoId);
-            document.getElementById("status").innerText = "Spelar nu YouTube-ID: " + data.videoId;
             if (player && player.loadVideoById) {
                 player.loadVideoById(data.videoId);
+            }
+        });
+
+        socket.on("state", (data) => {
+            document.getElementById("player-titel").innerHTML = `${data.pubNamn} <span class="accent">Spelare</span>`;
+            
+            if(data.nowPlaying) {
+                document.getElementById("status").innerText = "Spelar nu: " + data.nowPlaying.title;
+            } else {
+                document.getElementById("status").innerText = "Väntar på musik...";
+            }
+
+            const barQueue = document.getElementById("bar-queue");
+            if (!data.queue || data.queue.length === 0) {
+                barQueue.innerHTML = "<span style='opacity:0.3;'>Inga kommande låtar.</span>";
+            } else {
+                barQueue.innerHTML = data.queue.map((lat, index) => `
+                    <div class="queue-item">
+                        <span style="color:#1db954; font-weight:bold;">${index + 1}.</span>
+                        <span style="flex:1;">${lat.title}</span>
+                        <span style="opacity:0.4; font-size:12px;">(${lat.addedBy})</span>
+                    </div>
+                `).join("");
             }
         });
     </script>

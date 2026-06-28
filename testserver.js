@@ -6,85 +6,124 @@ const path = require('path');
 const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
 
-// Läs in radiolåtarna
-let radioPool = [];
-try {
-  radioPool = JSON.parse(fs.readFileSync(path.join(__dirname, 'radio.json'), 'utf8'));
-  console.log(`Radio-pool laddad med ${radioPool.length} låtar.`);
-} catch (err) {
-  console.error("Kunde inte ladda radio.json.", err);
-  radioPool = ["Rick Astley - Never Gonna Give You Up", "Metallica - Enter Sandman"];
+// Bestäm var pub-data ska läsas ifrån (Render fast disk '/data', eller lokal 'data' mapp för test)
+const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
+
+// Globalt minne för att hålla reda på varje pubs aktiva kö och nuvarande låt
+// Struktur: { "7-an": { queue: [], nowPlaying: null, config: {} } }
+const pubar = {};
+
+// Funktion för att ladda eller uppdatera en pubs inställningar från disken
+function hämtaPubData(pubId) {
+  const filStig = path.join(DATA_DIR, `${pubId}.json`);
+  
+  // Om puben inte har en konfigurationsfil, skapa en standard
+  if (!fs.existsSync(filStig)) {
+    const standardConfig = {
+      namn: `${pubId.toUpperCase()} Jukebox`,
+      pris: 10,
+      swish: "0000000000",
+      radioPool: ["Rick Astley - Never Gonna Give You Up", "Metallica - Enter Sandman"]
+    };
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+    fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
+  }
+
+  const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+
+  // Om puben inte är laddad i RAM-minnet än, initiera den
+  if (!pubar[pubId]) {
+    pubar[pubId] = {
+      queue: [],
+      nowPlaying: null,
+      config: config
+    };
+  } else {
+    // Uppdatera bara konfigurationen (om priser eller radiolåtar ändrats på disken)
+    pubar[pubId].config = config;
+  }
+
+  return pubar[pubId];
 }
 
-// Servera filer
-app.get('/mobile', (req, res) => res.sendFile(path.join(__dirname, 'test-mobile.html')));
-app.get('/player', (req, res) => res.sendFile(path.join(__dirname, 'test-player.html')));
+// DYNAMISKA SÖKBANOR: :pubId kan vara vad som helst (7-an, bisonbar, etc.)
+app.get('/pub/:pubId/mobile', (req, res) => res.sendFile(path.join(__dirname, 'test-mobile.html')));
+app.get('/pub/:pubId/player', (req, res) => res.sendFile(path.join(__dirname, 'test-player.html')));
 
-let queue = [];
-let nowPlaying = null;
+// Skicka ut uppdaterat tillstånd till just den pubens gäster och spelare
+function broadcastPubState(pubId) {
+  const pub = pubar[pubId];
+  if (!pub) return;
 
-function broadcastState() {
-  let gästLåtar = queue.filter(l => !l.isRadio);
-  let radioLåtar = queue.filter(l => l.isRadio);
+  let gästLåtar = pub.queue.filter(l => !l.isRadio);
+  let radioLåtar = pub.queue.filter(l => l.isRadio);
   let synligKö = [...gästLåtar, ...radioLåtar.slice(0, 2)];
 
-  io.emit("state", {
-    version: "7-an v2.0",
-    user: { credits: 99 },
-    nowPlaying: nowPlaying ? {
-      title: nowPlaying.title,
-      thumbnail: nowPlaying.thumbnail,
-      votes: { up: 0, down: 0 },
-      volVotes: { up: 0, down: 0, good: 0 }
-    } : null,
-    queue: synligKö,
-    config: { lyricsEnabled: false, currentVol: 0.7, activeUsersList: [] }
+  // Skicka endast till sockets som befinner sig i detta specifika pub-rum
+  io.to(pubId).emit("state", {
+    pubNamn: pub.config.namn,
+    pris: pub.config.pris,
+    swish: pub.config.swish,
+    nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
+    queue: synligKö
   });
 }
 
-async function fyllPåMedRadiolåt() {
-  const slumpadText = radioPool[Math.floor(Math.random() * radioPool.length)];
+async function fyllPåMedRadiolåt(pubId) {
+  const pub = pubar[pubId];
+  const pool = pub.config.radioPool;
+  const slumpadText = pool[Math.floor(Math.random() * pool.length)];
+  
   try {
     const searchResult = await youTubeSearchApi.GetListByKeyword(slumpadText, false, 1);
     if (searchResult && searchResult.items.length > 0) {
       const item = searchResult.items[0];
-      queue.push({
+      pub.queue.push({
         videoId: item.id,
         title: item.title,
-        thumbnail: item.thumbnail?.thumbnails[0]?.url || `https://img.youtube.com/vi/${item.id}/0.jpg`,
         addedBy: "Radio 📻",
         isRadio: true
       });
     }
   } catch (err) {
-    console.error("[RADIO] Sökningsfel:", err);
+    console.error(`[RADIO ${pubId}] Sökningsfel:`, err);
   }
 }
 
-async function hanteraSpelning() {
-  if (queue.length === 0) {
-    await fyllPåMedRadiolåt();
+async function hanteraSpelning(pubId) {
+  const pub = hämtaPubData(pubId);
+
+  if (pub.queue.length === 0) {
+    await fyllPåMedRadiolåt(pubId);
   }
 
-  if (!nowPlaying && queue.length > 0) {
-    let nastaLatIndex = queue.findIndex(l => !l.isRadio);
+  if (!pub.nowPlaying && pub.queue.length > 0) {
+    let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
     if (nastaLatIndex === -1) nastaLatIndex = 0;
 
-    nowPlaying = queue.splice(nastaLatIndex, 1)[0];
-    console.log(`[7-an] Spelar: ${nowPlaying.title}`);
-    io.emit("player:change_track", { videoId: nowPlaying.videoId });
+    pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
+    console.log(`[${pub.config.namn}] Spelar nu: ${pub.nowPlaying.title}`);
+    io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
   }
 
-  let antalRadioIKön = queue.filter(l => l.isRadio).length;
+  let antalRadioIKön = pub.queue.filter(l => l.isRadio).length;
   if (antalRadioIKön < 2) {
-    await fyllPåMedRadiolåt();
+    await fyllPåMedRadiolåt(pubId);
   }
 
-  broadcastState();
+  broadcastPubState(pubId);
 }
 
+// SOCKET.IO med rum-hantering (Rooms)
 io.on('connection', (socket) => {
-  hanteraSpelning();
+  
+  // När en mobil eller spelare ansluter måste de berätta vilken pub de tillhör
+  socket.on("join_pub", (pubId) => {
+    socket.join(pubId);
+    socket.pubId = pubId; // Spara pub-id på själva socket-anslutningen
+    
+    hanteraSpelning(pubId);
+  });
 
   socket.on("search", async (data) => {
     try {
@@ -94,34 +133,41 @@ io.on('connection', (socket) => {
         title: item.title,
         thumbnail: item.thumbnail?.thumbnails[0]?.url || `https://img.youtube.com/vi/${item.id}/0.jpg`
       }));
-      socket.emit("searchResults", { results, append: false });
+      socket.emit("searchResults", { results });
     } catch (err) {
       console.error("Sökningsfel:", err);
     }
   });
 
   socket.on("addSong", (data) => {
-    queue.push({
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
+
+    pubar[pubId].queue.push({
       videoId: data.videoId,
       title: data.title,
-      thumbnail: data.thumbnail,
       addedBy: "Gäst"
     });
-    hanteraSpelning();
+    hanteraSpelning(pubId);
   });
 
   socket.on("player:ready_for_next", () => {
-    nowPlaying = null;
-    hanteraSpelning();
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
+
+    pubar[pubId].nowPlaying = null;
+    hanteraSpelning(pubId);
   });
 
-  // NYTT EVENT: När någon klickar på SKIP i spelaren
   socket.on("player:skip", () => {
-    console.log("[7-an] Låt skippad av baren.");
-    nowPlaying = null;
-    hanteraSpelning();
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
+
+    console.log(`[${pubar[pubId].config.namn}] Låt skippad via player.`);
+    pubar[pubId].nowPlaying = null;
+    hanteraSpelning(pubId);
   });
 });
 
-const PORT = 3000;
-http.listen(PORT, () => console.log(`7-an Jukebox är igång på port ${PORT}!`));
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => console.log(`Multi-Jukebox Plattform rullar på port ${PORT}!`));
