@@ -3,283 +3,153 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Önska Låt - Jukebox</title>
+    <title>Jukebox - Mobil</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        h1 { font-size: 20px; margin: 0; }
         .accent { color: #1db954; }
-        
-        .reload-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
-        .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-top: 10px; }
-
-        /* Fliksystem */
         .tabs-nav { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; }
-        .tab-btn { flex: 1; padding: 12px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
-        .tab-btn.active { background: #1db954; color: black; border-color: #1db954; }
+        .tab-btn { flex: 1; padding: 12px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; }
+        .tab-btn.active { background: #1db954; color: black; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* NYTT: Biljettstatus-box (Supertydlig för gästen) */
-        .status-badge { background: #1a3a22; border: 1px solid #1db954; color: #1db954; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 14px; }
-
-        /* Kupongbox under inställningar */
-        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; }
-        .kupong-box label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
-        .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; box-sizing: border-box; font-weight: bold; text-transform: uppercase; }
-
-        /* Sök */
+        .status-badge { padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 14px; border: 1px solid; }
+        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-weight: bold; text-transform: uppercase; box-sizing: border-box; }
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
-        .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; }
-        .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
-
+        .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; }
+        .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; }
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #222; }
-        .row:last-child { border-bottom: none; }
-        .row img { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; }
-        
-        .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-left: auto; }
-        #now-playing-text { color: #ffcc00; font-weight: bold; font-size: 15px; }
-
-        .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
-        #qr-kod-plats { background: white; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
+        .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; margin-left: auto; }
     </style>
 </head>
 <body>
 
     <div class="header-row">
-        <h1 id="pub-titel">Laddar <span class="accent">Jukebox...</span></h1>
-        <button class="reload-btn" onclick="window.location.reload()">🔄 Ladda om</button>
+        <h1 id="pub-titel" style="font-size:20px; margin:0;">Laddar...</h1>
+        <button style="background:#222; color:#aaa; border:1px solid #444; padding:6px 12px; border-radius:6px;" onclick="window.location.reload()">🔄</button>
     </div>
     
-    <div id="biljett-status-banner" class="status-badge" style="display: none;">
-        🎫 KLAR ATT ÖNSKA: Du har 1 aktiv biljett!
-    </div>
+    <div id="biljett-status-banner" class="status-badge" style="display: none;"></div>
 
     <div class="tabs-nav">
         <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🎵 Jukebox</button>
-        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">⚙️ Hantera / Biljetter</button>
+        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">⚙️ Biljett & Meny</button>
     </div>
 
     <div id="tab-sok" class="tab-content active">
-        <div class="item-box" style="border-color: #ffcc00; text-align: center; margin-bottom: 15px;">
+        <div class="item-box" style="border-color: #ffcc00; text-align: center;">
             <small style="color:#888;">JUST NU I HÖGTALARNA:</small>
-            <div id="now-playing-text">Hämtar status...</div>
+            <div id="now-playing-text" style="color:#ffcc00; font-weight:bold; margin-top:5px;">Hämtar...</div>
         </div>
 
-        <div class="search-box">
+        <div class="search-box" style="margin-top:15px;">
             <input type="text" id="query" placeholder="Sök låt eller artist...">
             <button onclick="sök()">SÖK</button>
         </div>
         <div id="results"></div>
 
         <div class="item-box">
-            <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
-            <div id="queue-lista">Laddar kö...</div>
+            <h3 style="margin:0 0 10px 0; font-size:14px; color:#888;">NÄSTA LÅTAR:</h3>
+            <div id="queue-lista"></div>
         </div>
     </div>
 
     <div id="tab-qr" class="tab-content">
-        <div id="kupong-sektion" class="kupong-box">
-            <label for="kupong-input">Skriv in kod manuellt:</label>
-            <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8" oninput="uppdateraBannerFrånInmatning()">
+        <div class="kupong-box">
+            <label style="font-size:13px; color:#aaa; display:block; margin-bottom:5px;">Aktiv Biljettkod:</label>
+            <input type="text" id="kupong-input" placeholder="INGEN BILJETT LADDAD" oninput="uppdateraBanner()">
         </div>
 
-        <div class="item-box" style="text-align: center;">
-            <p style="margin-top:0; font-size:13px; color:#aaa;">Skicka jukeboxen till kompisarna runt bordet:</p>
-            <button class="share-btn" onclick="delaTillPolarna()">Dela länk 🚀</button>
-        </div>
-
-        <div class="qr-container">
-            <h3 style="margin:0 0 5px 0; font-size:15px; color:#fff;">Låt bordet skanna din skärm</h3>
-            <p style="margin:0 0 15px 0; font-size:13px; color:#aaa;">De hoppar in på samma pub direkt!</p>
-            <div id="qr-kod-plats"></div>
-            <small style="color:#666; word-break: break-all; margin-top:5px;" id="qr-lank-text"></small>
-        </div>
+        <button style="display:block; width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="delaLank()">Dela länk 🚀</button>
     </div>
 
     <script>
         const socket = io();
-        const pathParts = window.location.pathname.split('/');
-        const pubId = pathParts[pathParts.indexOf('pub') + 1];
-
+        const pubId = window.location.pathname.split('/').filter(Boolean).pop();
         let qrKravJustNu = false;
-        let qrObjekt = null;
 
         socket.emit("join_pub", pubId);
 
-        // Kollar direkt vid start om det finns en kod i länkens parametrar (?kod=XXXX)
         window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const kodFranUrl = urlParams.get('kod');
-            
-            if(kodFranUrl) {
-                document.getElementById("kupong-input").value = kodFranUrl.trim().toUpperCase();
-            }
-            uppdateraBannerFrånInmatning();
+            const params = new URLSearchParams(window.location.search);
+            if(params.get('kod')) document.getElementById("kupong-input").value = params.get('kod').trim().toUpperCase();
+            uppdateraBanner();
         });
 
-        function uppdateraBannerFrånInmatning() {
+        function uppdateraBanner() {
             const kod = document.getElementById("kupong-input").value.trim();
             const banner = document.getElementById("biljett-status-banner");
             
-            // Om kodkravet är på och vi har en kod inskriven, visa den gröna bannern
-            if (qrKravJustNu && kod.length > 0) {
-                banner.style.display = "block";
-                banner.innerText = "🎫 KLAR ATT ÖNSKA: Din biljett är laddad!";
-                banner.style.background = "#1a3a22";
-                banner.style.color = "#1db954";
-                banner.style.borderColor = "#1db954";
-            } else if (qrKravJustNu && kod.length === 0) {
-                // Kod krävs men fältet är tomt
-                banner.style.display = "block";
-                banner.innerText = "🔒 BILJETT KRÄVS: Skanna en QR-kod för att önska låt.";
-                banner.style.background = "#3a1a1a";
-                banner.style.color = "#e91429";
-                banner.style.borderColor = "#e91429";
+            if (qrKravJustNu) {
+                if(kod.length > 0) {
+                    const delar = kod.split("-");
+                    const maxLatar = delar[1] ? delar[1] : "1";
+                    banner.style.display = "block";
+                    banner.innerText = `🎫 BILJETT LADDAD: Gäller för max ${maxLatar} låtar!`;
+                    banner.style.background = "#1a3a22"; banner.style.color = "#1db954"; banner.style.borderColor = "#1db954";
+                } else {
+                    banner.style.display = "block";
+                    banner.innerText = "🔒 KOSTNAD: Skanna en QR-kod/biljett för att önska.";
+                    banner.style.background = "#3a1a1a"; banner.style.color = "#e91429"; banner.style.borderColor = "#e91429";
+                }
             } else {
-                // Fritt fram läge
                 banner.style.display = "none";
             }
         }
 
-        function bytFlik(flikNamn) {
+        function bytFlik(f) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            if(flikNamn === 'sok') {
-                document.getElementById('tab-sok').classList.add('active');
-                document.getElementById('btn-tab-sok').classList.add('active');
-            } else if(flikNamn === 'qr') {
-                document.getElementById('tab-qr').classList.add('active');
-                document.getElementById('btn-tab-qr').classList.add('active');
-                genereraQRIFlik();
-            }
-        }
-
-        function genereraQRIFlik() {
-            const basUrl = window.location.origin + window.location.pathname;
-            document.getElementById("qr-lank-text").innerText = basUrl;
-            
-            if (!qrObjekt) {
-                document.getElementById("qr-kod-plats").innerHTML = "";
-                qrObjekt = new QRCode(document.getElementById("qr-kod-plats"), {
-                    text: basUrl,
-                    width: 160,
-                    height: 160,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
-                });
-            } else {
-                qrObjekt.clear();
-                qrObjekt.makeCode(basUrl);
-            }
-        }
-
-        function delaTillPolarna() {
-            const basUrl = window.location.origin + window.location.pathname;
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Styr musiken i baren!',
-                    text: 'Häng med och önska låtar direkt från mobilen här:',
-                    url: basUrl
-                }).catch(err => console.log("Delning avbruten"));
-            } else {
-                alert("Kopiera och skicka denna länk: " + basUrl);
-            }
+            document.getElementById('tab-'+f).classList.add('active');
+            document.getElementById('btn-tab-'+f).classList.add('active');
         }
 
         function sök() {
-            const query = document.getElementById("query").value.trim();
-            if(!query) return;
-            document.getElementById("results").innerHTML = "<p style='opacity:0.5; font-size:14px;'>Söker på YouTube...</p>";
-            socket.emit("search", { query: query });
+            const q = document.getElementById("query").value.trim();
+            if(q) socket.emit("search", { query: q });
         }
 
-        function önskaLåt(videoId, title) {
-            const kod = document.getElementById("kupong-input").value.trim();
-            
-            if(qrKravJustNu && !kod) {
-                alert("Du måste skanna eller skriva in en biljettkod först!");
-                return;
+        function önskaLåt(vId, t) {
+            socket.emit("addSong", { videoId: vId, title: t, kupongKod: document.getElementById("kupong-input").value.trim() });
+        }
+
+        socket.on("kupong_error", (d) => alert(d.msg));
+        socket.on("kupong_success", (d) => {
+            alert(d.msg);
+            if(d.resterande <= 0) {
+                document.getElementById("kupong-input").value = "";
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
-            
-            socket.emit("addSong", { 
-                videoId: videoId, 
-                title: title,
-                kupongKod: kod 
-            });
-        }
-
-        socket.on("kupong_error", (data) => {
-            alert("❌ NEKAD: " + data.msg);
-        });
-
-        socket.on("kupong_success", (data) => {
-            alert("✅ " + data.msg);
             document.getElementById("results").innerHTML = "";
             document.getElementById("query").value = "";
-            document.getElementById("kupong-input").value = "";
-            window.history.replaceState({}, document.title, window.location.pathname);
-            uppdateraBannerFrånInmatning();
+            uppdateraBanner();
         });
 
-        socket.on("searchResults", (data) => {
-            const box = document.getElementById("results");
-            if(!data.results || data.results.length === 0) {
-                box.innerHTML = "<p style='opacity:0.3;'>Inga låtar hittades.</p>";
-                return;
-            }
-            
-            box.innerHTML = `
-                <div class="item-box" style="margin-top:10px;">
-                    <h3 style="margin-top:0; font-size:14px; color:#1db954;">SÖKRESULTAT:</h3>
-                    ${data.results.map(item => {
-                        const renTitel = item.title.replace(/'/g, "").replace(/"/g, "");
-                        return `
-                            <div class="row">
-                                <img src="${item.thumbnail}">
-                                <div style="flex:1; font-size:13px; font-weight:500; max-height:40px; overflow:hidden; line-height:1.2;">
-                                    ${item.title}
-                                </div>
-                                <button class="add-btn" onclick="önskaLåt('${item.videoId}', '${renTitel}')">ÖNSKA</button>
-                            </div>
-                        `;
-                    }).join("")}
+        socket.on("searchResults", (d) => {
+            document.getElementById("results").innerHTML = `<div class="item-box">${d.results.map(i => `
+                <div class="row">
+                    <img src="${i.thumbnail}">
+                    <span style="flex:1; font-size:13px;">${i.title}</span>
+                    <button class="add-btn" onclick="önskaLåt('${i.videoId}', '${i.title.replace(/'/g, "")}')">ÖNSKA</button>
                 </div>
-            `;
+            `).join("")}</div>`;
         });
 
         socket.on("state", (data) => {
-            document.getElementById("pub-titel").innerHTML = `${data.pubNamn}`;
-            
+            document.getElementById("pub-titel").innerText = data.pubNamn;
             qrKravJustNu = data.qrKrav;
-            uppdateraBannerFrånInmatning();
-
-            if(data.nowPlaying) {
-                document.getElementById("now-playing-text").innerText = "🎵 " + data.nowPlaying.title;
-            } else {
-                document.getElementById("now-playing-text").innerText = "Tyst i baren... Önska en låt! 🤐";
-            }
-
-            const queueBox = document.getElementById("queue-lista");
-            if (!data.queue || data.queue.length === 0) {
-                queueBox.innerHTML = "<span style='opacity:0.3; font-size:13px;'>Kön är tom. Blir du först?</span>";
-            } else {
-                queueBox.innerHTML = data.queue.map((lat, index) => `
-                    <div class="row" style="font-size:13px; justify-content:space-between;">
-                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; padding-right:10px;">
-                            <strong>${index + 1}.</strong> ${lat.title}
-                        </span>
-                        <small style="opacity:0.4; font-size:11px;">${lat.addedBy}</small>
-                    </div>
-                `).join("");
-            }
+            uppdateraBanner();
+            document.getElementById("now-playing-text").innerText = data.nowPlaying ? "🎵 " + data.nowPlaying.title : "Tyst i baren...";
+            document.getElementById("queue-lista").innerHTML = data.fullQueue.length === 0 ? "<span style='opacity:0.3; font-size:13px;'>Kön är tom.</span>" : data.fullQueue.map((l, i) => `
+                <div class="row" style="justify-content:space-between; font-size:13px;"><span><strong>${i+1}.</strong> ${l.title}</span></div>
+            `).join("");
         });
+
+        function delaLank() { navigator.share({ url: window.location.origin + window.location.pathname }); }
     </script>
 </body>
 </html>

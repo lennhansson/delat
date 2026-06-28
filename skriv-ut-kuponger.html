@@ -2,107 +2,77 @@
 <html lang="sv">
 <head>
     <meta charset="utf-8">
-    <title>Utskrift - Jukebox Kameralänkar</title>
+    <title>Utskrift - Jukebox Värdebiljetter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    
     <style>
-        body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 20px; color: #333; }
-        .kontroller { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .kontroller .row { margin-bottom: 12px; }
-        .kontroller label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 14px; }
-        .kontroller input { padding: 8px; font-size: 14px; width: 350px; border: 1px solid #ccc; border-radius: 4px; }
-        .kontroller button { padding: 10px 20px; font-size: 16px; background: #1db954; color: black; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
+        body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+        .kontroller { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .kontroller input, .kontroller select { padding: 8px; font-size: 14px; width: 250px; margin-right: 10px; }
+        .kontroller button { padding: 10px 20px; font-size: 14px; background: #1db954; border: none; font-weight: bold; cursor: pointer; border-radius: 4px; }
         .ark { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 210mm; margin: 0 auto; }
-        .kupong { background: white; border: 2px dashed #000; padding: 15px; text-align: center; border-radius: 8px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 80mm; }
-        .kupong h2 { margin: 0 0 2px 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: #1db954; }
-        .kupong p { margin: 0 0 8px 0; font-size: 11px; color: #666; font-weight: bold; }
-        .qr-kod { background: white; padding: 5px; display: inline-block; }
-        .kod-text { font-family: monospace; font-size: 15px; font-weight: bold; background: #eee; padding: 4px 8px; border-radius: 4px; margin-top: 8px; letter-spacing: 1px; width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        @media print {
-            body { background: white; padding: 0; }
-            .kontroller { display: none; }
-            .ark { gap: 10mm; }
-            .kupong { page-break-inside: avoid; border-color: #666; }
-        }
+        .kupong { background: white; border: 2px dashed #000; padding: 12px; text-align: center; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 82mm; box-sizing: border-box; }
+        .kupong h2 { margin: 0; font-size: 16px; color: #1db954; text-transform: uppercase; }
+        .kupong p { margin: 2px 0 5px 0; font-size: 12px; font-weight: bold; color: #555; }
+        .qr-kod { background: white; padding: 3px; }
+        .kod-text { font-family: monospace; font-size: 13px; font-weight: bold; background: #eee; padding: 4px; border-radius: 4px; width: 95%; overflow: hidden; text-transform: uppercase; }
+        @media print { .kontroller { display: none; } .kupong { page-break-inside: avoid; } }
     </style>
 </head>
 <body>
 
     <div class="kontroller">
-        <h2>Generera Smarta Biljetter (Skanna med Kamera)</h2>
-        <p style="margin: 0 0 15px 0; color: #666; font-size: 13px;">
-            QR-koden kommer att innehålla hela adressen. När gästen skannar öppnas mobilsidan och koden fylls i automatiskt!
-        </p>
-        
-        <div class="row">
-            <label for="domain-input">Din Render-adress (Huvuddomän):</label>
-            <input type="text" id="domain-input" placeholder="https://din-app.onrender.com" value="">
-            <small style="display:block; color:#777; margin-top:2px;">Lämna tom för att testa lokalt (använder då nuvarande adress i webbläsaren).</small>
-        </div>
-
-        <div class="row">
-            <label for="pub-input">Pub ID (Samma som i URL:en, t.ex. 7_an):</label>
-            <input type="text" id="pub-input" value="7_an">
-        </div>
-
-        <div class="row">
-            <label for="secret-input">MASTER_SECRET:</label>
-            <input type="text" id="secret-input" value="din-hemliga-globala-paniknyckel-2026">
-        </div>
-        
-        <button onclick="genereraArk()">Skapa 12 Kamerabiljetter 🖨️</button>
+        <h2>Skriv ut Smart-biljetter</h2>
+        <input type="text" id="domain-input" placeholder="Render-url (t.ex. https://app.onrender.com)">
+        <input type="text" id="pub-input" value="7_an" placeholder="Pub ID">
+        <label>Antal låtar per lapp:</label>
+        <select id="lator-select">
+            <option value="1">1 Låt (Standard)</option>
+            <option value="2">2 Låtar</option>
+            <option value="3">3 Låtar (AW-erbjudande)</option>
+            <option value="5">5 Låtar (Helkväll)</option>
+        </select>
+        <button onclick="genereraArk()">Generera Sida 🖨️</button>
     </div>
 
     <div class="ark" id="ark-container"></div>
 
     <script>
         function genereraArk() {
-            let doman = document.getElementById("domain-input").value.trim();
-            // Om ingen domän skrivs in, ta den vi är på just nu (bra för localhost-tester)
-            if(!doman) {
-                doman = window.location.origin;
-            }
-            // Ta bort eventuellt snedstreck på slutet
+            let doman = document.getElementById("domain-input").value.trim() || window.location.origin;
             if(doman.endsWith("/")) doman = doman.slice(0, -1);
-
             const pubId = document.getElementById("pub-input").value.trim();
-            const masterSecret = document.getElementById("secret-input").value.trim();
+            const antalLator = parseInt(document.getElementById("lator-select").value);
+            const masterSecret = "din-hemliga-globala-paniknyckel-2026";
+            
             const container = document.getElementById("ark-container");
             container.innerHTML = "";
 
             for (let i = 0; i < 12; i++) {
                 const kupongId = Math.floor(1000 + Math.random() * 9000).toString();
-                const hash = CryptoJS.HmacSHA256(kupongId, masterSecret);
-                const hashInHex = CryptoJS.enc.Hex.stringify(hash);
-                const signatur = hashInHex.substring(0, 6);
-                const fullständigKod = `${kupongId}-${signatur}`.toUpperCase();
+                // Kryptosignera BÅDE id och antal låtar tillsammans
+                const strang = `${kupongId}-${antalLator}`;
+                const hash = CryptoJS.HmacSHA256(strang, masterSecret);
+                const signatur = CryptoJS.enc.Hex.stringify(hash).substring(0, 6).toUpperCase();
+                
+                // Koden får formatet: ID-ANTAL-SIGNATUR
+                const fullstandigKod = `${kupongId}-${antalLator}-${signatur}`;
+                const malLank = `${doman}/pub/${pubId}/mobile?kod=${fullstandigKod}`;
 
-                // HÄR BYGGER VI HELA LÄNKEN SOM SKA IN I QR-KODEN
-                const fullständigMålLänk = `${doman}/pub/${pubId}/mobile?kod=${fullständigKod}`;
-
-                const kupongDiv = document.createElement("div");
-                kupongDiv.className = "kupong";
-                kupongDiv.innerHTML = `
+                const div = document.createElement("div");
+                div.className = "kupong";
+                div.innerHTML = `
                     <div>
                         <h2>Global Jukebox</h2>
-                        <p>Skanna lappen för att få 1 låt</p>
+                        <p style="color:#007aff; font-size:14px;">VÄRDE: ${antalLator} LÅT${antalLator > 1 ? 'AR' : ''}</p>
                     </div>
                     <div class="qr-kod" id="qr-${kupongId}"></div>
-                    <div class="kod-text">${fullständigKod}</div>
+                    <div class="kod-text">${fullstandigKod}</div>
                 `;
-                container.appendChild(kupongDiv);
+                container.appendChild(div);
 
-                // Skapa QR-koden med hela den långa URL-länken
                 new QRCode(document.getElementById(`qr-${kupongId}`), {
-                    text: fullständigMålLänk,
-                    width: 110,
-                    height: 110,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.M
+                    text: malLank, width: 115, height: 115
                 });
             }
         }
