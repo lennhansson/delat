@@ -19,7 +19,7 @@ function hämtaPubData(pubId) {
     const standardConfig = {
       namn: `${pubId.toUpperCase()} Jukebox`,
       aktivtValv: "Standard Rock",
-      qrKrav: false, // NYTT: Standard är att det är FRITT FRAM i vårt PoC
+      qrKrav: false,
       valv: {
         "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
         "Schlager & Party": ["Gyllene Tider - Sommartider", "Arvingarna - Eloise", "Fronda - Rullar fram"],
@@ -34,7 +34,7 @@ function hämtaPubData(pubId) {
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
 
   if (!config.användaKoder) config.användaKoder = [];
-  if (config.qrKrav === undefined) config.qrKrav = false; // Säkerställ fallback
+  if (config.qrKrav === undefined) config.qrKrav = false;
 
   if (!pubar[pubId]) {
     pubar[pubId] = {
@@ -49,6 +49,7 @@ function hämtaPubData(pubId) {
   return pubar[pubId];
 }
 
+// ROUTERS FÖR MOBIL OCH SPELARE
 app.get('/pub/:pubId/mobile', (req, res) => {
   hämtaPubData(req.params.pubId);
   res.sendFile(path.join(__dirname, 'test-mobile.html'));
@@ -57,6 +58,11 @@ app.get('/pub/:pubId/mobile', (req, res) => {
 app.get('/pub/:pubId/player', (req, res) => {
   hämtaPubData(req.params.pubId);
   res.sendFile(path.join(__dirname, 'test-player.html'));
+});
+
+// NY ROUTE: Servera biljettgeneratorn för utskrift
+app.get('/generate', (req, res) => {
+  res.sendFile(path.join(__dirname, 'skriv-ut-kuponger.html'));
 });
 
 function broadcastPubState(pubId) {
@@ -70,7 +76,7 @@ function broadcastPubState(pubId) {
   io.to(pubId).emit("state", {
     pubNamn: pub.config.namn,
     aktivtValv: pub.config.aktivtValv || "Standard Rock",
-    qrKrav: pub.config.qrKrav, // Skicka med inställningen till mobil och spelare
+    qrKrav: pub.config.qrKrav,
     valvLista: Object.keys(pub.config.valv || {}),
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
     queue: synligKö,
@@ -156,7 +162,6 @@ io.on('connection', (socket) => {
 
     const pub = pubar[pubId];
     
-    // NYTT: Kolla om QR-kod ens krävs på denna pub just nu!
     if (pub.config.qrKrav) {
       const fullKod = data.kupongKod ? data.kupongKod.trim() : "";
 
@@ -194,7 +199,6 @@ io.on('connection', (socket) => {
       fs.writeFileSync(filStig, JSON.stringify(pub.config, null, 2));
     }
 
-    // Lägg till låten (om qrKrav var false, eller om koden ovan godkändes)
     pub.queue.push({
       id: Math.random().toString(36).substr(2, 9),
       videoId: data.videoId,
@@ -206,7 +210,6 @@ io.on('connection', (socket) => {
     hanteraSpelning(pubId);
   });
 
-  // NYTT: Aktivera/Inaktivera QR-krav från baren (Player-sidan)
   socket.on("player:toggle_qr", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
