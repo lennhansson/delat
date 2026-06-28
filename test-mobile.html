@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Önska Låt - Jukebox</title>
     <script src="/socket.io/socket.io.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -17,7 +16,6 @@
         .reload-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
         .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-bottom: 15px; }
 
-        /* Fliksystem */
         .tabs-nav { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; }
         .tab-btn { flex: 1; padding: 10px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
         .tab-btn.active { background: #1db954; color: black; border-color: #1db954; }
@@ -28,13 +26,13 @@
         .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
         .kupong-box label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
         .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; box-sizing: border-box; font-weight: bold; text-transform: uppercase; }
+        .automatisk-laddad { color: #1db954; font-size: 12px; margin-top: 5px; display: block; font-weight: bold; }
 
         /* Sök */
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; }
         .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
-        /* Listor och boxar */
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #222; }
         .row:last-child { border-bottom: none; }
@@ -43,10 +41,7 @@
         .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-left: auto; }
         #now-playing-text { color: #ffcc00; font-weight: bold; font-size: 15px; }
 
-        /* QR-flikens specifika stil */
         .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
-        
-        /* Den lokala QR-koden behöver lite vit marginal för att kameror ska kunna läsa den */
         #qr-kod-plats { background: white; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
     </style>
 </head>
@@ -60,8 +55,9 @@
     <button class="share-btn" onclick="delaTillPolarna()">DELA LÄNK MED BORDET 🚀</button>
 
     <div id="kupong-sektion" class="kupong-box">
-        <label for="kupong-input">SKRIV IN KOD FRÅN PAPPPERSLAPPEN:</label>
+        <label for="kupong-input">KOD FRÅN PAPPPERSLAPPEN:</label>
         <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8">
+        <span id="auto-text" class="automatisk-laddad" style="display:none;">✅ Laddad automatiskt via QR-kod!</span>
     </div>
 
     <div class="item-box" style="border-color: #ffcc00; text-align: center;">
@@ -102,9 +98,21 @@
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
 
         let qrKravJustNu = false;
-        let qrObjekt = null; // Sparar QR-instansen så vi slipper återskapa den hela tiden
+        let qrObjekt = null;
 
         socket.emit("join_pub", pubId);
+
+        // NYTT: Kolla direkt vid start om det finns en kod i länkens parametrar (?kod=XXXX)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const kodFranUrl = urlParams.get('kod');
+            
+            if(kodFranUrl) {
+                const inputFalt = document.getElementById("kupong-input");
+                inputFalt.value = kodFranUrl.trim().toUpperCase();
+                document.getElementById("auto-text").style.display = "block";
+            }
+        });
 
         function bytFlik(flikNamn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -120,16 +128,15 @@
             }
         }
 
-        // UPPDATERAD: Genererar koden HELT lokalt utan Google Charts API
         function genereraQRIFlik() {
-            const nuvarandeUrl = window.location.href;
-            document.getElementById("qr-lank-text").innerText = nuvarandeUrl;
+            // Vi skalar bort eventuella gamla kupongkoder om man delar länk från skärm till skärm
+            const basUrl = window.location.origin + window.location.pathname;
+            document.getElementById("qr-lank-text").innerText = basUrl;
             
-            // Om vi inte har ritat koden än, gör det nu
             if (!qrObjekt) {
-                document.getElementById("qr-kod-plats").innerHTML = ""; // Rensa texten "Laddar"
+                document.getElementById("qr-kod-plats").innerHTML = "";
                 qrObjekt = new QRCode(document.getElementById("qr-kod-plats"), {
-                    text: nuvarandeUrl,
+                    text: basUrl,
                     width: 180,
                     height: 180,
                     colorDark : "#000000",
@@ -137,21 +144,21 @@
                     correctLevel : QRCode.CorrectLevel.H
                 });
             } else {
-                // Om URL:en mot förmodan ändrats uppdaterar vi bara texten i den befintliga koden
                 qrObjekt.clear();
-                qrObjekt.makeCode(nuvarandeUrl);
+                qrObjekt.makeCode(basUrl);
             }
         }
 
         function delaTillPolarna() {
+            const basUrl = window.location.origin + window.location.pathname;
             if (navigator.share) {
                 navigator.share({
                     title: 'Styr musiken i baren!',
                     text: 'Häng med och önska låtar direkt från mobilen här:',
-                    url: window.location.href
+                    url: basUrl
                 }).catch(err => console.log("Delning avbruten"));
             } else {
-                alert("Kopiera och skicka denna länk: " + window.location.href);
+                alert("Kopiera och skicka denna länk: " + basUrl);
             }
         }
 
@@ -185,6 +192,10 @@
             alert("✅ " + data.msg);
             document.getElementById("results").innerHTML = "";
             document.getElementById("query").value = "";
+            // Töm koden och rensa URL parametern efter lyckad önskning så de inte återanvänder den av misstag
+            document.getElementById("kupong-input").value = "";
+            document.getElementById("auto-text").style.display = "none";
+            window.history.replaceState({}, document.title, window.location.pathname);
         });
 
         socket.on("searchResults", (data) => {
