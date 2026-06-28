@@ -13,6 +13,7 @@ const pubar = {};
 const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
 
 function hämtaPubData(pubId) {
+  if (!pubId) return null;
   const filStig = path.join(DATA_DIR, `${pubId}.json`);
   
   if (!fs.existsSync(filStig)) {
@@ -75,7 +76,6 @@ function broadcastPubState(pubId) {
   });
 }
 
-// HJÄLPFUNKTION: Hämtar en radiolåt från YouTube utan att modifiera kön direkt
 async function hämtaEnRadiolåt(pubId) {
   const pub = pubar[pubId];
   if (!pub) return null;
@@ -99,31 +99,25 @@ async function hämtaEnRadiolåt(pubId) {
   return null;
 }
 
-// UPPDATERAD OCH STABIL KÖHANTERING
 async function hanteraSpelning(pubId) {
   const pub = hämtaPubData(pubId);
+  if (!pub) return;
 
-  // 1. Om ingenting spelas just nu, plocka nästa låt synkront ur listan direkt
   if (!pub.nowPlaying) {
-    // Leta först efter en gästlåt (dvs där isRadio INTE är sant)
     let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
     
-    // Om det inte fanns några gästlåtar, ta den första radiolåten i listan istället
     if (nastaLatIndex === -1 && pub.queue.length > 0) {
       nastaLatIndex = 0;
     }
 
-    // Om vi hittade en låt (gäst eller radio), spela den direkt!
     if (nastaLatIndex !== -1) {
       pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
       io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
     }
   }
 
-  // Skicka ut det aktuella läget till alla skärmar omedelbart
   broadcastPubState(pubId);
 
-  // 2. Fyll på med radiolåtar i bakgrunden om det finns färre än 2 i kön
   let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
   if (antalRadioIKon < 2) {
     (async () => {
@@ -131,10 +125,9 @@ async function hanteraSpelning(pubId) {
         const nyRadioLat = await hämtaEnRadiolåt(pubId);
         if (nyRadioLat) {
           pub.queue.push(nyRadioLat);
-          // Skicka ut uppdaterad kö så fort radiolåten lagts till
           broadcastPubState(pubId);
         } else {
-          break; // Bryt om API:et felar eller poolen är tom
+          break;
         }
       }
     })();
@@ -142,6 +135,7 @@ async function hanteraSpelning(pubId) {
 }
 
 io.on('connection', (socket) => {
+  
   socket.on("join_pub", (pubId) => {
     socket.join(pubId);
     socket.pubId = pubId;
@@ -161,7 +155,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on("addSong", (data) => {
-    const pubId = socket.pubId;
+    const pubId = data.pubId || socket.pubId; 
     if (!pubId || !pubar[pubId]) return;
     const pub = pubar[pubId];
     
@@ -191,7 +185,6 @@ io.on('connection', (socket) => {
         return socket.emit("kupong_error", { msg: "Ogiltig signatur! Felaktig biljett." });
       }
 
-      // Godkänd kod! Öka räknaren
       pub.config.användaKoder[kupongId] = användaGånger + 1;
       fs.writeFileSync(path.join(DATA_DIR, `${pubId}.json`), JSON.stringify(pub.config, null, 2));
       
@@ -207,10 +200,9 @@ io.on('connection', (socket) => {
         videoId: data.videoId,
         title: data.title,
         addedBy: pub.config.qrKrav ? "Kupong" : "Gäst",
-        isRadio: false // Sätts till false så prioriteringen plockar den först
+        isRadio: false
       };
 
-      // PRIO-LOGIK: Skjut in gästlåten FÖRE den första radiolåten i kön
       const förstaRadioIndex = pub.queue.findIndex(l => l.isRadio);
       if (förstaRadioIndex !== -1) {
         pub.queue.splice(förstaRadioIndex, 0, nyGästLåt);
@@ -224,6 +216,22 @@ io.on('connection', (socket) => {
       });
 
       hanteraSpelning(pubId);
+    }
+  });
+
+  socket.on("player:add_to_valv", (data) => {
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId] || !data.valvNamn || !data.title) return;
+    
+    const pub = pubar[pubId];
+    if (!pub.config.valv[data.valvNamn]) {
+      pub.config.valv[data.valvNamn] = [];
+    }
+    
+    if (!pub.config.valv[data.valvNamn].includes(data.title)) {
+      pub.config.valv[data.valvNamn].push(data.title);
+      fs.writeFileSync(path.join(DATA_DIR, `${pubId}.json`), JSON.stringify(pub.config, null, 2));
+      broadcastPubState(pubId);
     }
   });
 

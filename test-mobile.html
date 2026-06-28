@@ -9,7 +9,6 @@
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .accent { color: #1db954; }
         .tabs-nav { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; }
         .tab-btn { flex: 1; padding: 12px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; }
         .tab-btn.active { background: #1db954; color: black; }
@@ -19,12 +18,12 @@
         .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
         .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-weight: bold; text-transform: uppercase; box-sizing: border-box; }
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
-        .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; /* Förhindrar auto-zoom på iPhone */ }
+        .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; }
         .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; }
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         
-        /* MOBILANPASSADE RADER OCH THUMBNAILS */
-        .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #222; }
+        /* MOBILANPASSAT: Kompakt bildvisning och layout */
+        .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #222; }
         .row img { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
         .row span { flex: 1; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
         
@@ -75,7 +74,7 @@
     <script>
         const socket = io();
         
-        // KORRIGERAT PUB-ID: Matchar nu exakt hur test-player.html extraherar id från url:en
+        // Hittar baren säkert utifrån URL:en /pub/ID/mobile
         const pathParts = window.location.pathname.split('/');
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
         
@@ -98,7 +97,7 @@
                     const delar = kod.split("-");
                     const maxLatar = delar[1] ? delar[1] : "1";
                     banner.style.display = "block";
-                    banner.innerText = `🎫 BILJETT LADDAD: Gäller for max ${maxLatar} låtar!`;
+                    banner.innerText = `🎫 BILJETT LADDAD: Gäller för max ${maxLatar} låtar!`;
                     banner.style.background = "#1a3a22"; banner.style.color = "#1db954"; banner.style.borderColor = "#1db954";
                 } else {
                     banner.style.display = "block";
@@ -123,7 +122,13 @@
         }
 
         function önskaLåt(vId, t) {
-            socket.emit("addSong", { videoId: vId, title: t, kupongKod: document.getElementById("kupong-input").value.trim() });
+            // Skickar explicit med pubId i objektet så att servern inte kan missa det
+            socket.emit("addSong", { 
+                pubId: pubId,
+                videoId: vId, 
+                title: t, 
+                kupongKod: document.getElementById("kupong-input").value.trim() 
+            });
         }
 
         socket.on("kupong_error", (d) => alert(d.msg));
@@ -143,7 +148,7 @@
                 <div class="row">
                     <img src="${i.thumbnail}">
                     <span>${i.title}</span>
-                    <button class="add-btn" onclick="önskaLåt('${i.videoId}', '${i.title.replace(/'/g, "")}')">ÖNSKA</button>
+                    <button class="add-btn" onclick="önskaLåt('${i.videoId}', '${i.title.replace(/'/g, "").replace(/"/g, "")}')">ÖNSKA</button>
                 </div>
             `).join("")}</div>`;
         });
