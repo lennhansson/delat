@@ -1,0 +1,14 @@
+{
+  "name": "7-an-jukebox",
+  "version": "2.0.0",
+  "description": "7-an Jukebox i molnet",
+  "main": "testserver.js",
+  "scripts": {
+    "start": "node testserver.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "youtube-search-api": "^1.1.1"
+  }
+}
