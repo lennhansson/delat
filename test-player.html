@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <title>Test Spelare (Lokal)</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { background: #000; color: white; font-family: system-ui, sans-serif; text-align: center; padding-top: 50px; margin: 0; }
+        #btn { padding: 15px 30px; font-size: 18px; background: #1db954; color: black; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3); }
+        #btn:active { opacity: 0.8; }
+        #status { font-size: 18px; color: #888; margin-top: 20px; }
+        #player-div { margin-top: 30px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <h2>Testmiljö - Spelare (Baren)</h2>
+    <button id="btn" onclick="starta()">STARTA SPELAREN</button>
+    <p id="status">Klicka på knappen för att aktivera ljudströmmen och ansluta</p>
+
+    <div id="player-div"></div>
+
+    <script>
+        // Startar socket utan parametrar vilket gör att den tvingas ansluta till samma 
+        // dator och port som den laddades ifrån (alltså din lokala laptop på port 3000)
+        const socket = io(); 
+        let player;
+
+        function starta() {
+            document.getElementById("btn").style.display = "none";
+            document.getElementById("status").innerText = "Ansluter till lokala servern och väntar på låtar...";
+            
+            // Ladda YouTubes officiella IFrame API
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.getElementsByTagName('head')[0].appendChild(tag);
+        }
+
+        // YouTubes API anropar denna automatiskt när det har laddats klart
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player-div', {
+                height: '360',
+                width: '640',
+                videoId: '', // Startar tom
+                playerVars: { 
+                    'autoplay': 1, 
+                    'controls': 1,
+                    'rel': 0 
+                },
+                events: { 
+                    'onStateChange': (e) => {
+                        // Status 0 betyder att låten har spelat klart till sista sekunden
+                        if (e.data === YT.PlayerState.ENDED) {
+                            document.getElementById("status").innerText = "Låten slut. Ber servern om nästa...";
+                            socket.emit("player:ready_for_next");
+                        }
+                    },
+                    'onReady': () => {
+                        // Berätta för servern att vi är redo så fort spelaren startat
+                        socket.emit("player:ready_for_next");
+                    }
+                }
+            });
+        }
+
+        // Ta emot order från din testserver.js att byta låt
+        socket.on("player:change_track", (data) => {
+            console.log("Byter låt till:", data.videoId);
+            document.getElementById("status").innerText = "Spelar nu YouTube-ID: " + data.videoId;
+            if (player && player.loadVideoById) {
+                player.loadVideoById(data.videoId);
+            }
+        });
+    </script>
+</body>
+</html>

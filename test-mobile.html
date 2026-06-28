@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jukebox Cloud Mobile</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { background: #0b0b0b; color: white; font-family: system-ui, -apple-system, sans-serif; padding: 20px; margin: 0; box-sizing: border-box; }
+        h1 { font-size: 24px; margin-bottom: 20px; }
+        .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid #333; background: #1a1a1a; color: white; font-size: 16px; outline: none; }
+        input[type="text"]:focus { border-color: #1db954; }
+        button { padding: 12px 20px; background: #1db954; color: black; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        button:active { opacity: 0.8; }
+        .item { display: flex; gap: 12px; background: #1a1a1e; padding: 10px; border-radius: 8px; margin-bottom: 8px; align-items: center; text-align: left; cursor: pointer; }
+        .item:hover { background: #25252a; }
+        .thumb { width: 70px; height: 40px; object-fit: cover; border-radius: 4px; background: #222; }
+        .title { font-size: 14px; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .plus-btn { color: #1db954; font-weight: bold; font-size: 22px; padding-right: 5px; }
+        .queue-container { background: #111; padding: 15px; border-radius: 12px; margin-top: 30px; text-align: left; border: 1px solid #222; }
+        .playing-title { font-weight: bold; margin-bottom: 15px; color: #ffcc00; }
+    </style>
+</head>
+<body>
+
+    <h1>Jukebox Cloud 🎵</h1>
+    
+    <div class="search-box">
+        <input type="text" id="query" placeholder="Sök artist eller låt...">
+        <button onclick="sök()">SÖK</button>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="queue-container">
+        <h3 style="margin-top: 0; color: #1db954; font-size: 16px;">Nu spelas:</h3>
+        <div id="now-playing" class="playing-title">Inget just nu...</div>
+        
+        <h3 style="color: #888; font-size: 14px; margin-bottom: 10px;">Kommande låtar i kön:</h3>
+        <div id="queue-list" style="opacity: 0.9;">Kön är tom.</div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        // 1. Skicka söktexten till servern
+        function sök() {
+            const txt = document.getElementById("query").value.trim();
+            if(!txt) return;
+            document.getElementById("results").innerHTML = "<div style='opacity:0.5; padding:10px; text-align:center;'>Söker live på YouTube...</div>";
+            socket.emit("search", { query: txt });
+        }
+
+        // Lyssna på Enter-knappen i sökrutan också
+        document.getElementById("query").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sök();
+            }
+        });
+
+        // 2. När man klickar på en låt: Skicka infon till servern
+        function väljLåt(item) {
+            socket.emit("addSong", {
+                videoId: item.videoId,
+                title: item.title,
+                thumbnail: item.thumbnail
+            });
+            document.getElementById("results").innerHTML = ""; // Rensa sökningen efter val
+            document.getElementById("query").value = "";
+        }
+
+        // 3. Ta emot och rita upp sökresultaten från YouTube live
+        socket.on("searchResults", (data) => {
+            const div = document.getElementById("results");
+            if (!data.results || data.results.length === 0) {
+                div.innerHTML = "<div style='opacity:0.5; padding:10px; text-align:center;'>Inga låtar hittades.</div>";
+                return;
+            }
+            
+            div.innerHTML = data.results.map(item => `
+                <div class="item" onclick='väljLåt(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+                    <img class="thumb" src="${item.thumbnail}">
+                    <div class="title">${item.title}</div>
+                    <div class="plus-btn">+</div>
+                </div>
+            `).join("");
+        });
+
+        // 4. Lyssna på serverns globala "state" för att uppdatera kön live
+        socket.on("state", (data) => {
+            document.getElementById("now-playing").innerText = data.nowPlaying ? data.nowPlaying.title : "Inget just nu...";
+            
+            const qList = document.getElementById("queue-list");
+            if (!data.queue || data.queue.length === 0) {
+                qList.innerHTML = "<span style='opacity:0.3;'>Kön är tom. Sök och lägg till en låt!</span>";
+            } else {
+                qList.innerHTML = data.queue.map((lat, index) => `
+                    <div style="padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; display: flex; gap: 8px;">
+                        <span style="color: #1db954; font-weight:bold;">${index + 1}.</span> 
+                        <span style="flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lat.title}</span>
+                    </div>
+                `).join("");
+            }
+        });
+    </script>
+</body>
+</html>
