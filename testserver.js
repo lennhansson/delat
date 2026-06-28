@@ -10,7 +10,6 @@ const fs = require('fs');
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
 
 // Globalt minne för att hålla reda på varje pubs aktiva kö och nuvarande låt
-// Struktur: { "7-an": { queue: [], nowPlaying: null, config: {} } }
 const pubar = {};
 
 // Funktion för att ladda eller uppdatera en pubs inställningar från disken
@@ -39,16 +38,22 @@ function hämtaPubData(pubId) {
       config: config
     };
   } else {
-    // Uppdatera bara konfigurationen (om priser eller radiolåtar ändrats på disken)
     pubar[pubId].config = config;
   }
 
   return pubar[pubId];
 }
 
-// DYNAMISKA SÖKBANOR: :pubId kan vara vad som helst (7-an, bisonbar, etc.)
-app.get('/pub/:pubId/mobile', (req, res) => res.sendFile(path.join(__dirname, 'test-mobile.html')));
-app.get('/pub/:pubId/player', (req, res) => res.sendFile(path.join(__dirname, 'test-player.html')));
+// DYNAMISKA SÖKBANOR: Sänder ut HTML-filerna till besökarna
+app.get('/pub/:pubId/mobile', (req, res) => {
+  hämtaPubData(req.params.pubId); // Säkerställ att puben skapas/laddas direkt
+  res.sendFile(path.join(__dirname, 'test-mobile.html'));
+});
+
+app.get('/pub/:pubId/player', (req, res) => {
+  hämtaPubData(req.params.pubId); // Säkerställ att puben skapas/laddas direkt
+  res.sendFile(path.join(__dirname, 'test-player.html'));
+});
 
 // Skicka ut uppdaterat tillstånd till just den pubens gäster och spelare
 function broadcastPubState(pubId) {
@@ -59,7 +64,6 @@ function broadcastPubState(pubId) {
   let radioLåtar = pub.queue.filter(l => l.isRadio);
   let synligKö = [...gästLåtar, ...radioLåtar.slice(0, 2)];
 
-  // Skicka endast till sockets som befinner sig i detta specifika pub-rum
   io.to(pubId).emit("state", {
     pubNamn: pub.config.namn,
     pris: pub.config.pris,
@@ -71,6 +75,7 @@ function broadcastPubState(pubId) {
 
 async function fyllPåMedRadiolåt(pubId) {
   const pub = pubar[pubId];
+  if (!pub) return;
   const pool = pub.config.radioPool;
   const slumpadText = pool[Math.floor(Math.random() * pool.length)];
   
@@ -117,11 +122,9 @@ async function hanteraSpelning(pubId) {
 // SOCKET.IO med rum-hantering (Rooms)
 io.on('connection', (socket) => {
   
-  // När en mobil eller spelare ansluter måste de berätta vilken pub de tillhör
   socket.on("join_pub", (pubId) => {
     socket.join(pubId);
-    socket.pubId = pubId; // Spara pub-id på själva socket-anslutningen
-    
+    socket.pubId = pubId;
     hanteraSpelning(pubId);
   });
 
