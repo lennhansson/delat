@@ -10,46 +10,50 @@
         h1 { font-size: 20px; text-align: center; margin: 10px 0; }
         .accent { color: #1db954; }
         
-        /* Videofönster och fast kontroll */
         .player-wrapper { background: #000; padding: 5px; border-radius: 8px; margin-bottom: 10px; }
-        #player-div { width: 100%; height: 180px; background: #111; border-radius: 6px; }
+        #player-div { width: 100%; height: 160px; background: #111; border-radius: 6px; }
         #status { font-size: 14px; color: #ffcc00; text-align: center; font-weight: bold; margin: 8px 0; }
         
         #skip-btn { display: block; width: 100%; padding: 14px; font-size: 16px; background: #ff4444; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
 
-        /* Flikknappar */
         .tabs { display: flex; background: #1a1a1e; border-radius: 8px; padding: 4px; margin-bottom: 15px; border: 1px solid #222; }
         .tab-btn { flex: 1; padding: 10px 5px; background: transparent; color: #888; border: none; font-weight: bold; font-size: 13px; border-radius: 6px; cursor: pointer; text-align: center; }
         .tab-btn.active { background: #1db954; color: black; }
         
-        /* Flikinnehåll */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Listor */
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 10px; }
         .row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
         .del-btn { background: #ff4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
 
-        /* Spellistor-stil */
         .valv-card { background: #1a1a1e; border: 2px solid #222; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .valv-card.active { border-color: #1db954; background: #112215; }
         .act-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
         .valv-card.active .act-btn { background: #333; color: #777; cursor: not-allowed; }
+
+        /* Sökverktyg inuti valven */
+        .valv-search-box { background: #1a1a1e; border: 1px solid #222; padding: 12px; border-radius: 8px; margin-top: 20px; }
+        .search-input-group { display: flex; gap: 6px; margin-top: 5px; }
+        .valv-search-box input { flex: 1; padding: 10px; background: #111; border: 1px solid #333; color: white; border-radius: 6px; font-size: 14px; }
+        .valv-search-box button { background: #1db954; border: none; color: black; font-weight: bold; padding: 10px 14px; border-radius: 6px; cursor: pointer; }
+        
+        .search-result-row { display: flex; flex-direction: column; gap: 5px; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
+        .search-result-actions { display: flex; gap: 8px; align-items: center; }
+        .valv-select { background: #222; color: white; border: 1px solid #444; padding: 6px; border-radius: 4px; font-size: 12px; flex: 1; }
+        .save-to-valv-btn { background: #1db954; color: black; font-weight: bold; border: none; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h1 id="player-titel">Jukebox <span class="accent">Spelare</span></h1>
     
-    <!-- Video och fasta kontroller som ALLTID syns i mobilen -->
     <div class="player-wrapper">
         <div id="player-div"></div>
     </div>
     <p id="status">Laddar spelarmotor...</p>
     <button id="skip-btn" onclick="skipLat()">SKIPPA LÅT ⏭️</button>
 
-    <!-- Fliknavigering under spelaren -->
     <div class="tabs">
         <button class="tab-btn active" onclick="bytFlik('flik-ko', this)">HANTERA KÖ</button>
         <button class="tab-btn" onclick="bytFlik('flik-valv', this)">SPELLISTOR (VALV)</button>
@@ -62,19 +66,29 @@
         </div>
     </div>
 
-    <!-- FLIK 2: SPELLISTOR -->
+    <!-- FLIK 2: SPELLISTOR & EDITERING -->
     <div id="flik-valv" class="tab-content">
         <div id="valv-lista-container">Hämtar tillgängliga valv...</div>
+
+        <!-- NYTT: Bygg ut eller redigera valvens innehåll -->
+        <div class="valv-search-box">
+            <strong style="font-size: 14px; color: #1db954;">Lägg till nya låtar i barens valv:</strong>
+            <div class="search-input-group">
+                <input type="text" id="valv-query" placeholder="Sök låt att spara i lista...">
+                <button onclick="sökTillValv()">SÖK</button>
+            </div>
+            <div id="valv-search-results" style="margin-top: 10px; max-height: 250px; overflow-y: auto;"></div>
+        </div>
     </div>
 
     <script>
         const socket = io(); 
         let player;
+        let globalValvLista = []; // Sparar tillgängliga valvnamn lokalt i gränssnittet
 
         const pathParts = window.location.pathname.split('/');
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
 
-        // Anslut och starta YouTube API direkt utan knapptryck
         socket.emit("join_pub", pubId);
 
         const tag = document.createElement('script');
@@ -98,6 +112,20 @@
 
         function aktiveraValv(valvNamn) {
             socket.emit("player:byt_valv", { valvNamn: valvNamn });
+        }
+
+        // Sökfunktion specifik för valven
+        function sökTillValv() {
+            const query = document.getElementById("valv-query").value.trim();
+            if(!query) return;
+            document.getElementById("valv-search-results").innerHTML = "<small style='opacity:0.5;'>Söker på YouTube...</small>";
+            socket.emit("search", { query: query });
+        }
+
+        function sparaLåtIValv(title, selectId) {
+            const valvNamn = document.getElementById(selectId).value;
+            socket.emit("player:add_to_valv", { title: title, valvNamn: valvNamn });
+            alert(`Sparad i ${valvNamn}!`);
         }
 
         function onYouTubeIframeAPIReady() {
@@ -126,8 +154,38 @@
             }
         });
 
+        // Hantera sökresultaten som kommer tillbaka från YouTube
+        socket.on("searchResults", (data) => {
+            const box = document.getElementById("valv-search-results");
+            // Kolla om vi är på valvfliken och letar resultat
+            if(!box || !data.results || data.results.length === 0) return;
+
+            box.innerHTML = data.results.map((item, index) => {
+                const selectId = `valv-sel-${index}`;
+                
+                // Skapa alternativ i drop-down menyn för varje tillgängligt valv
+                const alternativ = globalValvLista.map(v => `<option value="${v}">${v}</option>`).join("");
+                
+                // Rensa bort enkla citattecken ur titeln så att inte onclick-funktionen går sönder i HTML-strängen
+                const renTitel = item.title.replace(/'/g, "").replace(/"/g, "");
+
+                return `
+                    <div class="search-result-row">
+                        <div style="font-weight:500; font-size:12px; line-height:1.3;">${item.title}</div>
+                        <div class="search-result-actions">
+                            <select id="${selectId}" class="valv-select">
+                                ${alternativ}
+                            </select>
+                            <button class="save-to-valv-btn" onclick="sparaLåtIValv('${renTitel}', '${selectId}')">SPARA</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        });
+
         socket.on("state", (data) => {
             document.getElementById("player-titel").innerHTML = `${data.pubNamn} <span class="accent">Spelare</span>`;
+            globalValvLista = data.valvLista || []; // Uppdatera vårt lokala minne av vilka listor som finns
             
             if(data.nowPlaying) {
                 document.getElementById("status").innerText = "Spelar nu: " + data.nowPlaying.title;

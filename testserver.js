@@ -64,7 +64,7 @@ function broadcastPubState(pubId) {
     aktivtValv: pub.config.aktivtValv || "Standard Rock",
     valvLista: Object.keys(pub.config.valv || {}),
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
-    queue: synligKö,
+    queue: synvisibleKö || synligKö,
     fullQueue: pub.queue
   });
 }
@@ -173,6 +173,25 @@ io.on('connection', (socket) => {
 
     pubar[pubId].queue = pubar[pubId].queue.filter(l => !l.isRadio);
     hanteraSpelning(pubId);
+  });
+
+  // NYTT: Spara en låt direkt in i ett specifikt valv
+  socket.on("player:add_to_valv", (data) => {
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
+
+    const pub = pubar[pubId];
+    if (pub.config.valv[data.valvNamn]) {
+      // Vi sparar titeln så att radion kan göra sökningar på den framöver
+      pub.config.valv[data.valvNamn].push(data.title);
+
+      // Skriv permanent till disken
+      const filStig = path.join(DATA_DIR, `${pubId}.json`);
+      fs.writeFileSync(filStig, JSON.stringify(pub.config, null, 2));
+      
+      console.log(`[${pub.config.namn}] Låten "${data.title}" sparad i valv [${data.valvNamn}]`);
+      broadcastPubState(pubId);
+    }
   });
 
   socket.on("player:ready_for_next", () => {
