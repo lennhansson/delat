@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Önska Låt - Jukebox</title>
     <script src="/socket.io/socket.io.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -42,39 +45,35 @@
 
         /* QR-flikens specifika stil */
         .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
-        .qr-container img { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        
+        /* Den lokala QR-koden behöver lite vit marginal för att kameror ska kunna läsa den */
+        #qr-kod-plats { background: white; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- TOPPMENY MED OMLADDNING -->
     <div class="header-row">
         <h1 id="pub-titel">Laddar <span class="accent">Jukebox...</span></h1>
         <button class="reload-btn" onclick="window.location.reload()">🔄 Ladda om</button>
     </div>
     
-    <!-- DELA LÄNK VIA SMS/MAIL/ANYTHING -->
     <button class="share-btn" onclick="delaTillPolarna()">DELA LÄNK MED BORDET 🚀</button>
 
-    <!-- DYNAMISK KUPONGBOX -->
     <div id="kupong-sektion" class="kupong-box">
         <label for="kupong-input">SKRIV IN KOD FRÅN PAPPPERSLAPPEN:</label>
         <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8">
     </div>
 
-    <!-- NU SPELAS -->
     <div class="item-box" style="border-color: #ffcc00; text-align: center;">
         <small style="color:#888;">JUST NU I HÖGTALARNA:</small>
         <div id="now-playing-text">Hämtar status...</div>
     </div>
 
-    <!-- FLIKAR FÖR ATT VÄXLA VY -->
     <div class="tabs-nav">
         <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🔍 Sök & Önska</button>
         <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">📱 Visa QR-kod</button>
     </div>
 
-    <!-- FLIK 1: SÖK LÅTAR -->
     <div id="tab-sok" class="tab-content active">
         <div class="search-box">
             <input type="text" id="query" placeholder="Sök låt eller artist...">
@@ -83,16 +82,15 @@
         <div id="results"></div>
     </div>
 
-    <!-- FLIK 2: VISA QR-KOD TILL BORDET -->
     <div id="tab-qr" class="tab-content">
         <div class="qr-container">
             <p style="margin-top:0; font-size:14px; color:#aaa;">Låt polarna skanna din skärm för att hoppa in i kön!</p>
             <div id="qr-kod-plats"></div>
+            <br>
             <small style="color:#666; word-break: break-all; margin-top:5px;" id="qr-lank-text"></small>
         </div>
     </div>
 
-    <!-- KOMMANDE KÖ -->
     <div class="item-box" style="margin-top: 15px;">
         <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
         <div id="queue-lista">Laddar kö...</div>
@@ -104,10 +102,10 @@
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
 
         let qrKravJustNu = false;
+        let qrObjekt = null; // Sparar QR-instansen så vi slipper återskapa den hela tiden
 
         socket.emit("join_pub", pubId);
 
-        // Flikväxlare
         function bytFlik(flikNamn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -122,14 +120,27 @@
             }
         }
 
-        // Genererar en QR-kod live baserat på exakt den URL gästen använder
+        // UPPDATERAD: Genererar koden HELT lokalt utan Google Charts API
         function genereraQRIFlik() {
             const nuvarandeUrl = window.location.href;
             document.getElementById("qr-lank-text").innerText = nuvarandeUrl;
             
-            // Vi bygger en länk till ett öppet och snabbt QR API (Google Charts)
-            const qrApiUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(nuvarandeUrl)}&choe=UTF-8`;
-            document.getElementById("qr-kod-plats").innerHTML = `<img src="${qrApiUrl}" alt="QR Kod">`;
+            // Om vi inte har ritat koden än, gör det nu
+            if (!qrObjekt) {
+                document.getElementById("qr-kod-plats").innerHTML = ""; // Rensa texten "Laddar"
+                qrObjekt = new QRCode(document.getElementById("qr-kod-plats"), {
+                    text: nuvarandeUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            } else {
+                // Om URL:en mot förmodan ändrats uppdaterar vi bara texten i den befintliga koden
+                qrObjekt.clear();
+                qrObjekt.makeCode(nuvarandeUrl);
+            }
         }
 
         function delaTillPolarna() {
