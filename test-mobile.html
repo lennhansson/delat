@@ -10,20 +10,17 @@
         h1 { font-size: 24px; text-align: center; margin-bottom: 5px; }
         .accent { color: #1db954; }
         
-        /* Delningsknapp */
         .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-bottom: 15px; }
 
-        /* Kupongsektion */
-        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        /* Kupongsektion - kan döljas */
+        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
         .kupong-box label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
         .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; box-sizing: border-box; font-weight: bold; text-transform: uppercase; }
 
-        /* Söksektion */
         .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
         .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; }
         .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
-        /* Listor */
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #222; }
         .row:last-child { border-bottom: none; }
@@ -37,18 +34,22 @@
 
     <h1 id="pub-titel">Laddar <span class="accent">Jukebox...</span></h1>
     
+    <!-- DELA LÄNK-KNAPP -->
     <button class="share-btn" onclick="delaTillPolarna()">DELA LÄNK MED BORDET 🚀</button>
 
-    <div class="kupong-box">
+    <!-- KUPONGKOD (Visas bara om servern kräver det) -->
+    <div id="kupong-sektion" class="kupong-box">
         <label for="kupong-input">SKRIV IN KOD FRÅN PAPPPERSLAPPEN:</label>
         <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8">
     </div>
 
+    <!-- NU SPELAS -->
     <div class="item-box" style="border-color: #ffcc00; text-align: center;">
         <small style="color:#888;">JUST NU I HÖGTALARNA:</small>
         <div id="now-playing-text">Hämtar status...</div>
     </div>
 
+    <!-- SÖK LÅT -->
     <div class="search-box">
         <input type="text" id="query" placeholder="Sök låt eller artist...">
         <button onclick="sök()">SÖK</button>
@@ -56,6 +57,7 @@
 
     <div id="results" class="tab-content" style="margin-bottom:20px;"></div>
 
+    <!-- KOMMANDE KÖ -->
     <div class="item-box">
         <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
         <div id="queue-lista">Laddar kö...</div>
@@ -63,22 +65,21 @@
 
     <script>
         const socket = io();
-
         const pathParts = window.location.pathname.split('/');
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
 
+        let qrKravJustNu = false;
+
         socket.emit("join_pub", pubId);
 
-        // VIRAL DELNINGSFUNKTION (Använder mobilens inbyggda meny)
         function delaTillPolarna() {
             if (navigator.share) {
                 navigator.share({
                     title: 'Styr musiken i baren!',
                     text: 'Häng med och önska låtar direkt från mobilen här:',
-                    url: window.location.href // Skickar med exakt länken de är på
+                    url: window.location.href
                 }).catch(err => console.log("Delning avbruten"));
             } else {
-                // Fallback om webbläsaren saknar stöd
                 alert("Kopiera och skicka denna länk: " + window.location.href);
             }
         }
@@ -92,7 +93,9 @@
 
         function önskaLåt(videoId, title) {
             const kod = document.getElementById("kupong-input").value.trim();
-            if(!kod) {
+            
+            // Kolla bara om fältet är tomt IFALL qr-krav faktiskt är aktivt
+            if(qrKravJustNu && !kod) {
                 alert("Du måste skriva in koden från din papperslapp först!");
                 return;
             }
@@ -104,15 +107,13 @@
             });
         }
 
-        // Felhantering för kuponger
         socket.on("kupong_error", (data) => {
             alert("❌ NEKAD: " + data.msg);
         });
 
-        // Framgång för kuponger
         socket.on("kupong_success", (data) => {
             alert("✅ " + data.msg);
-            document.getElementById("results").innerHTML = ""; // Rensa sökresultaten efter önskning
+            document.getElementById("results").innerHTML = "";
             document.getElementById("query").value = "";
         });
 
@@ -145,6 +146,15 @@
         socket.on("state", (data) => {
             document.getElementById("pub-titel").innerHTML = `${data.pubNamn}`;
             
+            // NYTT: Göm eller visa kupongfältet dynamiskt baserat på vad baren valt
+            qrKravJustNu = data.qrKrav;
+            const kupongSektion = document.getElementById("kupong-sektion");
+            if (data.qrKrav) {
+                kupongSektion.style.display = "block";
+            } else {
+                kupongSektion.style.display = "none";
+            }
+
             if(data.nowPlaying) {
                 document.getElementById("now-playing-text").innerText = "🎵 " + data.nowPlaying.title;
             } else {
