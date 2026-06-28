@@ -5,17 +5,25 @@
     <title>Jukebox - Player & Bar Kontroll</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; display: flex; gap: 20px; }
-        .panel { background: #1e1e1e; padding: 20px; border-radius: 12px; flex: 1; }
-        .tv-screen { flex: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border-radius: 12px; min-height: 400px; position: relative; }
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; display: flex; gap: 20px; height: 95vh; margin: 0; box-sizing: border-box; }
+        .panel { background: #1e1e1e; padding: 20px; border-radius: 12px; flex: 1; display: flex; flex-direction: column; }
+        .tv-screen { flex: 1.8; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
         h2 { margin: 0; color: #1db954; }
+        h3 { margin-top: 15px; margin-bottom: 10px; }
         .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: #333; color: white; text-decoration: none; display: inline-block; text-align: center; }
         .btn-active { background: #1db954; color: black; }
         .btn-danger { background: #e91429; color: white; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #222; margin-bottom: 6px; border-radius: 6px; font-size: 14px; }
-        #now-playing-title { font-size: 24px; font-weight: bold; color: #ffcc00; text-align: center; margin: 20px; }
+        
+        #now-playing-container { background: rgba(0, 0, 0, 0.8); padding: 15px; text-align: center; border-bottom: 2px solid #ffcc00; }
+        #now-playing-title { font-size: 20px; font-weight: bold; color: #ffcc00; margin-bottom: 10px; }
         
         .qr-toggle-box { background: #29292d; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .scroll-area { flex: 1; overflow-y: auto; }
+        
+        /* Ram för själva YouTube-videon så den fyller ut skärmen */
+        .video-wrapper { flex: 1; width: 100%; height: 100%; position: relative; }
+        #player { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
@@ -38,15 +46,23 @@
         </div>
 
         <h3>Aktivt Musikvalv (Radio)</h3>
-        <div id="valv-knappar" style="display:flex; gap:8px; margin-bottom:20px;"></div>
+        <div id="valv-knappar" style="display:flex; gap:8px; margin-bottom:15px;"></div>
 
         <h3>Kommande spellista</h3>
-        <div id="queue-lista">Kön är tom</div>
+        <div class="scroll-area" id="queue-lista">Kön är tom</div>
     </div>
 
     <div class="panel tv-screen">
-        <div id="now-playing-title">Laddar jukeboxen...</div>
-        <div id="player" style="width:1px; height:1px; opacity:0.01;"></div>
+        <div id="now-playing-container">
+            <div id="now-playing-title">Laddar jukeboxen...</div>
+            <div id="control-row" style="display: none; justify-content: center; gap: 10px;">
+                <button class="btn btn-danger" onclick="socket.emit('player:skip')">SKIPPA LÅT ⏭️</button>
+                <button class="btn" style="background:#555;" id="save-pool-btn">💾 Spara i Radio-pool</button>
+            </div>
+        </div>
+        <div class="video-wrapper">
+            <div id="player"></div>
+        </div>
     </div>
 
     <script>
@@ -56,6 +72,7 @@
 
         let nuvarandeQRKrav = false;
         let player = null;
+        let nuvarandeLatTitel = "";
 
         socket.emit("join_pub", pubId);
 
@@ -67,9 +84,15 @@
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '360',
-                width: '640',
+                height: '100%',
+                width: '100%',
                 videoId: '',
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 1, // Visar tidslinje och volym om bartendern behöver justera
+                    'modestbranding': 1,
+                    'rel': 0
+                },
                 events: {
                     'onReady': () => socket.emit('player:ready_for_next'),
                     'onStateChange': onPlayerStateChange
@@ -95,13 +118,13 @@
             socket.emit("player:remove_song", { id });
         }
 
-        function sparaIRadioPool(title) {
+        document.getElementById("save-pool-btn").addEventListener("click", () => {
             const aktivtValv = document.querySelector('.btn-active')?.innerText;
-            if (aktivtValv) {
-                socket.emit("player:add_to_valv", { valvNamn: aktivtValv, title: title });
-                alert(`"${title}" sparad i ${aktivtValv}!`);
+            if (aktivtValv && nuvarandeLatTitel) {
+                socket.emit("player:add_to_valv", { valvNamn: aktivtValv, title: nuvarandeLatTitel });
+                alert(`"${nuvarandeLatTitel}" sparad i ${aktivtValv}!`);
             }
-        }
+        });
 
         socket.on("player:change_track", (data) => {
             if(player && player.loadVideoById) {
@@ -116,27 +139,27 @@
             const statusTxt = document.getElementById("qr-status-text");
             const toggleBtn = document.getElementById("qr-toggle-btn");
             if (data.qrKrav) {
-                statusTxt.innerText = "QR-kod KRÄVS för att gäster ska önska.";
+                statusTxt.innerText = "QR-kod KRÄVS för gäster.";
                 statusTxt.style.color = "#e91429";
-                toggleBtn.innerText = "Stäng av kodkrav";
+                toggleBtn.innerText = "Slå på Fritt Fram";
                 toggleBtn.className = "btn btn-danger";
             } else {
-                statusTxt.innerText = "FRITT FRAM! Gäster önskar utan koder.";
+                statusTxt.innerText = "FRITT FRAM! Inga koder krävs.";
                 statusTxt.style.color = "#1db954";
-                toggleBtn.innerText = "Slå på kodkrav";
+                toggleBtn.innerText = "Slå på Kodkrav";
                 toggleBtn.className = "btn btn-active";
             }
 
             if(data.nowPlaying) {
+                nuvarandeLatTitel = data.nowPlaying.title.replace(/'/g, "");
                 document.getElementById("now-playing-title").innerHTML = `
-                    <span style="font-size:14px; color:#aaa; display:block;">SPELAS NU:</span>
-                    ${data.nowPlaying.title}
-                    <br><br>
-                    <button class="btn btn-danger" onclick="socket.emit('player:skip')">SKIPPA LÅT ⏭️</button>
-                    <button class="btn" style="background:#555;" onclick="sparaIRadioPool('${data.nowPlaying.title.replace(/'/g, "")}')">💾 Spara i Radio-pool</button>
+                    <span style="font-size:12px; color:#aaa; display:block; text-transform:uppercase; letter-spacing:1px;">Spelas Nu:</span>
+                    <strong>${data.nowPlaying.title}</strong>
                 `;
+                document.getElementById("control-row").style.display = "flex";
             } else {
                 document.getElementById("now-playing-title").innerText = "Köar nästa radiolåt...";
+                document.getElementById("control-row").style.display = "none";
             }
 
             const valvBox = document.getElementById("valv-knappar");
@@ -146,12 +169,12 @@
 
             const qBox = document.getElementById("queue-lista");
             if(data.fullQueue.length === 0) {
-                qBox.innerText = "Kön är tom (Radio fyller på automatiskt)";
+                qBox.innerHTML = "<div style='opacity:0.3; font-size:14px; padding:10px;'>Kön är tom (Radio fyller på automatiskt)</div>";
             } else {
                 qBox.innerHTML = data.fullQueue.map((l, i) => `
                     <div class="row">
-                        <span style="max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            <strong>${i+1}.</strong> ${l.title} (${l.addedBy})
+                        <span style="max-width:75%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <strong>${i+1}.</strong> ${l.title} <small style="opacity:0.5;">(${l.addedBy})</small>
                         </span>
                         <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="taBortLåt('${l.id}')">Ta bort</button>
                     </div>

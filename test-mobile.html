@@ -14,19 +14,22 @@
         .accent { color: #1db954; }
         
         .reload-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
-        .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-bottom: 15px; }
+        .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-top: 10px; }
 
+        /* Fliksystem */
         .tabs-nav { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; }
-        .tab-btn { flex: 1; padding: 10px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .tab-btn { flex: 1; padding: 12px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
         .tab-btn.active { background: #1db954; color: black; border-color: #1db954; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Kupongsektion */
-        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
+        /* NYTT: Biljettstatus-box (Supertydlig för gästen) */
+        .status-badge { background: #1a3a22; border: 1px solid #1db954; color: #1db954; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 14px; }
+
+        /* Kupongbox under inställningar */
+        .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: left; }
         .kupong-box label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
         .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; box-sizing: border-box; font-weight: bold; text-transform: uppercase; }
-        .automatisk-laddad { color: #1db954; font-size: 12px; margin-top: 5px; display: block; font-weight: bold; }
 
         /* Sök */
         .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
@@ -41,7 +44,7 @@
         .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-left: auto; }
         #now-playing-text { color: #ffcc00; font-weight: bold; font-size: 15px; }
 
-        .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
+        .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
         #qr-kod-plats { background: white; padding: 15px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
     </style>
 </head>
@@ -52,44 +55,50 @@
         <button class="reload-btn" onclick="window.location.reload()">🔄 Ladda om</button>
     </div>
     
-    <button class="share-btn" onclick="delaTillPolarna()">DELA LÄNK MED BORDET 🚀</button>
-
-    <div id="kupong-sektion" class="kupong-box">
-        <label for="kupong-input">KOD FRÅN PAPPPERSLAPPEN:</label>
-        <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8">
-        <span id="auto-text" class="automatisk-laddad" style="display:none;">✅ Laddad automatiskt via QR-kod!</span>
-    </div>
-
-    <div class="item-box" style="border-color: #ffcc00; text-align: center;">
-        <small style="color:#888;">JUST NU I HÖGTALARNA:</small>
-        <div id="now-playing-text">Hämtar status...</div>
+    <div id="biljett-status-banner" class="status-badge" style="display: none;">
+        🎫 KLAR ATT ÖNSKA: Du har 1 aktiv biljett!
     </div>
 
     <div class="tabs-nav">
-        <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🔍 Sök & Önska</button>
-        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">📱 Visa QR-kod</button>
+        <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🎵 Jukebox</button>
+        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">⚙️ Hantera / Biljetter</button>
     </div>
 
     <div id="tab-sok" class="tab-content active">
+        <div class="item-box" style="border-color: #ffcc00; text-align: center; margin-bottom: 15px;">
+            <small style="color:#888;">JUST NU I HÖGTALARNA:</small>
+            <div id="now-playing-text">Hämtar status...</div>
+        </div>
+
         <div class="search-box">
             <input type="text" id="query" placeholder="Sök låt eller artist...">
             <button onclick="sök()">SÖK</button>
         </div>
         <div id="results"></div>
-    </div>
 
-    <div id="tab-qr" class="tab-content">
-        <div class="qr-container">
-            <p style="margin-top:0; font-size:14px; color:#aaa;">Låt polarna skanna din skärm för att hoppa in i kön!</p>
-            <div id="qr-kod-plats"></div>
-            <br>
-            <small style="color:#666; word-break: break-all; margin-top:5px;" id="qr-lank-text"></small>
+        <div class="item-box">
+            <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
+            <div id="queue-lista">Laddar kö...</div>
         </div>
     </div>
 
-    <div class="item-box" style="margin-top: 15px;">
-        <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
-        <div id="queue-lista">Laddar kö...</div>
+    <div id="tab-qr" class="tab-content">
+        <div id="kupong-sektion" class="kupong-box">
+            <label for="kupong-input">Skriv in kod manuellt:</label>
+            <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8" oninput="uppdateraBannerFrånInmatning()">
+        </div>
+
+        <div class="item-box" style="text-align: center;">
+            <p style="margin-top:0; font-size:13px; color:#aaa;">Skicka jukeboxen till kompisarna runt bordet:</p>
+            <button class="share-btn" onclick="delaTillPolarna()">Dela länk 🚀</button>
+        </div>
+
+        <div class="qr-container">
+            <h3 style="margin:0 0 5px 0; font-size:15px; color:#fff;">Låt bordet skanna din skärm</h3>
+            <p style="margin:0 0 15px 0; font-size:13px; color:#aaa;">De hoppar in på samma pub direkt!</p>
+            <div id="qr-kod-plats"></div>
+            <small style="color:#666; word-break: break-all; margin-top:5px;" id="qr-lank-text"></small>
+        </div>
     </div>
 
     <script>
@@ -102,17 +111,40 @@
 
         socket.emit("join_pub", pubId);
 
-        // NYTT: Kolla direkt vid start om det finns en kod i länkens parametrar (?kod=XXXX)
+        // Kollar direkt vid start om det finns en kod i länkens parametrar (?kod=XXXX)
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const kodFranUrl = urlParams.get('kod');
             
             if(kodFranUrl) {
-                const inputFalt = document.getElementById("kupong-input");
-                inputFalt.value = kodFranUrl.trim().toUpperCase();
-                document.getElementById("auto-text").style.display = "block";
+                document.getElementById("kupong-input").value = kodFranUrl.trim().toUpperCase();
             }
+            uppdateraBannerFrånInmatning();
         });
+
+        function uppdateraBannerFrånInmatning() {
+            const kod = document.getElementById("kupong-input").value.trim();
+            const banner = document.getElementById("biljett-status-banner");
+            
+            // Om kodkravet är på och vi har en kod inskriven, visa den gröna bannern
+            if (qrKravJustNu && kod.length > 0) {
+                banner.style.display = "block";
+                banner.innerText = "🎫 KLAR ATT ÖNSKA: Din biljett är laddad!";
+                banner.style.background = "#1a3a22";
+                banner.style.color = "#1db954";
+                banner.style.borderColor = "#1db954";
+            } else if (qrKravJustNu && kod.length === 0) {
+                // Kod krävs men fältet är tomt
+                banner.style.display = "block";
+                banner.innerText = "🔒 BILJETT KRÄVS: Skanna en QR-kod för att önska låt.";
+                banner.style.background = "#3a1a1a";
+                banner.style.color = "#e91429";
+                banner.style.borderColor = "#e91429";
+            } else {
+                // Fritt fram läge
+                banner.style.display = "none";
+            }
+        }
 
         function bytFlik(flikNamn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -129,7 +161,6 @@
         }
 
         function genereraQRIFlik() {
-            // Vi skalar bort eventuella gamla kupongkoder om man delar länk från skärm till skärm
             const basUrl = window.location.origin + window.location.pathname;
             document.getElementById("qr-lank-text").innerText = basUrl;
             
@@ -137,8 +168,8 @@
                 document.getElementById("qr-kod-plats").innerHTML = "";
                 qrObjekt = new QRCode(document.getElementById("qr-kod-plats"), {
                     text: basUrl,
-                    width: 180,
-                    height: 180,
+                    width: 160,
+                    height: 160,
                     colorDark : "#000000",
                     colorLight : "#ffffff",
                     correctLevel : QRCode.CorrectLevel.H
@@ -173,7 +204,7 @@
             const kod = document.getElementById("kupong-input").value.trim();
             
             if(qrKravJustNu && !kod) {
-                alert("Du måste skriva in koden från din papperslapp först!");
+                alert("Du måste skanna eller skriva in en biljettkod först!");
                 return;
             }
             
@@ -192,10 +223,9 @@
             alert("✅ " + data.msg);
             document.getElementById("results").innerHTML = "";
             document.getElementById("query").value = "";
-            // Töm koden och rensa URL parametern efter lyckad önskning så de inte återanvänder den av misstag
             document.getElementById("kupong-input").value = "";
-            document.getElementById("auto-text").style.display = "none";
             window.history.replaceState({}, document.title, window.location.pathname);
+            uppdateraBannerFrånInmatning();
         });
 
         socket.on("searchResults", (data) => {
@@ -228,12 +258,7 @@
             document.getElementById("pub-titel").innerHTML = `${data.pubNamn}`;
             
             qrKravJustNu = data.qrKrav;
-            const kupongSektion = document.getElementById("kupong-sektion");
-            if (data.qrKrav) {
-                kupongSektion.style.display = "block";
-            } else {
-                kupongSektion.style.display = "none";
-            }
+            uppdateraBannerFrånInmatning();
 
             if(data.nowPlaying) {
                 document.getElementById("now-playing-text").innerText = "🎵 " + data.nowPlaying.title;
