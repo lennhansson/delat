@@ -9,7 +9,7 @@
         .panel { background: #1e1e1e; padding: 20px; border-radius: 12px; flex: 1; }
         .tv-screen { flex: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border-radius: 12px; min-height: 400px; position: relative; }
         h2 { margin: 0; color: #1db954; }
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: #333; color: white; }
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: #333; color: white; text-decoration: none; display: inline-block; text-align: center; }
         .btn-active { background: #1db954; color: black; }
         .btn-danger { background: #e91429; color: white; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #222; margin-bottom: 6px; border-radius: 6px; font-size: 14px; }
@@ -20,15 +20,15 @@
 </head>
 <body>
 
-    <!-- VÄNSTERPANEL: BARTENDERNS KONTROLLER -->
     <div class="panel">
-        <!-- TOPP MED TITEL OCH OMLADDNINGSKNAPP -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h2 id="pub-namn">Laddar bar...</h2>
-            <button class="btn" style="background: #444; font-size: 12px; padding: 6px 12px;" onclick="window.location.reload()">🔄 Ladda om</button>
+            <div style="display: flex; gap: 8px;">
+                <a href="/generate" target="_blank" class="btn" style="background: #1db954; color: black; font-size: 12px; padding: 6px 12px;">🖨️ Skriv ut biljetter</a>
+                <button class="btn" style="background: #444; font-size: 12px; padding: 6px 12px;" onclick="window.location.reload()">🔄 Ladda om</button>
+            </div>
         </div>
         
-        <!-- FLIPPA TESTLÄGE / DRIFTLÄGE -->
         <div class="qr-toggle-box">
             <div>
                 <strong style="display:block; font-size:14px;">Testläge / Driftläge:</strong>
@@ -44,7 +44,6 @@
         <div id="queue-lista">Kön är tom</div>
     </div>
 
-    <!-- HÖGERPANEL: DEN DIGITALA TV-SKÄRMEN -->
     <div class="panel tv-screen">
         <div id="now-playing-title">Laddar jukeboxen...</div>
         <div id="player" style="width:1px; height:1px; opacity:0.01;"></div>
