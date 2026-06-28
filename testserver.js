@@ -6,23 +6,21 @@ const path = require('path');
 const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
 
-// Bestäm var pub-data ska läsas ifrån (Render fast disk '/data', eller lokal 'data' mapp för test)
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
-
-// Globalt minne för att hålla reda på varje pubs aktiva kö och nuvarande låt
 const pubar = {};
 
-// Funktion för att ladda eller uppdatera en pubs inställningar från disken
 function hämtaPubData(pubId) {
   const filStig = path.join(DATA_DIR, `${pubId}.json`);
   
-  // Om puben inte har en konfigurationsfil, skapa en standard
   if (!fs.existsSync(filStig)) {
     const standardConfig = {
       namn: `${pubId.toUpperCase()} Jukebox`,
-      pris: 10,
-      swish: "0000000000",
-      radioPool: ["Rick Astley - Never Gonna Give You Up", "Metallica - Enter Sandman"]
+      aktivtValv: "Standard Rock",
+      valv: {
+        "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
+        "Schlager & Party": ["Fronda - Rullar fram", "Gyllene Tider - Sommartider", "Arvingarna - Eloise"],
+        "Lugn AW / Blues": ["Gary Moore - Still Got The Blues", "Otis Redding - Sittin On The Dock", "Norah Jones - Don't Know Why"]
+      }
     };
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
     fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
@@ -30,7 +28,6 @@ function hämtaPubData(pubId) {
 
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
 
-  // Om puben inte är laddad i RAM-minnet än, initiera den
   if (!pubar[pubId]) {
     pubar[pubId] = {
       queue: [],
@@ -44,39 +41,43 @@ function hämtaPubData(pubId) {
   return pubar[pubId];
 }
 
-// DYNAMISKA SÖKBANOR: Sänder ut HTML-filerna till besökarna
 app.get('/pub/:pubId/mobile', (req, res) => {
-  hämtaPubData(req.params.pubId); // Säkerställ att puben skapas/laddas direkt
+  hämtaPubData(req.params.pubId);
   res.sendFile(path.join(__dirname, 'test-mobile.html'));
 });
 
 app.get('/pub/:pubId/player', (req, res) => {
-  hämtaPubData(req.params.pubId); // Säkerställ att puben skapas/laddas direkt
+  hämtaPubData(req.params.pubId);
   res.sendFile(path.join(__dirname, 'test-player.html'));
 });
 
-// Skicka ut uppdaterat tillstånd till just den pubens gäster och spelare
 function broadcastPubState(pubId) {
   const pub = pubar[pubId];
   if (!pub) return;
 
+  // Mobilerna ser gästernas kö + 2 kommande radiolåtar
   let gästLåtar = pub.queue.filter(l => !l.isRadio);
   let radioLåtar = pub.queue.filter(l => l.isRadio);
   let synligKö = [...gästLåtar, ...radioLåtar.slice(0, 2)];
 
   io.to(pubId).emit("state", {
     pubNamn: pub.config.namn,
-    pris: pub.config.pris,
-    swish: pub.config.swish,
+    aktivtValv: pub.config.aktivtValv || "Standard Rock",
+    valvLista: Object.keys(pub.config.valv || {}),
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
-    queue: synligKö
+    queue: synligKö,
+    fullQueue: pub.queue // Spelaren får hela kön så bartendern kan rensa allt
   });
 }
 
 async function fyllPåMedRadiolåt(pubId) {
   const pub = pubar[pubId];
   if (!pub) return;
-  const pool = pub.config.radioPool;
+  
+  const aktivtValvNamn = pub.config.aktivtValv || Object.keys(pub.config.valv)[0];
+  const pool = pub.config.valv[aktivtValvNamn] || [];
+  if (pool.length === 0) return;
+
   const slumpadText = pool[Math.floor(Math.random() * pool.length)];
   
   try {
@@ -84,9 +85,10 @@ async function fyllPåMedRadiolåt(pubId) {
     if (searchResult && searchResult.items.length > 0) {
       const item = searchResult.items[0];
       pub.queue.push({
+        id: Math.random().toString(36).substr(2, 9), // Unikt ID för att kunna radera specifik låt
         videoId: item.id,
         title: item.title,
-        addedBy: "Radio 📻",
+        addedBy: `Radio (${aktivtValvNamn}) 📻`,
         isRadio: true
       });
     }
@@ -107,7 +109,6 @@ async function hanteraSpelning(pubId) {
     if (nastaLatIndex === -1) nastaLatIndex = 0;
 
     pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
-    console.log(`[${pub.config.namn}] Spelar nu: ${pub.nowPlaying.title}`);
     io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
   }
 
@@ -119,7 +120,6 @@ async function hanteraSpelning(pubId) {
   broadcastPubState(pubId);
 }
 
-// SOCKET.IO med rum-hantering (Rooms)
 io.on('connection', (socket) => {
   
   socket.on("join_pub", (pubId) => {
@@ -147,6 +147,7 @@ io.on('connection', (socket) => {
     if (!pubId || !pubar[pubId]) return;
 
     pubar[pubId].queue.push({
+      id: Math.random().toString(36).substr(2, 9),
       videoId: data.videoId,
       title: data.title,
       addedBy: "Gäst"
@@ -154,10 +155,34 @@ io.on('connection', (socket) => {
     hanteraSpelning(pubId);
   });
 
-  socket.on("player:ready_for_next", () => {
+  // BARTENDER-KONTROLLER (Från Player-mobilen)
+  socket.on("player:remove_song", (data) => {
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
+    
+    pubar[pubId].queue = pubar[pubId].queue.filter(l => l.id !== data.id);
+    hanteraSpelning(pubId);
+  });
+
+  socket.on("player:byt_valv", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
 
+    pubar[pubId].config.aktivtValv = data.valvNamn;
+    
+    // Spara valet till fasta hårddisken
+    const filStig = path.join(DATA_DIR, `${pubId}.json`);
+    fs.writeFileSync(filStig, JSON.stringify(pubar[pubId].config, null, 2));
+
+    // Rensa bort gamla radiolåtar ur kön så det nya valvet kickar in direkt
+    pubar[pubId].queue = pubar[pubId].queue.filter(l => !l.isRadio);
+    
+    hanteraSpelning(pubId);
+  });
+
+  socket.on("player:ready_for_next", () => {
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId]) return;
     pubar[pubId].nowPlaying = null;
     hanteraSpelning(pubId);
   });
@@ -165,8 +190,6 @@ io.on('connection', (socket) => {
   socket.on("player:skip", () => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
-
-    console.log(`[${pubar[pubId].config.namn}] Låt skippad via player.`);
     pubar[pubId].nowPlaying = null;
     hanteraSpelning(pubId);
   });
