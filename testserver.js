@@ -75,32 +75,35 @@ function broadcastPubState(pubId) {
   });
 }
 
-async function fyllPåMedRadiolåt(pubId) {
+// HJÄLPFUNKTION: Hämtar en radiolåt från YouTube utan att modifiera kön direkt
+async function hämtaEnRadiolåt(pubId) {
   const pub = pubar[pubId];
-  if (!pub) return;
+  if (!pub) return null;
   const pool = pub.config.valv[pub.config.aktivtValv] || [];
-  if (pool.length === 0) return;
+  if (pool.length === 0) return null;
   const slumpadText = pool[Math.floor(Math.random() * pool.length)];
   try {
     const searchResult = await youTubeSearchApi.GetListByKeyword(slumpadText, false, 1);
     if (searchResult && searchResult.items.length > 0) {
-      pub.queue.push({
+      return {
         id: Math.random().toString(36).substr(2, 9),
         videoId: searchResult.items[0].id,
         title: searchResult.items[0].title,
         addedBy: "Radio",
         isRadio: true
-      });
+      };
     }
   } catch (err) {
     console.error("Fel vid hämtning av radiolåt:", err);
   }
+  return null;
 }
 
+// UPPDATERAD OCH STABIL KÖHANTERING
 async function hanteraSpelning(pubId) {
   const pub = hämtaPubData(pubId);
 
-  // 1. Om ingenting spelas just nu, leta efter nästa låt
+  // 1. Om ingenting spelas just nu, plocka nästa låt synkront ur listan direkt
   if (!pub.nowPlaying) {
     // Leta först efter en gästlåt (dvs där isRadio INTE är sant)
     let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
@@ -110,22 +113,32 @@ async function hanteraSpelning(pubId) {
       nastaLatIndex = 0;
     }
 
-    // Om vi hittade en låt (gäst eller radio), spela den!
+    // Om vi hittade en låt (gäst eller radio), spela den direkt!
     if (nastaLatIndex !== -1) {
       pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
       io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
     }
   }
 
-  // 2. Se till att det ALLTID finns minst 2 radiolåtar som ligger i slutet av kön i backup
-  let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
-  while (antalRadioIKon < 2) {
-    await fyllPåMedRadiolåt(pubId);
-    antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
-  }
-
-  // Skicka uppdaterad status till alla skärmar
+  // Skicka ut det aktuella läget till alla skärmar omedelbart
   broadcastPubState(pubId);
+
+  // 2. Fyll på med radiolåtar i bakgrunden om det finns färre än 2 i kön
+  let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
+  if (antalRadioIKon < 2) {
+    (async () => {
+      while (pubar[pubId] && pub.queue.filter(l => l.isRadio).length < 2) {
+        const nyRadioLat = await hämtaEnRadiolåt(pubId);
+        if (nyRadioLat) {
+          pub.queue.push(nyRadioLat);
+          // Skicka ut uppdaterad kö så fort radiolåten lagts till
+          broadcastPubState(pubId);
+        } else {
+          break; // Bryt om API:et felar eller poolen är tom
+        }
+      }
+    })();
+  }
 }
 
 io.on('connection', (socket) => {
@@ -194,10 +207,10 @@ io.on('connection', (socket) => {
         videoId: data.videoId,
         title: data.title,
         addedBy: pub.config.qrKrav ? "Kupong" : "Gäst",
-        isRadio: false // VIKTIGT: Sätts till false så att prioriteringen vet att det är en gäst
+        isRadio: false // Sätts till false så prioriteringen plockar den först
       };
 
-      // HÄR SÄTTER VI PRIO: Hitta index för första radiolåten och skjut in gästlåten FÖRE den.
+      // PRIO-LOGIK: Skjut in gästlåten FÖRE den första radiolåten i kön
       const förstaRadioIndex = pub.queue.findIndex(l => l.isRadio);
       if (förstaRadioIndex !== -1) {
         pub.queue.splice(förstaRadioIndex, 0, nyGästLåt);
