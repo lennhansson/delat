@@ -8,15 +8,13 @@
         body { background: #121212; color: white; font-family: sans-serif; padding: 20px; display: flex; gap: 20px; }
         .panel { background: #1e1e1e; padding: 20px; border-radius: 12px; flex: 1; }
         .tv-screen { flex: 1.5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border-radius: 12px; min-height: 400px; position: relative; }
-        h2 { margin-top: 0; color: #1db954; }
+        h2 { margin: 0; color: #1db954; }
         .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: #333; color: white; }
         .btn-active { background: #1db954; color: black; }
         .btn-danger { background: #e91429; color: white; }
         .row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #222; margin-bottom: 6px; border-radius: 6px; font-size: 14px; }
-        #player-canvas { width: 100%; height: 100%; display: none; }
         #now-playing-title { font-size: 24px; font-weight: bold; color: #ffcc00; text-align: center; margin: 20px; }
         
-        /* Ny stil för QR-Statusknappen */
         .qr-toggle-box { background: #29292d; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
@@ -24,9 +22,13 @@
 
     <!-- VÄNSTERPANEL: BARTENDERNS KONTROLLER -->
     <div class="panel">
-        <h2 id="pub-namn">Laddar bar...</h2>
+        <!-- TOPP MED TITEL OCH OMLADDNINGSKNAPP -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 id="pub-namn">Laddar bar...</h2>
+            <button class="btn" style="background: #444; font-size: 12px; padding: 6px 12px;" onclick="window.location.reload()">🔄 Ladda om</button>
+        </div>
         
-        <!-- NYTT: SLÅ PÅ/AV QR-KODER -->
+        <!-- FLIPPA TESTLÄGE / DRIFTLÄGE -->
         <div class="qr-toggle-box">
             <div>
                 <strong style="display:block; font-size:14px;">Testläge / Driftläge:</strong>
@@ -58,7 +60,7 @@
 
         socket.emit("join_pub", pubId);
 
-        // Ladda YouTube Player API i bakgrunden
+        // Ladda YouTube Player API
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -82,7 +84,6 @@
             }
         }
 
-        // NYTT: Skicka ändring till servern
         function toggleQRKrav() {
             socket.emit("player:toggle_qr", { qrKrav: !nuvarandeQRKrav });
         }
@@ -112,7 +113,6 @@
         socket.on("state", (data) => {
             document.getElementById("pub-namn").innerText = data.pubNamn;
             
-            // NYTT: Uppdatera QR-statusknappen live på barsidan
             nuvarandeQRKrav = data.qrKrav;
             const statusTxt = document.getElementById("qr-status-text");
             const toggleBtn = document.getElementById("qr-toggle-btn");
@@ -140,13 +140,11 @@
                 document.getElementById("now-playing-title").innerText = "Köar nästa radiolåt...";
             }
 
-            // Valv-knappar
             const valvBox = document.getElementById("valv-knappar");
             valvBox.innerHTML = data.valvLista.map(v => `
                 <button class="btn ${data.aktivtValv === v ? 'btn-active' : ''}" onclick="bytValv('${v}')">${v}</button>
             `).join("");
 
-            // Kön
             const qBox = document.getElementById("queue-lista");
             if(data.fullQueue.length === 0) {
                 qBox.innerText = "Kön är tom (Radio fyller på automatiskt)";

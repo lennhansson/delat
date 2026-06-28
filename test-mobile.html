@@ -7,20 +7,31 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
-        h1 { font-size: 24px; text-align: center; margin-bottom: 5px; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        h1 { font-size: 20px; margin: 0; }
         .accent { color: #1db954; }
         
+        .reload-btn { background: #222; color: #aaa; border: 1px solid #444; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
         .share-btn { display: block; width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; margin-bottom: 15px; }
 
-        /* Kupongsektion - kan döljas */
+        /* Fliksystem */
+        .tabs-nav { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 8px; }
+        .tab-btn { flex: 1; padding: 10px; background: #1a1a1e; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .tab-btn.active { background: #1db954; color: black; border-color: #1db954; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Kupongsektion */
         .kupong-box { background: #1a1a1e; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none; }
         .kupong-box label { font-size: 13px; color: #aaa; display: block; margin-bottom: 5px; }
         .kupong-box input { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; font-size: 15px; box-sizing: border-box; font-weight: bold; text-transform: uppercase; }
 
-        .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
+        /* Sök */
+        .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-box input { flex: 1; padding: 12px; background: #111; border: 1px solid #222; color: white; border-radius: 8px; font-size: 16px; }
         .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
+        /* Listor och boxar */
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #222; }
         .row:last-child { border-bottom: none; }
@@ -28,16 +39,24 @@
         
         .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-left: auto; }
         #now-playing-text { color: #ffcc00; font-weight: bold; font-size: 15px; }
+
+        /* QR-flikens specifika stil */
+        .qr-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #111; border-radius: 8px; border: 1px solid #222; text-align: center; }
+        .qr-container img { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-    <h1 id="pub-titel">Laddar <span class="accent">Jukebox...</span></h1>
+    <!-- TOPPMENY MED OMLADDNING -->
+    <div class="header-row">
+        <h1 id="pub-titel">Laddar <span class="accent">Jukebox...</span></h1>
+        <button class="reload-btn" onclick="window.location.reload()">🔄 Ladda om</button>
+    </div>
     
-    <!-- DELA LÄNK-KNAPP -->
+    <!-- DELA LÄNK VIA SMS/MAIL/ANYTHING -->
     <button class="share-btn" onclick="delaTillPolarna()">DELA LÄNK MED BORDET 🚀</button>
 
-    <!-- KUPONGKOD (Visas bara om servern kräver det) -->
+    <!-- DYNAMISK KUPONGBOX -->
     <div id="kupong-sektion" class="kupong-box">
         <label for="kupong-input">SKRIV IN KOD FRÅN PAPPPERSLAPPEN:</label>
         <input type="text" id="kupong-input" placeholder="T.EX. 1024-A4B2C8">
@@ -49,16 +68,32 @@
         <div id="now-playing-text">Hämtar status...</div>
     </div>
 
-    <!-- SÖK LÅT -->
-    <div class="search-box">
-        <input type="text" id="query" placeholder="Sök låt eller artist...">
-        <button onclick="sök()">SÖK</button>
+    <!-- FLIKAR FÖR ATT VÄXLA VY -->
+    <div class="tabs-nav">
+        <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🔍 Sök & Önska</button>
+        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">📱 Visa QR-kod</button>
     </div>
 
-    <div id="results" class="tab-content" style="margin-bottom:20px;"></div>
+    <!-- FLIK 1: SÖK LÅTAR -->
+    <div id="tab-sok" class="tab-content active">
+        <div class="search-box">
+            <input type="text" id="query" placeholder="Sök låt eller artist...">
+            <button onclick="sök()">SÖK</button>
+        </div>
+        <div id="results"></div>
+    </div>
+
+    <!-- FLIK 2: VISA QR-KOD TILL BORDET -->
+    <div id="tab-qr" class="tab-content">
+        <div class="qr-container">
+            <p style="margin-top:0; font-size:14px; color:#aaa;">Låt polarna skanna din skärm för att hoppa in i kön!</p>
+            <div id="qr-kod-plats"></div>
+            <small style="color:#666; word-break: break-all; margin-top:5px;" id="qr-lank-text"></small>
+        </div>
+    </div>
 
     <!-- KOMMANDE KÖ -->
-    <div class="item-box">
+    <div class="item-box" style="margin-top: 15px;">
         <h3 style="margin-top:0; font-size:14px; color:#888;">KOMMANDE LÅTAR:</h3>
         <div id="queue-lista">Laddar kö...</div>
     </div>
@@ -71,6 +106,31 @@
         let qrKravJustNu = false;
 
         socket.emit("join_pub", pubId);
+
+        // Flikväxlare
+        function bytFlik(flikNamn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            if(flikNamn === 'sok') {
+                document.getElementById('tab-sok').classList.add('active');
+                document.getElementById('btn-tab-sok').classList.add('active');
+            } else if(flikNamn === 'qr') {
+                document.getElementById('tab-qr').classList.add('active');
+                document.getElementById('btn-tab-qr').classList.add('active');
+                genereraQRIFlik();
+            }
+        }
+
+        // Genererar en QR-kod live baserat på exakt den URL gästen använder
+        function genereraQRIFlik() {
+            const nuvarandeUrl = window.location.href;
+            document.getElementById("qr-lank-text").innerText = nuvarandeUrl;
+            
+            // Vi bygger en länk till ett öppet och snabbt QR API (Google Charts)
+            const qrApiUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(nuvarandeUrl)}&choe=UTF-8`;
+            document.getElementById("qr-kod-plats").innerHTML = `<img src="${qrApiUrl}" alt="QR Kod">`;
+        }
 
         function delaTillPolarna() {
             if (navigator.share) {
@@ -94,7 +154,6 @@
         function önskaLåt(videoId, title) {
             const kod = document.getElementById("kupong-input").value.trim();
             
-            // Kolla bara om fältet är tomt IFALL qr-krav faktiskt är aktivt
             if(qrKravJustNu && !kod) {
                 alert("Du måste skriva in koden från din papperslapp först!");
                 return;
@@ -125,7 +184,7 @@
             }
             
             box.innerHTML = `
-                <div class="item-box">
+                <div class="item-box" style="margin-top:10px;">
                     <h3 style="margin-top:0; font-size:14px; color:#1db954;">SÖKRESULTAT:</h3>
                     ${data.results.map(item => {
                         const renTitel = item.title.replace(/'/g, "").replace(/"/g, "");
@@ -146,7 +205,6 @@
         socket.on("state", (data) => {
             document.getElementById("pub-titel").innerHTML = `${data.pubNamn}`;
             
-            // NYTT: Göm eller visa kupongfältet dynamiskt baserat på vad baren valt
             qrKravJustNu = data.qrKrav;
             const kupongSektion = document.getElementById("kupong-sektion");
             if (data.qrKrav) {
