@@ -18,7 +18,7 @@ function hämtaPubData(pubId) {
       aktivtValv: "Standard Rock",
       valv: {
         "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
-        "Schlager & Party": ["Fronda - Rullar fram", "Gyllene Tider - Sommartider", "Arvingarna - Eloise"],
+        "Schlager & Party": ["Gyllene Tider - Sommartider", "Arvingarna - Eloise", "Fronda - Rullar fram"],
         "Lugn AW / Blues": ["Gary Moore - Still Got The Blues", "Otis Redding - Sittin On The Dock", "Norah Jones - Don't Know Why"]
       }
     };
@@ -55,7 +55,6 @@ function broadcastPubState(pubId) {
   const pub = pubar[pubId];
   if (!pub) return;
 
-  // Mobilerna ser gästernas kö + 2 kommande radiolåtar
   let gästLåtar = pub.queue.filter(l => !l.isRadio);
   let radioLåtar = pub.queue.filter(l => l.isRadio);
   let synligKö = [...gästLåtar, ...radioLåtar.slice(0, 2)];
@@ -66,7 +65,7 @@ function broadcastPubState(pubId) {
     valvLista: Object.keys(pub.config.valv || {}),
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
     queue: synligKö,
-    fullQueue: pub.queue // Spelaren får hela kön så bartendern kan rensa allt
+    fullQueue: pub.queue
   });
 }
 
@@ -85,10 +84,10 @@ async function fyllPåMedRadiolåt(pubId) {
     if (searchResult && searchResult.items.length > 0) {
       const item = searchResult.items[0];
       pub.queue.push({
-        id: Math.random().toString(36).substr(2, 9), // Unikt ID för att kunna radera specifik låt
+        id: Math.random().toString(36).substr(2, 9),
         videoId: item.id,
         title: item.title,
-        addedBy: `Radio (${aktivtValvNamn}) 📻`,
+        addedBy: `Radio (${aktivtValvNamn})`,
         isRadio: true
       });
     }
@@ -155,7 +154,6 @@ io.on('connection', (socket) => {
     hanteraSpelning(pubId);
   });
 
-  // BARTENDER-KONTROLLER (Från Player-mobilen)
   socket.on("player:remove_song", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
@@ -170,13 +168,10 @@ io.on('connection', (socket) => {
 
     pubar[pubId].config.aktivtValv = data.valvNamn;
     
-    // Spara valet till fasta hårddisken
     const filStig = path.join(DATA_DIR, `${pubId}.json`);
     fs.writeFileSync(filStig, JSON.stringify(pubar[pubId].config, null, 2));
 
-    // Rensa bort gamla radiolåtar ur kön så det nya valvet kickar in direkt
     pubar[pubId].queue = pubar[pubId].queue.filter(l => !l.isRadio);
-    
     hanteraSpelning(pubId);
   });
 
