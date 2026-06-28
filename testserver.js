@@ -5,9 +5,13 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 const path = require('path');
 const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
+const crypto = require('crypto'); // Krävs för den säkra HMAC-kryptovalideringen
 
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
 const pubar = {};
+
+// NYTT: Global nödnyckel som fungerar på ALLA ställen i hela systemet
+const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
 
 function hämtaPubData(pubId) {
   const filStig = path.join(DATA_DIR, `${pubId}.json`);
@@ -20,13 +24,19 @@ function hämtaPubData(pubId) {
         "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
         "Schlager & Party": ["Gyllene Tider - Sommartider", "Arvingarna - Eloise", "Fronda - Rullar fram"],
         "Lugn AW / Blues": ["Gary Moore - Still Got The Blues", "Otis Redding - Sittin On The Dock", "Norah Jones - Don't Know Why"]
-      }
+      },
+      användaKoder: [] // Håller reda på förbrukade papperslappar på denna pub
     };
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
     fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
   }
 
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+
+  // Säkerställ att användaKoder-arrayen alltid finns
+  if (!config.användaKoder) {
+    config.användaKoder = [];
+  }
 
   if (!pubar[pubId]) {
     pubar[pubId] = {
@@ -64,7 +74,7 @@ function broadcastPubState(pubId) {
     aktivtValv: pub.config.aktivtValv || "Standard Rock",
     valvLista: Object.keys(pub.config.valv || {}),
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
-    queue: synvisibleKö || synligKö,
+    queue: synligKö,
     fullQueue: pub.queue
   });
 }
@@ -141,19 +151,66 @@ io.on('connection', (socket) => {
     }
   });
 
+  // GÄST LÄGGER TILL LÅT (Kräver nu giltig kupong)
   socket.on("addSong", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
 
-    pubar[pubId].queue.push({
+    const pub = pubar[pubId];
+    const fullKod = data.kupongKod ? data.kupongKod.trim() : "";
+
+    // Om koden saknar bindestreck är den ogiltig direkt
+    if (!fullKod.includes("-")) {
+      return socket.emit("kupong_error", { msg: "Felaktigt kodformat. Använd ID-SIGNATUR." });
+    }
+
+    const [kupongId, inskickadSignatur] = fullKod.split("-");
+
+    // 1. Kolla om koden redan har förbrukats på denna pub
+    if (pub.config.användaKoder.includes(kupongId)) {
+      return socket.emit("kupong_error", { msg: "Denna papperslapp är redan förbrukad!" });
+    }
+
+    let kodÄrGiltig = false;
+
+    // STEG 1: Kolla om det är din universella Panik/Master-serie (Giltig överallt)
+    const förväntadMasterSig = crypto.createHmac('sha256', MASTER_SECRET).update(kupongId).digest('hex').substr(0, 6);
+    if (inskickadSignatur === förväntadMasterSig) {
+      kodÄrGiltig = true;
+    }
+
+    // STEG 2: Om inte master, kolla om det är en lokal giltig kod för just denna pub
+    if (!kodÄrGiltig) {
+      const pubSecret = `hemlis-${pubId}-2026`; // Dynamisk unik krypto-bas per pub
+      const förväntadPubSig = crypto.createHmac('sha256', pubSecret).update(kupongId).digest('hex').substr(0, 6);
+      if (inskickadSignatur === förväntadPubSig) {
+        kodÄrGiltig = true;
+      }
+    }
+
+    // Om koden inte matchade någon av kryptoberäkningarna -> NEKA!
+    if (!kodÄrGiltig) {
+      return socket.emit("kupong_error", { msg: "Ogiltig kod! Kontrollera papperslappen." });
+    }
+
+    // KODEN ÄR GILTIG! Spara kupongID som förbrukat så den inte går att använda igen
+    pub.config.användaKoder.push(kupongId);
+    const filStig = path.join(DATA_DIR, `${pubId}.json`);
+    fs.writeFileSync(filStig, JSON.stringify(pub.config, null, 2));
+
+    // Tryck in låten i bänkön
+    pub.queue.push({
       id: Math.random().toString(36).substr(2, 9),
       videoId: data.videoId,
       title: data.title,
-      addedBy: "Gäst"
+      addedBy: "Gäst (Kupong)"
     });
+
+    socket.emit("kupong_success", { msg: "Kupong godkänd! Din låt har lagts till i kön." });
     hanteraSpelning(pubId);
   });
 
+  // BARTENDER-KONTROLLER (Från Player-mobilen)
   socket.on("player:remove_song", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
@@ -175,21 +232,17 @@ io.on('connection', (socket) => {
     hanteraSpelning(pubId);
   });
 
-  // NYTT: Spara en låt direkt in i ett specifikt valv
   socket.on("player:add_to_valv", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId]) return;
 
     const pub = pubar[pubId];
     if (pub.config.valv[data.valvNamn]) {
-      // Vi sparar titeln så att radion kan göra sökningar på den framöver
       pub.config.valv[data.valvNamn].push(data.title);
 
-      // Skriv permanent till disken
       const filStig = path.join(DATA_DIR, `${pubId}.json`);
       fs.writeFileSync(filStig, JSON.stringify(pub.config, null, 2));
       
-      console.log(`[${pub.config.namn}] Låten "${data.title}" sparad i valv [${data.valvNamn}]`);
       broadcastPubState(pubId);
     }
   });
