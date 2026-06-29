@@ -5,13 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jukebox - Mobil</title>
     
+    <!-- WEBAPP / PWA INSTÄLLNINGAR -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Jukebox">
     <meta name="mobile-web-app-capable" content="yes">
     
+    <!-- Temporär ikon (En snygg musiknot) tills din slutgiltiga app-ikon är klar -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Hämta den externa app-logikfilen du precis skapade -->
+    <script src="/jukebox-pwa.js" defer></script>
     
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
@@ -35,9 +43,8 @@
         
         .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; flex-shrink: 0; }
         
-        /* QR-kodstilar för delning vid bordet */
-        .qr-delning-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; padding: 15px; background: white; border-radius: 12px; color: black; }
-        .qr-delning-container h4 { margin: 0 0 10px 0; font-size: 14px; text-align: center; }
+        .qr-delning-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 25px; padding: 15px; background: white; border-radius: 12px; color: black; }
+        .qr-delning-container h4 { margin: 0 0 12px 0; font-size: 13px; text-align: center; color: #111; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -73,15 +80,23 @@
     </div>
 
     <div id="tab-qr" class="tab-content">
+        <!-- PWA/INSTALLATIONSKNAPP -->
+        <div class="kupong-box" style="border-color: #1db954; text-align: center;">
+            <button id="pwa-install-btn" style="display:block; width:100%; padding:14px; background:#1db954; color:black; border:none; border-radius:8px; font-weight:bold; font-size:15px;">
+                Ladda ner som Webbapp 📱
+            </button>
+            <div id="pwa-ios-instruktion" style="display:none; margin-top:10px; font-size:13px; color:#aaa; text-align:left; line-height:1.4;"></div>
+        </div>
+
         <div class="kupong-box">
             <label style="font-size:13px; color:#aaa; display:block; margin-bottom:5px;">Aktiv Biljettkod:</label>
             <input type="text" id="kupong-input" placeholder="INGEN BILJETT LADDAD" oninput="uppdateraBanner()">
         </div>
 
-        <button style="display:block; width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="delaLank()">Dela länk via mobilsystemet 🚀</button>
+        <button style="display:block; width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;" onclick="delaLank()">Dela via mobilsystemet 🚀</button>
 
         <div class="qr-delning-container">
-            <h4>LÅT POLARNA SKANNA APPEN:</h4>
+            <h4>LÅT POLARNA SKANNA APPEN vid bordet:</h4>
             <div id="mobil-delning-qr"></div>
         </div>
     </div>
@@ -101,7 +116,6 @@
             if(params.get('kod')) document.getElementById("kupong-input").value = params.get('kod').trim().toUpperCase();
             uppdateraBanner();
 
-            // Skapar QR-kod för den rena Jukebox-appen till fliken (utan att dela med sig av sin egen biljettkod)
             const renAppLank = window.location.origin + window.location.pathname;
             new QRCode(document.getElementById("mobil-delning-qr"), {
                 text: renAppLank,

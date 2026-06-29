@@ -64,6 +64,11 @@ app.get('/generate', (req, res) => {
   res.sendFile(path.join(__dirname, 'skriv-ut-kuponger.html'));
 });
 
+// Leverera den nya PWA-logikfilen till mobilerna
+app.get('/jukebox-pwa.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'jukebox-pwa.js'));
+});
+
 // Socket-kommunikation
 io.on('connection', (socket) => {
   
@@ -134,7 +139,6 @@ io.on('connection', (socket) => {
         isRadio: false
       };
 
-      // Lägg alltid gästens önskelåt FÖRE radiolåtarna i kön
       const förstaRadioIndex = pub.queue.findIndex(l => l.isRadio);
       if (förstaRadioIndex !== -1) {
         pub.queue.splice(förstaRadioIndex, 0, nyGästLåt);
