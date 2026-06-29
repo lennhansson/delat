@@ -4,8 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Jukebox - Mobil</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jukebox">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         body { background: #0b0b0b; color: white; font-family: system-ui, sans-serif; padding: 15px; margin: 0; }
         .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -22,12 +29,15 @@
         .search-box button { background: #1db954; color: black; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; }
         .item-box { background: #111; border: 1px solid #222; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         
-        /* MOBILANPASSAT: Kompakt bildvisning och layout */
         .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #222; }
         .row img { width: 60px; height: 45px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
         .row span { flex: 1; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
         
         .add-btn { background: #1db954; color: black; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; flex-shrink: 0; }
+        
+        /* QR-kodstilar för delning vid bordet */
+        .qr-delning-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; padding: 15px; background: white; border-radius: 12px; color: black; }
+        .qr-delning-container h4 { margin: 0 0 10px 0; font-size: 14px; text-align: center; }
     </style>
 </head>
 <body>
@@ -41,7 +51,7 @@
 
     <div class="tabs-nav">
         <button id="btn-tab-sok" class="tab-btn active" onclick="bytFlik('sok')">🎵 Jukebox</button>
-        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">⚙️ Biljett & Meny</button>
+        <button id="btn-tab-qr" class="tab-btn" onclick="bytFlik('qr')">⚙️ App & Biljett</button>
     </div>
 
     <div id="tab-sok" class="tab-content active">
@@ -68,13 +78,17 @@
             <input type="text" id="kupong-input" placeholder="INGEN BILJETT LADDAD" oninput="uppdateraBanner()">
         </div>
 
-        <button style="display:block; width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:8px; font-weight:bold;" onclick="delaLank()">Dela länk 🚀</button>
+        <button style="display:block; width:100%; padding:12px; background:#007aff; color:white; border:none; border-radius:8px; font-weight:bold; margin-bottom:20px;" onclick="delaLank()">Dela länk via mobilsystemet 🚀</button>
+
+        <div class="qr-delning-container">
+            <h4>LÅT POLARNA SKANNA APPEN:</h4>
+            <div id="mobil-delning-qr"></div>
+        </div>
     </div>
 
     <script>
         const socket = io();
         
-        // Hittar baren säkert utifrån URL:en /pub/ID/mobile
         const pathParts = window.location.pathname.split('/');
         const pubId = pathParts[pathParts.indexOf('pub') + 1];
         
@@ -86,6 +100,17 @@
             const params = new URLSearchParams(window.location.search);
             if(params.get('kod')) document.getElementById("kupong-input").value = params.get('kod').trim().toUpperCase();
             uppdateraBanner();
+
+            // Skapar QR-kod för den rena Jukebox-appen till fliken (utan att dela med sig av sin egen biljettkod)
+            const renAppLank = window.location.origin + window.location.pathname;
+            new QRCode(document.getElementById("mobil-delning-qr"), {
+                text: renAppLank,
+                width: 160,
+                height: 160,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
         });
 
         function uppdateraBanner() {
@@ -122,7 +147,6 @@
         }
 
         function önskaLåt(vId, t) {
-            // Skickar explicit med pubId i objektet så att servern inte kan missa det
             socket.emit("addSong", { 
                 pubId: pubId,
                 videoId: vId, 
