@@ -1,3 +1,4 @@
+// testserver.js
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
@@ -7,9 +8,11 @@ const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// Importera den separerade spel- och kömotorn
+const { hanteraSpelning } = require('./jukebox-player-logic');
+
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
 const pubar = {};
-
 const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
 
 function hämtaPubData(pubId) {
@@ -33,7 +36,6 @@ function hämtaPubData(pubId) {
   }
 
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
-
   if (!config.användaKoder || Array.isArray(config.användaKoder)) config.användaKoder = {};
   if (config.qrKrav === undefined) config.qrKrav = false;
   if (config.låtarPerBiljett === undefined) config.låtarPerBiljett = 1;
@@ -47,6 +49,7 @@ function hämtaPubData(pubId) {
   return pubar[pubId];
 }
 
+// Webbsidor
 app.get('/pub/:pubId/mobile', (req, res) => {
   hämtaPubData(req.params.pubId);
   res.sendFile(path.join(__dirname, 'test-mobile.html'));
@@ -61,85 +64,13 @@ app.get('/generate', (req, res) => {
   res.sendFile(path.join(__dirname, 'skriv-ut-kuponger.html'));
 });
 
-function broadcastPubState(pubId) {
-  const pub = pubar[pubId];
-  if (!pub) return;
-
-  io.to(pubId).emit("state", {
-    pubNamn: pub.config.namn,
-    aktivtValv: pub.config.aktivtValv || "Standard Rock",
-    qrKrav: pub.config.qrKrav,
-    låtarPerBiljett: pub.config.låtarPerBiljett,
-    valvLista: Object.keys(pub.config.valv || {}),
-    nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
-    fullQueue: pub.queue
-  });
-}
-
-async function hämtaEnRadiolåt(pubId) {
-  const pub = pubar[pubId];
-  if (!pub) return null;
-  const pool = pub.config.valv[pub.config.aktivtValv] || [];
-  if (pool.length === 0) return null;
-  const slumpadText = pool[Math.floor(Math.random() * pool.length)];
-  try {
-    const searchResult = await youTubeSearchApi.GetListByKeyword(slumpadText, false, 1);
-    if (searchResult && searchResult.items.length > 0) {
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        videoId: searchResult.items[0].id,
-        title: searchResult.items[0].title,
-        addedBy: "Radio",
-        isRadio: true
-      };
-    }
-  } catch (err) {
-    console.error("Fel vid hämtning av radiolåt:", err);
-  }
-  return null;
-}
-
-async function hanteraSpelning(pubId) {
-  const pub = hämtaPubData(pubId);
-  if (!pub) return;
-
-  if (!pub.nowPlaying) {
-    let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
-    
-    if (nastaLatIndex === -1 && pub.queue.length > 0) {
-      nastaLatIndex = 0;
-    }
-
-    if (nastaLatIndex !== -1) {
-      pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
-      io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
-    }
-  }
-
-  broadcastPubState(pubId);
-
-  let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
-  if (antalRadioIKon < 2) {
-    (async () => {
-      while (pubar[pubId] && pub.queue.filter(l => l.isRadio).length < 2) {
-        const nyRadioLat = await hämtaEnRadiolåt(pubId);
-        if (nyRadioLat) {
-          pub.queue.push(nyRadioLat);
-          broadcastPubState(pubId);
-        } else {
-          break;
-        }
-      }
-    })();
-  }
-}
-
+// Socket-kommunikation
 io.on('connection', (socket) => {
   
   socket.on("join_pub", (pubId) => {
     socket.join(pubId);
     socket.pubId = pubId;
-    hanteraSpelning(pubId);
+    hanteraSpelning(pubId, pubar, hämtaPubData, io);
   });
 
   socket.on("search", async (data) => {
@@ -175,7 +106,7 @@ io.on('connection', (socket) => {
       const användaGånger = pub.config.användaKoder[kupongId] || 0;
 
       if (användaGånger >= maxLåtar) {
-        return socket.emit("kupong_error", { msg: `Denna biljett är redan förbrukad (${användaGånger}/${maxLåtar}).` });
+        return socket.emit("kupong_error", { msg: `Denna biljett är redan förbrukad.` });
       }
 
       const strängAttSignera = `${kupongId}-${maxLåtar}`;
@@ -203,6 +134,7 @@ io.on('connection', (socket) => {
         isRadio: false
       };
 
+      // Lägg alltid gästens önskelåt FÖRE radiolåtarna i kön
       const förstaRadioIndex = pub.queue.findIndex(l => l.isRadio);
       if (förstaRadioIndex !== -1) {
         pub.queue.splice(förstaRadioIndex, 0, nyGästLåt);
@@ -211,27 +143,24 @@ io.on('connection', (socket) => {
       }
 
       socket.emit("kupong_success", { 
-        msg: pub.config.qrKrav ? `Låt tillagd! Du har ${textKvar} låtar kvar på biljetten.` : "Låten har lagts till i kön!", 
+        msg: pub.config.qrKrav ? `Låt tillagd! Du har ${textKvar} låtar kvar.` : "Låten har lagts till i kön!", 
         resterande: textKvar 
       });
 
-      hanteraSpelning(pubId);
+      hanteraSpelning(pubId, pubar, hämtaPubData, io);
     }
   });
 
   socket.on("player:add_to_valv", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId] || !data.valvNamn || !data.title) return;
-    
     const pub = pubar[pubId];
-    if (!pub.config.valv[data.valvNamn]) {
-      pub.config.valv[data.valvNamn] = [];
-    }
+    if (!pub.config.valv[data.valvNamn]) pub.config.valv[data.valvNamn] = [];
     
     if (!pub.config.valv[data.valvNamn].includes(data.title)) {
       pub.config.valv[data.valvNamn].push(data.title);
       fs.writeFileSync(path.join(DATA_DIR, `${pubId}.json`), JSON.stringify(pub.config, null, 2));
-      broadcastPubState(pubId);
+      hanteraSpelning(pubId, pubar, hämtaPubData, io);
     }
   });
 
@@ -239,41 +168,41 @@ io.on('connection', (socket) => {
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].config.qrKrav = data.qrKrav;
     fs.writeFileSync(path.join(DATA_DIR, `${socket.pubId}.json`), JSON.stringify(pubar[socket.pubId].config, null, 2));
-    broadcastPubState(socket.pubId);
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io);
   });
 
   socket.on("player:set_lator_per_biljett", (data) => {
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].config.låtarPerBiljett = parseInt(data.antal) || 1;
     fs.writeFileSync(path.join(DATA_DIR, `${socket.pubId}.json`), JSON.stringify(pubar[socket.pubId].config, null, 2));
-    broadcastPubState(socket.pubId);
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io);
   });
 
   socket.on("player:skip", () => { 
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].nowPlaying = null; 
-    hanteraSpelning(socket.pubId); 
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); 
   });
 
   socket.on("player:remove_song", (data) => { 
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => l.id !== data.id); 
-    hanteraSpelning(socket.pubId); 
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); 
   });
 
   socket.on("player:byt_valv", (data) => { 
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].config.aktivtValv = data.valvNamn; 
     pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => !l.isRadio); 
-    hanteraSpelning(socket.pubId); 
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); 
   });
 
   socket.on("player:ready_for_next", () => { 
     if(!socket.pubId || !pubar[socket.pubId]) return;
     pubar[socket.pubId].nowPlaying = null; 
-    hanteraSpelning(socket.pubId); 
+    hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); 
   });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Jukebox rullar på port ${PORT}`));
+http.listen(PORT, () => console.log(`Jukebox-server rullar på port ${PORT}`));
