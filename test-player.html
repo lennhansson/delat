@@ -2,95 +2,117 @@
 <html lang="sv">
 <head>
     <meta charset="utf-8">
-    <title>Jukebox Spelare - Admin</title>
+    <title>Jukebox Spelare - Storbild & Admin</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #050505; color: white; font-family: system-ui, sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
-        .main-player { flex: 3; display: flex; flex-direction: column; background: #000; justify-content: center; align-items: center; position: relative; border-right: 2px solid #111; }
-        .sidebar { flex: 1.5; display: flex; flex-direction: column; background: #0d0d11; padding: 20px; box-sizing: border-box; }
+        body { background: #050505; color: white; font-family: system-ui, sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
         
-        .tabs-nav { display: flex; gap: 5px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 12px; background: #1a1a24; color: #888; border: 1px solid #333; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .tab-btn.active { background: #1db954; color: black; border-color: #1db954; }
-        
-        .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
-        .tab-content.active { display: flex; }
+        /* TOP-BAR FÖR ATT VÄXLA LÄGE */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; background: #0d0d11; padding: 10px 20px; border-bottom: 2px solid #1a1a24; height: 40px; }
+        .nav-btn { padding: 10px 20px; background: #1a1a24; color: #aaa; border: 1px solid #333; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .nav-btn.active { background: #1db954; color: black; border-color: #1db954; }
 
-        .song-row { display: flex; justify-content: space-between; align-items: center; background: #141419; border: 1px solid #222; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
-        .btn-danger { background: #e91429; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-success { background: #1db954; color: black; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        /* HUVUDCONTAINERS */
+        .page-content { height: calc(100vh - 62px); width: 100vw; display: none; box-sizing: border-box; }
+        .page-content.active { display: flex; }
+
+        /* LÄGE 1: TV / SKÄRMLÄGE (SPELAREN & KÖN) */
+        .player-view { width: 100%; height: 100%; display: flex; }
+        .video-container { flex: 2.5; background: #000; position: relative; display: flex; justify-content: center; align-items: center; }
+        .mini-queue { flex: 1; background: #09090d; padding: 20px; border-left: 2px solid #111; overflow-y: auto; display: flex; flex-direction: column; }
+
+        /* LÄGE 2: HELSKÄRMS-ADMIN (FÖR PERSONALEN) */
+        .admin-view { width: 100%; height: 100%; padding: 30px; box-sizing: border-box; display: flex; gap: 30px; background: #09090d; overflow-y: auto; }
+        .admin-left { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .admin-right { flex: 1.5; display: flex; flex-direction: column; background: #141419; border: 1px solid #222; border-radius: 12px; padding: 25px; min-height: 0; }
+
+        /* KOMPONENTER */
+        .card { background: #141419; border: 1px solid #222; padding: 20px; border-radius: 12px; }
+        .song-row { display: flex; justify-content: space-between; align-items: center; background: #1a1a24; border: 1px solid #2d2d3d; padding: 14px; border-radius: 8px; margin-bottom: 8px; font-size: 15px; }
+        .btn-danger { background: #e91429; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-success { background: #1db954; color: black; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
         
-        input, select { width: 100%; padding: 12px; background: #111; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; font-size: 15px; margin-bottom: 15px; }
-        label { font-size: 13px; color: #aaa; margin-bottom: 5px; display: block; font-weight: bold; }
+        input, select { width: 100%; padding: 14px; background: #050505; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; }
+        label { font-size: 14px; color: #aaa; margin-bottom: 8px; display: block; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         
         #video-cover { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; text-align: center; pointer-events: none; }
+        #player { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
-    <!-- VÄNSTER: YOUTUBE-SPELAREN -->
-    <div class="main-player">
-        <div id="player"></div>
-        <div id="video-cover">
-            <div>
-                <h1 id="screen-now-playing" style="font-size: 32px; color: #ffcc00; margin: 0 0 10px 0;">Tyst i baren...</h1>
-                <p id="screen-added-by" style="font-size: 18px; color: #888; margin: 0;">Väntar på val</p>
+    <div class="top-nav">
+        <h3 id="pub-namn" style="margin: 0; font-size: 16px; text-transform: uppercase; color: #ffcc00;">Laddar...</h3>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-mode-tv" class="nav-btn active" onclick="bytSkärmLäge('tv')">📺 Visa TV-Skärm</button>
+            <button id="btn-mode-admin" class="nav-btn" onclick="bytSkärmLäge('admin')">⚙️ Helskärms-Admin & Listor</button>
+        </div>
+    </div>
+
+    <div id="page-tv" class="page-content active">
+        <div class="player-view">
+            <div class="video-container">
+                <div id="player"></div>
+                <div id="video-cover">
+                    <div>
+                        <h1 id="screen-now-playing" style="font-size: 36px; color: #ffcc00; margin: 0 0 10px 0;">Tyst i baren...</h1>
+                        <p id="screen-added-by" style="font-size: 20px; color: #aaa; margin: 0;">Väntar på val</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mini-queue">
+                <h3 style="margin: 0 0 15px 0; color: #888; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">Kön just nu:</h3>
+                <div id="tv-queue-lista" style="flex: 1; overflow-y: auto;"></div>
             </div>
         </div>
     </div>
 
-    <!-- HÖGER: ADMINPANEL & FLIKAR -->
-    <div class="sidebar">
-        <h2 id="pub-namn" style="margin: 0 0 15px 0; font-size: 20px; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 10px;">Laddar Jukebox...</h2>
-
-        <div class="tabs-nav">
-            <button id="btn-tab-ko" class="tab-btn active" onclick="bytFlik('ko')">🎵 Spellista & Kö</button>
-            <button id="btn-tab-config" class="tab-btn" onclick="bytFlik('config')">⚙️ Inställningar & Listor</button>
-        </div>
-
-        <!-- FLIK 1: KÖN JUST NU -->
-        <div id="tab-ko" class="tab-content active">
-            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0; font-size:16px; color:#888;">NÄSTA LÅTAR I KÖN:</h3>
-                <button onclick="skipLat()" class="btn-danger" style="background:#ffcc00; color:black;">SKIP LÅT ⏭️</button>
-            </div>
-            <div id="queue-lista" style="flex:1;"></div>
-        </div>
-
-        <!-- FLIK 2: INSTÄLLNINGAR & EDITERA FILER -->
-        <div id="tab-config" class="tab-content">
+    <div id="page-admin" class="page-content">
+        <div class="admin-view">
             
-            <!-- PUBENS AKTIVA INSTÄLLNINGAR -->
-            <div style="background:#141419; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #222;">
-                <label>Kräv QR-biljett från gästerna:</label>
-                <select id="qr-toggle" onchange="ändraQrKrav()">
-                    <option value="false">NEJ (Helt gratis att önska)</option>
-                    <option value="true">JA (Kräv biljettkod)</option>
-                </select>
+            <div class="admin-left">
+                <div class="card">
+                    <h3 style="margin: 0 0 20px 0; border-bottom: 1px solid #222; padding-bottom: 10px; color: #ffcc00;">Jukebox-Inställningar</h3>
+                    
+                    <label>Kräv QR-biljett från gästerna:</label>
+                    <select id="qr-toggle" onchange="ändraQrKrav()">
+                        <option value="false">NEJ (Helt gratis att önska)</option>
+                        <option value="true">JA (Kräv biljettkod)</option>
+                    </select>
 
-                <label style="color: #ffcc00;">Aktivt bakgrundsvalv (Spelas i högtalarna nu):</label>
-                <select id="valv-väljare" onchange="ändraValv()" style="border-color: #ffcc00;"></select>
-            </div>
-
-            <!-- EDITERA VALFRI FIL (OBEROENDE AV VAD SOM SPELAS) -->
-            <div style="background:#1a1a24; padding:15px; border-radius:8px; border:1px solid #333; display:flex; flex-direction:column; flex:1; min-height:0;">
-                <h3 style="margin:0 0 10px 0; font-size:15px; color:#1db954;">HANTERA FILER & LÅTLISTOR:</h3>
-                
-                <label>Välj vilken fil du vill redigera:</label>
-                <select id="edit-valv-väljare" onchange="bytEditFil()"></select>
-                
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <input type="text" id="ny-valv-lat" placeholder="Artist - Låttitel..." style="margin:0;">
-                    <button onclick="läggTillIVabv()" class="btn-success" style="padding:0 15px;">LÄGG TILL</button>
+                    <label style="color: #ffcc00;">Aktivt bakgrundsvalv (Det som spelas nu):</label>
+                    <select id="valv-väljare" onchange="ändraValv()" style="border-color: #ffcc00; font-weight: bold; color: #ffcc00;"></select>
                 </div>
 
-                <div id="valv-låtar-lista" style="flex:1; overflow-y:auto; border:1px solid #222; padding:10px; border-radius:6px; background:#09090d;"></div>
+                <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin:0; font-size:16px;">Hoppa över nuvarande låt?</h4>
+                        <p style="margin:5px 0 0 0; font-size:13px; color:#666;">Gör detta om videon hängt sig eller är dålig.</p>
+                    </div>
+                    <button onclick="skipLat()" class="btn-success" style="background:#ffcc00; color:black;">SKIP LÅT ⏭_</button>
+                </div>
+            </div>
+
+            <div class="admin-right">
+                <h3 style="margin: 0 0 5px 0; color: #1db954;">Filredigering (.json)</h3>
+                <p style="margin: 0 0 20px 0; font-size: 13px; color: #666;">Här uppdaterar du innehållet i dina sparade textfiler direkt på disken.</p>
+                
+                <label>Välj vilken fil du vill öppna och redigera:</label>
+                <select id="edit-valv-väljare" onchange="bytEditFil()" style="background: #1a1a24; font-size: 18px; font-weight: bold; border-color: #1db954;"></select>
+                
+                <label>Lägg till ny låt i denna fil:</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="ny-valv-lat" placeholder="Artist - Låttitel (t.ex. Metallica - Enter Sandman)..." style="margin: 0;">
+                    <button onclick="läggTillIVabv()" class="btn-success">SPARA I FIL</button>
+                </div>
+
+                <label>Låtar i denna fil just nu:</label>
+                <div id="valv-låtar-lista" style="flex: 1; overflow-y: auto; border: 1px solid #333; padding: 15px; border-radius: 8px; background: #050505;"></div>
             </div>
 
         </div>
     </div>
 
-    <!-- YouTube Iframe SDK -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         let ytPlayer;
@@ -134,7 +156,7 @@
                 sparadValvData = data.valvData;
             }
 
-            // Hantera Nu Spelas
+            // Hantera Nu Spelas på TV:n
             if(data.nowPlaying) {
                 document.getElementById("screen-now-playing").innerText = data.nowPlaying.title;
                 document.getElementById("screen-added-by").innerText = "Önskad av: " + data.nowPlaying.addedBy;
@@ -143,29 +165,26 @@
                 document.getElementById("screen-added-by").innerText = "Väntar på val";
             }
 
-            // Hantera Kö-listan
-            const koLista = document.getElementById("queue-lista");
-            koLista.innerHTML = data.fullQueue.length === 0 ? "<p style='color:#555; font-size:14px;'>Kön är tom.</p>" : data.fullQueue.map(l => `
-                <div class="song-row">
-                    <span><strong>[${l.addedBy}]</strong> ${l.title}</span>
-                    <button class="btn-danger" onclick="taBortUrKö('${l.id}')">❌</button>
+            // Hantera TV-kön
+            const tvKo = document.getElementById("tv-queue-lista");
+            tvKo.innerHTML = data.fullQueue.length === 0 ? "<p style='color:#444; font-size:14px;'>Kön är tom.</p>" : data.fullQueue.map(l => `
+                <div style="padding:10px; background:#141419; margin-bottom:5px; border-radius:6px; font-size:13px; border:1px solid #222;">
+                    <span style="color:#888;">[${l.addedBy}]</span> ${l.title}
                 </div>
             `).join("");
 
-            // 1. Uppdatera HÖGTALAR-DROPDOWN (Vad som spelas nu)
+            // Uppdatera "Spelas Nu"-dropdown
             const väljare = document.getElementById("valv-väljare");
             väljare.innerHTML = data.valvLista.map(v => `<option value="${v}" ${v === data.aktivtValv ? 'selected' : ''}>${v}</option>`).join("");
 
-            // 2. Uppdatera EDITERINGS-DROPDOWN (Om det är första gången vi laddar)
+            // Uppdatera "Editera"-dropdown
             const editVäljare = document.getElementById("edit-valv-väljare");
             const gamlaValet = editVäljare.value;
-            
             editVäljare.innerHTML = data.valvLista.map(v => `<option value="${v}">${v}</option>`).join("");
             
             if (gamlaValet && data.valvLista.includes(gamlaValet)) {
                 editVäljare.value = gamlaValet;
             }
-            
             if(!valdFilAttEditera || !data.valvLista.includes(valdFilAttEditera)) {
                 valdFilAttEditera = editVäljare.value;
             }
@@ -176,16 +195,24 @@
         function renderaValvEditering() {
             const root = document.getElementById("valv-låtar-lista");
             if(!sparadValvData || !sparadValvData[valdFilAttEditera]) {
-                root.innerHTML = "<p style='color:#555; padding:10px;'>Välj en fil ovan för att visa låtar.</p>";
+                root.innerHTML = "<p style='color:#555; padding:10px;'>Välj en fil ovan för att redigera.</p>";
                 return;
             }
             
             root.innerHTML = sparadValvData[valdFilAttEditera].map(latText => `
-                <div class="song-row" style="padding: 8px; margin-bottom: 5px; background:#111;">
-                    <span style="font-size:13px;">${latText}</span>
-                    <button class="btn-danger" style="padding:2px 8px; font-size:11px;" onclick="raderaUrValv('${latText}')">❌</button>
+                <div class="song-row">
+                    <span>${latText}</span>
+                    <button class="btn-danger" onclick="raderaUrValv('${latText}')">TA BORT ❌</button>
                 </div>
             `).join("");
+        }
+
+        function bytSkärmLäge(läge) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('page-'+läge).classList.add('active');
+            document.getElementById('btn-mode-'+läge).classList.add('active');
         }
 
         function bytEditFil() {
@@ -193,16 +220,7 @@
             renderaValvEditering();
         }
 
-        // Knappfunktioner
-        function bytFlik(f) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-'+f).classList.add('active');
-            document.getElementById('btn-tab-'+f).classList.add('active');
-        }
-        
         function skipLat() { socket.emit("player:skip"); }
-        function taBortUrKö(id) { socket.emit("player:remove_song", { id: id }); }
         function ändraQrKrav() { socket.emit("player:toggle_qr", { qrKrav: document.getElementById("qr-toggle").value === "true" }); }
         function ändraValv() { socket.emit("player:byt_valv", { valvNamn: document.getElementById("valv-väljare").value }); }
         
@@ -215,7 +233,7 @@
         }
         
         function raderaUrValv(texten) {
-            if(confirm(`Vill du ta bort "${texten}" från listan ${valdFilAttEditera}?`)) {
+            if(confirm(`Vill du ta bort "${texten}" från filen ${valdFilAttEditera}.json?`)) {
                 socket.emit("player:remove_from_valv", { valvNamn: valdFilAttEditera, title: texten });
             }
         }
