@@ -10,7 +10,7 @@ async function hämtaEnRadiolåt(pub) {
   const slumpadText = pool[Math.floor(Math.random() * pool.length)];
   try {
     const searchResult = await youTubeSearchApi.GetListByKeyword(slumpadText, false, 1);
-    if (searchResult && searchResult.items.length > 0) {
+    if (searchResult && searchResult.items && searchResult.items.length > 0) {
       return {
         id: Math.random().toString(36).substr(2, 9),
         videoId: searchResult.items[0].id,
@@ -54,6 +54,7 @@ async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
     qrKrav: pub.config.qrKrav,
     låtarPerBiljett: pub.config.låtarPerBiljett,
     valvLista: Object.keys(pub.config.valv || {}),
+    valvData: pub.config.valv || {}, // Skicka med rådatan så adminfliken kan rendera listorna!
     nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
     fullQueue: pub.queue
   });
@@ -63,10 +64,13 @@ async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
   if (antalRadioIKon < 2) {
     // Kör påfyllning i bakgrunden utan att blockera
     (async () => {
+      let ladesTillNågonLåt = false;
       while (pubar[pubId] && pub.queue.filter(l => l.isRadio).length < 2) {
         const nyRadioLat = await hämtaEnRadiolåt(pub);
         if (nyRadioLat) {
           pub.queue.push(nyRadioLat);
+          ladesTillNågonLåt = true;
+          
           // Skicka ut uppdaterad kö till gränssnittet
           io.to(pubId).emit("state", {
             pubNamn: pub.config.namn,
@@ -74,12 +78,18 @@ async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
             qrKrav: pub.config.qrKrav,
             låtarPerBiljett: pub.config.låtarPerBiljett,
             valvLista: Object.keys(pub.config.valv || {}),
+            valvData: pub.config.valv || {},
             nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
             fullQueue: pub.queue
           });
         } else {
           break;
         }
+      }
+      
+      // CRITICAL FIX: Om vi precis fyllde på en tom kö och ingenting spelas, kicka igång motorn!
+      if (ladesTillNågonLåt && !pub.nowPlaying) {
+        hanteraSpelning(pubId, pubar, hämtaPubData, io);
       }
     })();
   }
