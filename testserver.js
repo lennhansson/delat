@@ -12,8 +12,30 @@ const crypto = require('crypto');
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
+const LISTOR_DIR = path.join(__dirname, 'låtlista'); // Synkad mot din exakta mapp!
 const pubar = {};
 const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
+
+// Läser ENBART av de befintliga JSON-filerna i din mapp "låtlista"
+function hämtaGemensammaListor() {
+  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR);
+
+  const valv = {};
+  const filer = fs.readdirSync(LISTOR_DIR);
+  
+  filer.forEach(fil => {
+    if (fil.endsWith('.json')) {
+      const listNamn = fil.replace('.json', ''); // "gubbrock.json" blir "gubbrock"
+      try {
+        const innehall = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8'));
+        valv[listNamn] = innehall;
+      } catch (e) {
+        valv[listNamn] = []; // Tom lista om filen är korrupt eller tom
+      }
+    }
+  });
+  return valv;
+}
 
 function hämtaPubData(pubId) {
   if (!pubId) return null;
@@ -22,13 +44,9 @@ function hämtaPubData(pubId) {
   if (!fs.existsSync(filStig)) {
     const standardConfig = {
       namn: `${pubId.toUpperCase()} Jukebox`,
-      aktivtValv: "Standard Rock",
+      aktivtValv: "",
       qrKrav: false,
       låtarPerBiljett: 1,
-      valv: {
-        "Standard Rock": ["Creedence - Have You Ever Seen The Rain", "Eddie Meduza - Gasen i botten", "Volbeat - Still Counting"],
-        "Schlager & Party": ["Gyllene Tider - Sommartider", "Arvingarna - Eloise", "Fronda - Rullar fram"]
-      },
       användaKoder: {}
     };
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
@@ -39,6 +57,14 @@ function hämtaPubData(pubId) {
   if (!config.användaKoder || Array.isArray(config.användaKoder)) config.användaKoder = {};
   if (config.qrKrav === undefined) config.qrKrav = false;
   if (config.låtarPerBiljett === undefined) config.låtarPerBiljett = 1;
+
+  // Läs in dina filer (gubbrock, lattlyssnat, radio) direkt från disken
+  config.valv = hämtaGemensammaListor();
+
+  const tillgangligaValv = Object.keys(config.valv);
+  if (tillgangligaValv.length > 0 && (!config.aktivtValv || !tillgangligaValv.includes(config.aktivtValv))) {
+    config.aktivtValv = tillgangligaValv[0];
+  }
 
   if (!pubar[pubId]) {
     pubar[pubId] = { queue: [], nowPlaying: null, config: config };
@@ -62,11 +88,6 @@ app.get('/pub/:pubId/player', (req, res) => {
 
 app.get('/generate', (req, res) => {
   res.sendFile(path.join(__dirname, 'skriv-ut-kuponger.html'));
-});
-
-// Leverera den nya PWA-logikfilen till mobilerna
-app.get('/jukebox-pwa.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'jukebox-pwa.js'));
 });
 
 // Socket-kommunikation
@@ -158,12 +179,27 @@ io.on('connection', (socket) => {
   socket.on("player:add_to_valv", (data) => {
     const pubId = socket.pubId;
     if (!pubId || !pubar[pubId] || !data.valvNamn || !data.title) return;
-    const pub = pubar[pubId];
-    if (!pub.config.valv[data.valvNamn]) pub.config.valv[data.valvNamn] = [];
     
-    if (!pub.config.valv[data.valvNamn].includes(data.title)) {
-      pub.config.valv[data.valvNamn].push(data.title);
-      fs.writeFileSync(path.join(DATA_DIR, `${pubId}.json`), JSON.stringify(pub.config, null, 2));
+    const filStig = path.join(LISTOR_DIR, `${data.valvNamn}.json`);
+    if (fs.existsSync(filStig)) {
+      const lista = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+      if (!lista.includes(data.title)) {
+        lista.push(data.title);
+        fs.writeFileSync(filStig, JSON.stringify(lista, null, 2));
+        hanteraSpelning(pubId, pubar, hämtaPubData, io);
+      }
+    }
+  });
+
+  socket.on("player:remove_from_valv", (data) => {
+    const pubId = socket.pubId;
+    if (!pubId || !pubar[pubId] || !data.valvNamn || !data.title) return;
+
+    const filStig = path.join(LISTOR_DIR, `${data.valvNamn}.json`);
+    if (fs.existsSync(filStig)) {
+      let lista = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+      lista = lista.filter(t => t !== data.title);
+      fs.writeFileSync(filStig, JSON.stringify(lista, null, 2));
       hanteraSpelning(pubId, pubar, hämtaPubData, io);
     }
   });

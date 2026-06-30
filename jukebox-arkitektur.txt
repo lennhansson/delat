@@ -1,0 +1,38 @@
+======================================================================
+PROJEKTBESKRIVNING & ARKITEKTUR: SMART JUKEBOX
+Plats på disk: C:\Users\lennh\testjb
+======================================================================
+
+KÄRNREGLER (FÅR EJ BRYTAS):
+1. INGEN YT-DLP: Vi använder ALDRIG yt-dlp för att ladda ner filer. Musik och video spelas uteslutande via YouTube Iframe API (spelaren i webbläsaren).
+2. HELA FILER: Vid kodändringar ska ALLTID hela filer levereras för att undvika kod- och versionsfel.
+3. INGEN HÅRDKODNING AV LÅTAR: Inga låtlistor, valv eller artister får hårdkodas i serverfilerna (t.ex. testserver.js).
+
+----------------------------------------------------------------------
+SYSTEMETS IDÉ & FUNKTION:
+Ett modernt, webbaserat jukeboxsystem för barer och pubar. 
+- Spelaren (test-player.html) körs på en skärm bakom baren/i lokalen och streamar ljud/video live från YouTube.
+- Gästerna skannar en QR-kod för att nå mobilgränssnittet (test-mobile.html) där de kan söka efter och önska låtar till kön.
+- Systemet kan ställas in i "Kupong-läge" via spelaren, vilket kräver att gästerna har en unik kryptografiskt signerad biljett (genererad via skriv-ut-kuponger.html) för att få önska.
+
+----------------------------------------------------------------------
+MAPP- OCH FILSTRUKTUR (AKTUELL):
+- testserver.js             (Express-server, hanterar API-sök, Socket.io-rum per bar och laddar sidor)
+- jukebox-player-logic.js   (Musikmotorn. Styr kön och ser till att det alltid ligger minst 2 radiolåtar i slutet av kön)
+- test-player.html          (Gränssnittet för tv/skärm bakom baren som spelar upp musiken)
+- test-mobile.html          (Gästernas mobilsida för sök och önskningar)
+- skriv-ut-kuponger.html    (Adminverktyg för att skriva ut fysiska QR-biljetter med unika hash-koder)
+- data/[barId].json         (Innehåller barens unika config, aktiva inställningar samt förbrukade kuponger)
+
+----------------------------------------------------------------------
+VALV / SPÄLLISTOR (PÅGÅENDE ARKITEKTUR):
+Låtlistor som spelas i bakgrunden (när gästerna inte önskar) ska ligga som separata JSON-filer i en egen mapp: `låtlistor/[barId]/`.
+- Filnamnet avgör namnet på listan i gränssnittet (t.ex. "Gubbrock", ".json" skalas bort i koden).
+- Detta görs för att varje bar ska kunna ha unika listor och för att personalen senare ska kunna editera filerna via en adminflik.
+
+----------------------------------------------------------------------
+FRAMTIDSVISION (DATABASTÄNK):
+Filstrukturen för låtlistor är ett första steg. Längre fram ska systemet migreras till en databas (t.ex. SQLite/PostgreSQL) för att bygga en smart, datadriven jukebox.
+- Systemet ska logga tidpunkt och veckodag för önskningar/spelningar för att lära sig barens rytm (t.ex. automatiskt spela "Lättlyssnat/Lunch" på dagtid och "Gubbrock" på fredagskvällar).
+- Möjliggöra smarta, automatiskt genererade listor som "Topp 50 mest önskade på denna bar".
+======================================================================
