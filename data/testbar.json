@@ -1,7 +1,7 @@
 {
   "namn": "TESTBAR Jukebox",
   "aktivtValv": "gubbrock",
-  "qrKrav": true,
+  "qrKrav": false,
   "låtarPerBiljett": 1,
   "användaKoder": {},
   "statistikKuponger": 0,

@@ -11,22 +11,35 @@ const { hanteraSpelning } = require('./jukebox-player-logic');
 
 const DATA_DIR = process.env.DATA_DIR || process.env.RENDER_DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data'));
 const LEGACY_LISTOR_DIR = path.join(__dirname, 'låtlista');
+const APP_SONGLIST_DIR = path.join(__dirname, 'songlist');
 const LISTOR_DIR = process.env.LISTOR_DIR || path.join(DATA_DIR, 'songlist');
 const pubar = {};
 
 function migreraListaOmBehovs() {
-  if (fs.existsSync(LEGACY_LISTOR_DIR) && !fs.existsSync(LISTOR_DIR)) {
-    fs.mkdirSync(LISTOR_DIR, { recursive: true });
-    const filer = fs.readdirSync(LEGACY_LISTOR_DIR);
-    filer.forEach(fil => {
-      if (fil.endsWith('.json')) {
-        const source = path.join(LEGACY_LISTOR_DIR, fil);
-        const dest = path.join(LISTOR_DIR, fil);
-        if (!fs.existsSync(dest)) {
-          fs.copyFileSync(source, dest);
-        }
+  const sourceDirs = [APP_SONGLIST_DIR, LEGACY_LISTOR_DIR];
+  let targetHasFiles = false;
+
+  if (fs.existsSync(LISTOR_DIR)) {
+    targetHasFiles = fs.readdirSync(LISTOR_DIR).some(fil => fil.endsWith('.json'));
+  }
+
+  if (!targetHasFiles) {
+    for (const sourceDir of sourceDirs) {
+      if (fs.existsSync(sourceDir)) {
+        const filer = fs.readdirSync(sourceDir).filter(fil => fil.endsWith('.json'));
+        if (filer.length === 0) continue;
+
+        fs.mkdirSync(LISTOR_DIR, { recursive: true });
+        filer.forEach(fil => {
+          const source = path.join(sourceDir, fil);
+          const dest = path.join(LISTOR_DIR, fil);
+          if (!fs.existsSync(dest)) {
+            fs.copyFileSync(source, dest);
+          }
+        });
+        break;
       }
-    });
+    }
   }
 }
 
