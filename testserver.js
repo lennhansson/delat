@@ -51,7 +51,7 @@ function hämtaPubData(pubId) {
   if (!fs.existsSync(filStig)) {
     const standardConfig = {
       namn: `${pubId.toUpperCase()} Jukebox`,
-      aktivtValv: "Standard Rock",
+      aktivtValv: "radio",
       qrKrav: false,
       användaKoder: {},
       statistikKuponger: 0,
@@ -64,6 +64,10 @@ function hämtaPubData(pubId) {
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
   if (!config.användaKoder || Array.isArray(config.användaKoder)) config.användaKoder = {};
   config.valv = hämtaGemensammaListor();
+  if (!config.aktivtValv || !config.valv[config.aktivtValv]) {
+    const availableValv = Object.keys(config.valv);
+    config.aktivtValv = availableValv.length > 0 ? availableValv[0] : "radio";
+  }
   
   if (!pubar[pubId]) {
     pubar[pubId] = { queue: [], nowPlaying: null, config: config };
