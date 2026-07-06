@@ -7,24 +7,46 @@ const path = require('path');
 const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
 
+// VIKTIGT: Kontrollera att filnamnet matchar exakt på GitHub (små/stora bokstäver)
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
 // Kontrollera om Render har monterat den fasta disken på '/data', annars använd lokal mapp
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
-// KORRIGERING: Ändrat från 'låtlista' till 'låtlistor' för att matcha filstrukturen på disk
+
+// Tvinga mappen till 'låtlistor' (plural) och kontrollera att den existerar
 const LISTOR_DIR = path.join(__dirname, 'låtlistor'); 
 const pubar = {};
 
+// Automatisk loggning till Renders "Logs"-flik för att se vad som hittas på disken
+console.log("=== JUKEBOX DIAGNOS ===");
+console.log("Letar efter data i: ", DATA_DIR);
+console.log("Letar efter låtlistor i: ", LISTOR_DIR);
+if (fs.existsSync(LISTOR_DIR)) {
+  console.log("Hittade mappen 'låtlistor'! Innehåller filer:", fs.readdirSync(LISTOR_DIR));
+} else {
+  console.log("VARNING: Mappen 'låtlistor' saknas på servern, skapar en ny tom mapp.");
+  fs.mkdirSync(LISTOR_DIR, { recursive: true });
+}
+console.log("=======================");
+
 function hämtaGemensammaListor() {
-  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR);
+  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR, { recursive: true });
   const valv = {};
-  const filer = fs.readdirSync(LISTOR_DIR);
-  filer.forEach(fil => {
-    if (fil.endsWith('.json')) {
-      const listNamn = fil.replace('.json', '');
-      try { valv[listNamn] = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8')); } catch (e) { valv[listNamn] = []; }
-    }
-  });
+  try {
+    const filer = fs.readdirSync(LISTOR_DIR);
+    filer.forEach(fil => {
+      if (fil.endsWith('.json')) {
+        const listNamn = fil.replace('.json', '');
+        try { 
+          valv[listNamn] = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8')); 
+        } catch (e) { 
+          valv[listNamn] = []; 
+        }
+      }
+    });
+  } catch (err) {
+    console.error("Fel vid läsning av listor:", err);
+  }
   return valv;
 }
 
@@ -41,7 +63,7 @@ function hämtaPubData(pubId) {
       statistikKuponger: 0,
       statistikTotalt: 0
     };
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
   }
 
@@ -61,6 +83,7 @@ function hämtaPubData(pubId) {
   return pubar[pubId];
 }
 
+// Routes för webbläsaren
 app.get('/pub/:pubId/mobile', (req, res) => { hämtaPubData(req.params.pubId); res.sendFile(path.join(__dirname, 'test-mobile.html')); });
 app.get('/pub/:pubId/player', (req, res) => { hämtaPubData(req.params.pubId); res.sendFile(path.join(__dirname, 'test-player.html')); });
 
