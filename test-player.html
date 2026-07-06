@@ -52,7 +52,6 @@
     </div>
 
     <div class="kontroll-panel">
-        <!-- HÄR ÄR DEN SÄKRA FIXEN FÖR TV-LÄNKARNA -->
         <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
             <button onclick="oppnaTvSida()" class="btn btn-primary">📺 Visa TV-Skärm</button>
             <a href="?admin=true" class="btn btn-secondary">⚙️ Helskärms-Admin & Listor</a>
@@ -75,7 +74,6 @@
         <label style="font-size: 13px; color: #aaa; display: block; margin-bottom: 5px;">Aktivt bakgrundsvalv:</label>
         <div id="valv-radio-lista" class="radio-group"></div>
 
-        <!-- Statistikboxen -->
         <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #333; font-size: 13px; color: #888;">
             <h4 style="margin: 0 0 10px 0; font-size: 12px; letter-spacing: 0.5px; color: #555;">SESSION-STATISTIK</h4>
             <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
@@ -116,8 +114,8 @@
         }
 
         function laddaFilInnehåll(valvNamn) {
-            if(!sparadState || !sparadState.valv[valvNamn]) return;
-            const låtar = sparadState.valv[valvNamn];
+            if(!sparadState || !sparadState.valvData || !sparadState.valvData[valvNamn]) return;
+            const låtar = sparadState.valvData[valvNamn];
             document.getElementById("fil-låtar-lista").innerHTML = låtar.map(låt => `
                 <div class="row">
                     <span>${låt}</span>
@@ -126,19 +124,9 @@
             `).join("");
         }
 
-        function läggTillIFil() {
-            const fil = document.getElementById("fil-väljare").value;
-            const title = document.getElementById("ny-fil-låt").value.trim();
-            if(!title) return;
-            socket.emit("player:add_to_valv", { valvNamn: fil, title });
-            document.getElementById("ny-fil-låt").value = "";
-        }
-
-        function taBortFrånFil(valvNamn, title) {
-            if(confirm(`Vill du ta bort "${title}" från ${valvNamn}?`)) {
-                socket.emit("player:remove_from_valv", { valvNamn, title });
-            }
-        }
+        document.addEventListener("click", function(e) {
+            // Förhindra krascher om popup-blockerare stoppar window.open
+        });
 
         socket.on("state", (data) => {
             sparadState = data;
@@ -148,8 +136,8 @@
             document.getElementById("qr-på").checked = data.qrKrav;
             document.getElementById("qr-av").checked = !data.qrKrav;
 
-            document.getElementById("stat-totalt").innerText = data.statistikTotalt || 0;
-            document.getElementById("stat-kuponger").innerText = data.statistikKuponger || 0;
+            document.getElementById("stat-totalt").innerText = data.statistikTotalt || data.config?.statistikTotalt || 0;
+            document.getElementById("stat-kuponger").innerText = data.statistikKuponger || data.config?.statistikKuponger || 0;
 
             document.getElementById("player-queue-lista").innerHTML = data.fullQueue.length === 0 
                 ? "<span style='opacity:0.4;'>Kön är helt tom...</span>" 
@@ -160,9 +148,9 @@
                     </div>
                 `).join("");
 
-            if(data.valv) {
+            if(data.valvData) {
                 const aktivaValvet = data.aktivtValv;
-                document.getElementById("valv-radio-lista").innerHTML = Object.keys(data.valv).map(v => `
+                document.getElementById("valv-radio-lista").innerHTML = Object.keys(data.valvData).map(v => `
                     <div class="radio-option" onclick="bytValv('${v}')">
                         <input type="radio" name="bakgrundsvalv" ${aktivaValvet === v ? 'checked' : ''}>
                         <span>${v}</span>
@@ -171,7 +159,7 @@
 
                 const väljare = document.getElementById("fil-väljare");
                 if(väljare.children.length === 0) {
-                    väljare.innerHTML = Object.keys(data.valv).map(v => `<option value="${v}">${v}</option>`).join("");
+                    väljare.innerHTML = Object.keys(data.valvData).map(v => `<option value="${v}">${v}</option>`).join("");
                     laddaFilInnehåll(väljare.value);
                 } else {
                     laddaFilInnehåll(väljare.value);

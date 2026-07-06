@@ -9,8 +9,10 @@ const fs = require('fs');
 
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
+// Kontrollera om Render har monterat den fasta disken på '/data', annars använd lokal mapp
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
-const LISTOR_DIR = path.join(__dirname, 'låtlista');
+// KORRIGERING: Ändrat från 'låtlista' till 'låtlistor' för att matcha filstrukturen på disk
+const LISTOR_DIR = path.join(__dirname, 'låtlistor'); 
 const pubar = {};
 
 function hämtaGemensammaListor() {
@@ -95,12 +97,10 @@ io.on('connection', (socket) => {
         return socket.emit("kupong_error", { msg: "🔒 QR-kod krävs för att önska låtar!" });
       }
 
-      // FUSK-LOGIK: Om koden redan finns i listan över använda koder är den förbrukad
       if (pub.config.användaKoder[råKod]) {
         return socket.emit("kupong_error", { msg: "Denna biljettkod är redan förbrukad!" });
       }
 
-      // Godkänn koden och spärra den för framtida bruk
       pub.config.användaKoder[råKod] = 1; 
       pub.config.statistikKuponger += 1;
       registreringGodkand = true;
@@ -143,4 +143,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {});
+http.listen(PORT, () => {
+  console.log(`Jukebox-server igång på port ${PORT}`);
+});
