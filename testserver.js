@@ -10,10 +10,28 @@ const fs = require('fs');
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
 const DATA_DIR = process.env.DATA_DIR || process.env.RENDER_DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data'));
-const LISTOR_DIR = path.join(DATA_DIR, 'låtlista');
+const LEGACY_LISTOR_DIR = path.join(__dirname, 'låtlista');
+const LISTOR_DIR = process.env.LISTOR_DIR || path.join(DATA_DIR, 'songlist');
 const pubar = {};
 
+function migreraListaOmBehovs() {
+  if (fs.existsSync(LEGACY_LISTOR_DIR) && !fs.existsSync(LISTOR_DIR)) {
+    fs.mkdirSync(LISTOR_DIR, { recursive: true });
+    const filer = fs.readdirSync(LEGACY_LISTOR_DIR);
+    filer.forEach(fil => {
+      if (fil.endsWith('.json')) {
+        const source = path.join(LEGACY_LISTOR_DIR, fil);
+        const dest = path.join(LISTOR_DIR, fil);
+        if (!fs.existsSync(dest)) {
+          fs.copyFileSync(source, dest);
+        }
+      }
+    });
+  }
+}
+
 function hämtaGemensammaListor() {
+  migreraListaOmBehovs();
   if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR, { recursive: true });
   const valv = {};
   const filer = fs.readdirSync(LISTOR_DIR);
