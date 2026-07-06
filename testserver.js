@@ -7,46 +7,22 @@ const path = require('path');
 const youTubeSearchApi = require('youtube-search-api');
 const fs = require('fs');
 
-// VIKTIGT: Kontrollera att filnamnet matchar exakt på GitHub (små/stora bokstäver)
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
-// Kontrollera om Render har monterat den fasta disken på '/data', annars använd lokal mapp
 const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
-
-// Tvinga mappen till 'låtlistor' (plural) och kontrollera att den existerar
-const LISTOR_DIR = path.join(__dirname, 'låtlistor'); 
+const LISTOR_DIR = path.join(__dirname, 'låtlista');
 const pubar = {};
 
-// Automatisk loggning till Renders "Logs"-flik för att se vad som hittas på disken
-console.log("=== JUKEBOX DIAGNOS ===");
-console.log("Letar efter data i: ", DATA_DIR);
-console.log("Letar efter låtlistor i: ", LISTOR_DIR);
-if (fs.existsSync(LISTOR_DIR)) {
-  console.log("Hittade mappen 'låtlistor'! Innehåller filer:", fs.readdirSync(LISTOR_DIR));
-} else {
-  console.log("VARNING: Mappen 'låtlistor' saknas på servern, skapar en ny tom mapp.");
-  fs.mkdirSync(LISTOR_DIR, { recursive: true });
-}
-console.log("=======================");
-
 function hämtaGemensammaListor() {
-  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR, { recursive: true });
+  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR);
   const valv = {};
-  try {
-    const filer = fs.readdirSync(LISTOR_DIR);
-    filer.forEach(fil => {
-      if (fil.endsWith('.json')) {
-        const listNamn = fil.replace('.json', '');
-        try { 
-          valv[listNamn] = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8')); 
-        } catch (e) { 
-          valv[listNamn] = []; 
-        }
-      }
-    });
-  } catch (err) {
-    console.error("Fel vid läsning av listor:", err);
-  }
+  const filer = fs.readdirSync(LISTOR_DIR);
+  filer.forEach(fil => {
+    if (fil.endsWith('.json')) {
+      const listNamn = fil.replace('.json', '');
+      try { valv[listNamn] = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8')); } catch (e) { valv[listNamn] = []; }
+    }
+  });
   return valv;
 }
 
@@ -57,22 +33,18 @@ function hämtaPubData(pubId) {
   if (!fs.existsSync(filStig)) {
     const standardConfig = {
       namn: `${pubId.toUpperCase()} Jukebox`,
-      aktivtValv: "",
+      aktivtValv: "Standard Rock",
       qrKrav: false,
       användaKoder: {},
       statistikKuponger: 0,
       statistikTotalt: 0
     };
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
     fs.writeFileSync(filStig, JSON.stringify(standardConfig, null, 2));
   }
 
   const config = JSON.parse(fs.readFileSync(filStig, 'utf8'));
   if (!config.användaKoder || Array.isArray(config.användaKoder)) config.användaKoder = {};
-  if (config.qrKrav === undefined) config.qrKrav = false;
-  if (config.statistikKuponger === undefined) config.statistikKuponger = 0;
-  if (config.statistikTotalt === undefined) config.statistikTotalt = 0;
-
   config.valv = hämtaGemensammaListor();
   
   if (!pubar[pubId]) {
@@ -83,7 +55,6 @@ function hämtaPubData(pubId) {
   return pubar[pubId];
 }
 
-// Routes för webbläsaren
 app.get('/pub/:pubId/mobile', (req, res) => { hämtaPubData(req.params.pubId); res.sendFile(path.join(__dirname, 'test-mobile.html')); });
 app.get('/pub/:pubId/player', (req, res) => { hämtaPubData(req.params.pubId); res.sendFile(path.join(__dirname, 'test-player.html')); });
 
@@ -115,14 +86,8 @@ io.on('connection', (socket) => {
 
     if (pub.config.qrKrav) {
       const råKod = data.kupongKod ? data.kupongKod.trim().toUpperCase() : "";
-      
-      if (!råKod) {
-        return socket.emit("kupong_error", { msg: "🔒 QR-kod krävs för att önska låtar!" });
-      }
-
-      if (pub.config.användaKoder[råKod]) {
-        return socket.emit("kupong_error", { msg: "Denna biljettkod är redan förbrukad!" });
-      }
+      if (!råKod) return socket.emit("kupong_error", { msg: "🔒 QR-kod krävs!" });
+      if (pub.config.användaKoder[råKod]) return socket.emit("kupong_error", { msg: "Koden är förbrukad!" });
 
       pub.config.användaKoder[råKod] = 1; 
       pub.config.statistikKuponger += 1;
@@ -147,7 +112,7 @@ io.on('connection', (socket) => {
       if (radioIdx !== -1) pub.queue.splice(radioIdx, 0, nyLåt);
       else pub.queue.push(nyLåt);
 
-      socket.emit("kupong_success", { msg: "Låten har lagts till i kön!", resterande: 0 });
+      socket.emit("kupong_success", { msg: "Låten tillagd!", resterande: 0 });
       hanteraSpelning(pubId, pubar, hämtaPubData, io);
     }
   });
@@ -161,11 +126,56 @@ io.on('connection', (socket) => {
 
   socket.on("player:skip", () => { if(!socket.pubId || !pubar[socket.pubId]) return; pubar[socket.pubId].nowPlaying = null; hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); });
   socket.on("player:remove_song", (data) => { if(!socket.pubId || !pubar[socket.pubId]) return; pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => l.id !== data.id); hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); });
-  socket.on("player:byt_valv", (data) => { if(!socket.pubId || !pubar[socket.pubId]) return; pubar[socket.pubId].config.aktivtValv = data.valvNamn; pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => !l.isRadio); hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); });
+  socket.on("player:byt_valv", (data) => { if(!socket.pubId || !pubar[socket.pubId]) return; pubar[socket.pubId].config.aktivtValv = data.valvNamn; pubar[socket.pubId].queue = pubar[socket.pubId].queue.filter(l => !l.isRadio); fs.writeFileSync(path.join(DATA_DIR, `${socket.pubId}.json`), JSON.stringify(pubar[socket.pubId].config, null, 2)); hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); });
   socket.on("player:ready_for_next", () => { if(!socket.pubId || !pubar[socket.pubId]) return; pubar[socket.pubId].nowPlaying = null; hanteraSpelning(socket.pubId, pubar, hämtaPubData, io); });
+
+  // ==========================================
+  // HÄR ÄR DE SAKNADE FUNKTIONERNA SOM GÖR ATT FIL-KNAPPARNA FUNGERAR:
+  // ==========================================
+  socket.on("admin:add_to_valv", (data) => {
+    try {
+      const filStig = path.join(LISTOR_DIR, `${data.valvNamn}.json`);
+      let listInnehåll = [];
+      if (fs.existsSync(filStig)) {
+        listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+      }
+      if (!listInnehåll.includes(data.lat)) {
+        listInnehåll.push(data.lat);
+        fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
+      }
+      hanteraSpelning(socket.pubId, pubar, hämtaPubData, io);
+      io.to(socket.pubId).emit("admin:valv_data", { valvNamn: data.valvNamn, songs: listInnehåll });
+    } catch (e) { console.error("Fel vid tillägg i fil:", e); }
+  });
+
+  socket.on("admin:remove_from_valv", (data) => {
+    try {
+      const filStig = path.join(LISTOR_DIR, `${data.valvNamn}.json`);
+      if (fs.existsSync(filStig)) {
+        let listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+        if (typeof data.index === 'number' && data.index >= 0 && data.index < listInnehåll.length) {
+          listInnehåll.splice(data.index, 1);
+          fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
+        }
+        io.to(socket.pubId).emit("admin:valv_data", { valvNamn: data.valvNamn, songs: listInnehåll });
+      }
+      hanteraSpelning(socket.pubId, pubar, hämtaPubData, io);
+    } catch (e) { console.error("Fel vid borttagning från fil:", e); }
+  });
+
+  socket.on("admin:request_valv_data", (data) => {
+    try {
+      const filStig = path.join(LISTOR_DIR, `${data.valvNamn}.json`);
+      let listInnehåll = [];
+      if (fs.existsSync(filStig)) {
+        listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
+      }
+      socket.emit("admin:valv_data", { valvNamn: data.valvNamn, songs: listInnehåll });
+    } catch (e) {
+      console.error("Fel vid hämtning av valvdata:", e);
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-  console.log(`Jukebox-server igång på port ${PORT}`);
-});
+http.listen(PORT, () => { console.log(`Jukebox-server igång på port ${PORT}`); });

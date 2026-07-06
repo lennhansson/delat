@@ -55,7 +55,8 @@ async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
     låtarPerBiljett: pub.config.låtarPerBiljett,
     valvLista: Object.keys(pub.config.valv || {}),
     valvData: pub.config.valv || {}, // Skicka med rådatan så adminfliken kan rendera listorna!
-    nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
+    valv: pub.config.valv || {},
+    nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title, videoId: pub.nowPlaying.videoId } : null,
     fullQueue: pub.queue
   });
 
@@ -79,7 +80,8 @@ async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
             låtarPerBiljett: pub.config.låtarPerBiljett,
             valvLista: Object.keys(pub.config.valv || {}),
             valvData: pub.config.valv || {},
-            nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title } : null,
+            valv: pub.config.valv || {},
+            nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title, videoId: pub.nowPlaying.videoId } : null,
             fullQueue: pub.queue
           });
         } else {
