@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
     <meta charset="utf-8">
-    <title>Jukebox - Admin & Spelare</title>
+    <title>Jukebox - Admin & Spelare2</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { font-family: sans-serif; background: #121212; color: white; margin: 0; padding: 20px; display: flex; gap: 20px; }
@@ -10,10 +10,11 @@
         .kontroll-panel { flex: 1; background: #1c1c1e; padding: 20px; border-radius: 12px; height: fit-content; }
         h1, h2, h3, h4 { margin-top: 0; }
         .row { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #2c2c2e; margin-bottom: 8px; border-radius: 6px; }
-        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; text-decoration: none; text-align: center; }
         .btn-danger { background: #dc3545; }
         .btn-success { background: #1db954; color: black; }
         .btn-primary { background: #007aff; }
+        .btn-secondary { background: #3a3a3c; color: white; }
         select { padding: 8px; background: #2c2c2e; color: white; border: 1px solid #444; border-radius: 4px; width: 100%; margin-bottom: 15px; }
         input[type="text"] { width: 100%; padding: 8px; background: #2c2c2e; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; margin-bottom: 10px; }
         .radio-group { background: #2c2c2e; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
@@ -37,7 +38,7 @@
         <hr style="border: 1px solid #333; margin: 30px 0;">
 
         <h2>Filredigering (.json)</h2>
-        <p style="font-size: 13px; color: #aaa;">Här uppdaterar du innehållet i dina sparade textfiler direkt på disken.</p>
+        <p style="font-size: 13px; color: #aaa;">Här uppdaterar du innehållet i dina sparade textfiler direkt på disken.2</p>
         
         <label style="font-size: 13px; color: #aaa;">Välj vilken fil du vill öppna och redigera:</label>
         <select id="fil-väljare" onchange="laddaFilInnehåll(this.value)"></select>
@@ -51,6 +52,12 @@
     </div>
 
     <div class="kontroll-panel">
+        <!-- HÄR ÄR DEN SÄKRA FIXEN FÖR TV-LÄNKARNA -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+            <button onclick="oppnaTvSida()" class="btn btn-primary">📺 Visa TV-Skärm</button>
+            <a href="?admin=true" class="btn btn-secondary">⚙️ Helskärms-Admin & Listor</a>
+        </div>
+
         <h3>Jukebox-Inställningar</h3>
         
         <div class="radio-group">
@@ -68,7 +75,7 @@
         <label style="font-size: 13px; color: #aaa; display: block; margin-bottom: 5px;">Aktivt bakgrundsvalv:</label>
         <div id="valv-radio-lista" class="radio-group"></div>
 
-        <!-- Statistikboxen integrerad -->
+        <!-- Statistikboxen -->
         <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #333; font-size: 13px; color: #888;">
             <h4 style="margin: 0 0 10px 0; font-size: 12px; letter-spacing: 0.5px; color: #555;">SESSION-STATISTIK</h4>
             <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
@@ -90,6 +97,12 @@
         let sparadState = null;
 
         socket.emit("join_pub", pubId);
+
+        // Öppnar den rena TV-sidan utan admin-gränssnittet i en ny flik
+        function oppnaTvSida() {
+            const basUrl = window.location.origin;
+            window.open(`${basUrl}/pub/${pubId}/player`, '_blank');
+        }
 
         function skipLåt() { socket.emit("player:skip"); }
         function taBortLåt(id) { socket.emit("player:remove_song", { id }); }
@@ -132,15 +145,12 @@
             document.getElementById("pub-namn").innerText = data.pubNamn;
             document.getElementById("nu-spelas").innerText = data.nowPlaying ? "🎵 " + data.nowPlaying.title : "Ingen låt i kön...";
             
-            // Uppdatera QR-radioknappar
             document.getElementById("qr-på").checked = data.qrKrav;
             document.getElementById("qr-av").checked = !data.qrKrav;
 
-            // Uppdatera live-statistik
             document.getElementById("stat-totalt").innerText = data.statistikTotalt || 0;
             document.getElementById("stat-kuponger").innerText = data.statistikKuponger || 0;
 
-            // Bygg kön
             document.getElementById("player-queue-lista").innerHTML = data.fullQueue.length === 0 
                 ? "<span style='opacity:0.4;'>Kön är helt tom...</span>" 
                 : data.fullQueue.map((l, i) => `
@@ -150,7 +160,6 @@
                     </div>
                 `).join("");
 
-            // Bygg listan över tillgängliga valv (radio-knapparna)
             if(data.valv) {
                 const aktivaValvet = data.aktivtValv;
                 document.getElementById("valv-radio-lista").innerHTML = Object.keys(data.valv).map(v => `
@@ -160,7 +169,6 @@
                     </div>
                 `).join("");
 
-                // Uppdatera filväljar-drop-down om den är tom
                 const väljare = document.getElementById("fil-väljare");
                 if(väljare.children.length === 0) {
                     väljare.innerHTML = Object.keys(data.valv).map(v => `<option value="${v}">${v}</option>`).join("");
