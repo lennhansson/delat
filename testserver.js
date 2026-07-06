@@ -9,12 +9,12 @@ const fs = require('fs');
 
 const { hanteraSpelning } = require('./jukebox-player-logic');
 
-const DATA_DIR = fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data');
-const LISTOR_DIR = path.join(__dirname, 'låtlista');
+const DATA_DIR = process.env.DATA_DIR || process.env.RENDER_DATA_DIR || (fs.existsSync('/data') ? '/data' : path.join(__dirname, 'data'));
+const LISTOR_DIR = path.join(DATA_DIR, 'låtlista');
 const pubar = {};
 
 function hämtaGemensammaListor() {
-  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR);
+  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR, { recursive: true });
   const valv = {};
   const filer = fs.readdirSync(LISTOR_DIR);
   filer.forEach(fil => {
