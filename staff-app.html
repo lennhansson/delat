@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jukebox - Staff App</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; height: 100vh; background: #121212; color: #eee; font-family: Arial, Helvetica, sans-serif; overflow: hidden; }
+        .header { height: 50px; background: #181818; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; padding: 0 20px; font-size: 18px; font-weight: 600; }
+        .container { display: flex; height: calc(100vh - 50px); }
+        .library { width: 340px; background: #101010; border-right: 1px solid #292929; padding: 15px; display: flex; flex-direction: column; }
+        .library h2 { font-size: 13px; margin: 0 0 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+        .sticky-active-zone { border-bottom: 1px solid #252525; padding-bottom: 8px; margin-bottom: 10px; flex-shrink: 0; }
+        .playlist-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .playlist { display: flex; align-items: center; padding: 8px; margin-bottom: 6px; border-radius: 6px; cursor: pointer; background: #161616; border: 1px solid #222; }
+        .playlist.active { background: #1ed760; color: #000; font-weight: bold; border-color: #1ed760; }
+        .playlist.temp-active { background: #007aff; color: #fff; font-weight: bold; border-color: #007aff; }
+        .cover { width: 32px; height: 32px; border-radius: 4px; background: linear-gradient(135deg,#444,#222); display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; color: #fff; margin-right: 10px; flex-shrink: 0; }
+        .playlist.active .cover { background: #000; color: #1ed760; }
+        .playlist-name { flex: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .macro-btn { background: rgba(255,255,255,0.15); border: none; color: inherit; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 6px; flex-shrink: 0; transition: background 0.2s; }
+        .macro-btn:hover { background: rgba(255,255,255,0.3); }
+        .playlist.active .macro-btn { background: rgba(0,0,0,0.2); color: #000; }
+        .workspace { flex: 1; padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .nav { display: flex; gap: 20px; border-bottom: 1px solid #292929; padding-bottom: 10px; margin-bottom: 20px; }
+        .nav a { color: #999; text-decoration: none; cursor: pointer; font-weight: 500; font-size: 15px; padding-bottom: 11px; margin-bottom: -12px; border-bottom: 2px solid transparent; }
+        .nav a:hover, .nav a.active { color: white; }
+        .nav a.active { border-bottom-color: #1db954; }
+        .title { font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+        .input-row { display: flex; gap: 8px; margin-bottom: 15px; max-width: 500px; }
+        .input-row input { flex: 1; padding: 10px; background: #191919; border: 1px solid #333; color: white; border-radius: 4px; font-size: 14px; }
+        .input-row button { padding: 10px 16px; background: #fff; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .song-list-container { max-width: 600px; background: #151515; border: 1px solid #222; border-radius: 6px; max-height: 50vh; overflow-y: auto; }
+        .player-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr); gap: 16px; align-items: start; }
+        .player-main { min-width: 0; }
+        .queue-panel { min-width: 0; }
+        .queue-panel .song-list-container { max-width: none; max-height: calc(100vh - 320px); }
+        .song-row { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #222; font-size: 14px; align-items: center; }
+        .btn-delete { background: none; border: none; color: #cd1a2b; cursor: pointer; font-weight: bold; font-size: 16px; padding: 5px; }
+        .placeholder-box { background: #151515; border: 1px dashed #444; padding: 30px; text-align: center; color: #888; border-radius: 6px; }
+        .btn-action { padding: 8px 16px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="header" id="app-header">Jukebox Staff</div>
+
+<div class="container">
+    <aside class="library">
+        <h2>Aktiva</h2>
+        <div class="sticky-active-zone" id="active-sticky-target"></div>
+        <h2>Låtlistor</h2>
+        <div class="playlist-scroll-area" id="playlist-library-target"></div>
+    </aside>
+
+    <section class="workspace">
+        <nav class="nav">
+            <a id="tab-edit" class="active" onclick="switchTab('edit')">Edit</a>
+            <a id="tab-player" onclick="switchTab('player')">Player</a>
+            <a id="tab-mobile" onclick="switchTab('mobile')">Mobile</a>
+            <a id="tab-settings" onclick="switchTab('settings')">Settings</a>
+            <a id="tab-moments" onclick="switchTab('moments')">Moment</a>
+        </nav>
+
+        <div id="view-edit" class="tab-view">
+            <div class="title" id="edit-view-title">Edit - Ingen aktiv lista</div>
+            <div id="edit-view-content" style="display: none;">
+                <div class="input-row">
+                    <input type="text" id="txt-ny-lat" placeholder="Artist - Låttitel...">
+                    <button onclick="laggTillLatIFil()">Lägg till</button>
+                </div>
+                <div class="song-list-container" id="edit-song-list-target"></div>
+            </div>
+        </div>
+
+        <div id="view-player" class="tab-view" style="display: none;">
+            <div class="title">Spelare-status</div>
+
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-action" style="background: #1ed760; color: #000;" onclick="triggaSpelareReady()">▶ STARTA SPELAREN</button>
+                <input id="queue-song-input" type="text" placeholder="Artist - Låttitel" style="padding: 8px 10px; min-width: 220px; border-radius: 4px; border: 1px solid #333; background: #191919; color: white;">
+                <button class="btn-action" style="background: #007aff;" onclick="laggTillKoLåt()">LÄGG TILL I KÖN</button>
+            </div>
+
+            <div class="player-grid">
+                <div class="player-main" style="background: #191919; padding: 15px; border-radius: 6px; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                        <div>
+                            <span style="font-size: 12px; color: #888; display: block;">SPELAS JUST NU:</span>
+                            <strong id="lbl-now-playing" style="font-size: 18px; color: #1db954;">Tyst...</strong>
+                        </div>
+                        <button class="btn-action" style="background: #cd1a2b;" onclick="skipLat()">SKIP</button>
+                    </div>
+                    <div id="staff-player-container" style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 6px; overflow: hidden;">
+                        <div id="staff-yt-player"></div>
+                    </div>
+                </div>
+
+                <div class="queue-panel">
+                    <div class="title" style="font-size: 16px; margin-bottom: 10px;">Kommande låtar (Gästkön)</div>
+                    <div class="song-list-container" id="player-queue-target"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-mobile" class="tab-view" style="display: none;"><div class="title">Gästaktivitet</div><div class="placeholder-box">Önskningar från gästernas mobiler.</div></div>
+        <div id="view-settings" class="tab-view" style="display: none;"><div class="title">Inställningar</div><div class="placeholder-box">System- och QR-inställningar.</div></div>
+        <div id="view-moments" class="tab-view" style="display: none;"><div class="title">Moment</div><div class="placeholder-box">Snabbknappar för rums-events.</div></div>
+    </section>
+</div>
+
+<script>
+    const socket = io();
+    
+    const urlDelar = window.location.pathname.split('/');
+    const pubIdx = urlDelar.indexOf('pub');
+    const pubId = (pubIdx !== -1 && urlDelar[pubIdx + 1]) ? urlDelar[pubIdx + 1] : "default_pub";
+
+    let nuvarandeState = null;
+    let staffYtPlayer = null;
+    let aktivStaffVideoId = null;
+
+    const fastOrdning = [
+        "happy birthday to you", "Ac Dc", "celiks lista", "Saras lista", "La Muzika",
+        "Favoriter", "Before I Leave", "Highway Man", "Rolling Stones", "AcDc only",
+        "Bob Marley & The Wailers", "Santana"
+    ];
+
+    socket.emit("join_pub", pubId);
+    document.getElementById("app-header").innerText = `Jukebox Staff - ${pubId.toUpperCase()}`;
+
+    socket.on("staff_state", (state) => {
+        nuvarandeState = state;
+
+        document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+
+        renderaBibliotek(state);
+        uppdateraEditVy();
+        uppdateraPlayerVy();
+        uppdateraStaffPlayer(state);
+    });
+
+    window.onYouTubeIframeAPIReady = function () {
+        if (!document.getElementById("staff-yt-player")) return;
+        staffYtPlayer = new YT.Player("staff-yt-player", {
+            width: "100%",
+            height: "100%",
+            playerVars: { autoplay: 1, controls: 1, rel: 0, modestbranding: 1 },
+            events: {
+                onStateChange: (event) => {
+                    if (event.data === YT.PlayerState.ENDED) {
+                        triggaSpelareReady();
+                    }
+                },
+                onError: () => {
+                    triggaSpelareReady();
+                }
+            }
+        });
+    };
+
+    function genInitialer(namn) {
+        const rentNamn = namn.replace(/_/g, ' ');
+        const delar = rentNamn.split(' ').filter(n => n.length > 0);
+        if (delar.length === 0) return "";
+        if (delar.length === 1) return delar[0].substring(0, 2).toUpperCase();
+        return (delar[0][0] + delar[1][0]).toUpperCase();
+    }
+
+    function byggPlaylistHtml(namn, typ) {
+        const isMain = (typ === 'main');
+        const isTemp = (typ === 'temp');
+        const isInactive = (typ === 'inactive');
+        let klassNamn = "playlist";
+        let extraElement = "";
+
+        if (isMain) { klassNamn = "playlist active"; }
+        else if (isTemp) { klassNamn = "playlist temp-active"; extraElement = `<button class="macro-btn" onclick="taBortTemp(event)">-</button>`; }
+        else if (isInactive) { extraElement = `<button class="macro-btn" onclick="klickaHuvudPlus(event, '${namn}')">+</button>`; }
+
+        return `
+            <div class="${klassNamn}" onclick="klickaLista('${namn}')">
+                <div class="cover">${genInitialer(namn)}</div>
+                <div class="playlist-name">${namn.replace(/_/g, ' ')}</div>
+                ${extraElement}
+            </div>
+        `;
+    }
+
+    function rensaNamnForMatch(str) { return str.toLowerCase().replace(/_/g, ' ').replace(/\s+/g, '').trim(); }
+
+    function renderaBibliotek(state) {
+        const stickyTarget = document.getElementById("active-sticky-target");
+        const scrollTarget = document.getElementById("playlist-library-target");
+        const allaListorFrånServer = Object.keys(state.valv);
+        let stickyHtml = "", scrollHtml = "";
+
+        if (state.aktivHuvudlista && state.valv[state.aktivHuvudlista]) { stickyHtml += byggPlaylistHtml(state.aktivHuvudlista, 'main'); }
+        if (state.aktivTillfalligLista && state.valv[state.aktivTillfalligLista]) { stickyHtml += byggPlaylistHtml(state.aktivTillfalligLista, 'temp'); }
+
+        const renderade = new Set();
+        fastOrdning.forEach(fastNamn => {
+            const renFast = rensaNamnForMatch(fastNamn);
+            const hittad = allaListorFrånServer.find(n => rensaNamnForMatch(n) === renFast);
+            if (hittad) {
+                renderade.add(hittad);
+                if (hittad !== state.aktivHuvudlista && hittad !== state.aktivTillfalligLista) { scrollHtml += byggPlaylistHtml(hittad, 'inactive'); }
+            }
+        });
+
+        allaListorFrånServer.filter(namn => !renderade.has(namn)).sort((a, b) => a.localeCompare(b, 'sv')).forEach(namn => {
+            if (namn !== state.aktivHuvudlista && namn !== state.aktivTillfalligLista) { scrollHtml += byggPlaylistHtml(namn, 'inactive'); }
+        });
+
+        stickyTarget.innerHTML = stickyHtml || "<div style='color:#444; padding:5px; font-size:13px;'>Ingen aktiv profil.</div>";
+        scrollTarget.innerHTML = scrollHtml || "<div style='color:#666; padding:5px; font-size:13px;'>Tomt bibliotek.</div>";
+    }
+
+    function uppdateraEditVy() {
+        const aktivLista = nuvarandeState ? nuvarandeState.aktivHuvudlista : "";
+        const titleTarget = document.getElementById("edit-view-title");
+        const contentTarget = document.getElementById("edit-view-content");
+        
+        if (!aktivLista) { titleTarget.innerText = "Edit - Ingen aktiv lista"; contentTarget.style.display = "none"; return; }
+
+        titleTarget.innerText = `Redigerar aktiv lista: ${aktivLista.replace(/_/g, ' ')}.json`;
+        contentTarget.style.display = "block";
+
+        const latar = nuvarandeState.valv[aktivLista] || [];
+        const listTarget = document.getElementById("edit-song-list-target");
+        
+        if (latar.length === 0) { listTarget.innerHTML = "<div style='padding:15px; color:#666;'>Inga låtar i listan än.</div>"; return; }
+
+        listTarget.innerHTML = latar.map(lat => `
+            <div class="song-row">
+                <span>${lat}</span>
+                <button class="btn-delete" onclick="raderaLatFrånFil('${aktivLista}', '${lat}')">✕</button>
+            </div>
+        `).join("");
+    }
+
+    function uppdateraPlayerVy() {
+        const queueTarget = document.getElementById("player-queue-target");
+        const queueItems = Array.isArray(nuvarandeState?.queue)
+            ? nuvarandeState.queue
+            : (Array.isArray(nuvarandeState?.fullQueue) ? nuvarandeState.fullQueue : []);
+
+        if (!queueItems.length) {
+            queueTarget.innerHTML = "<div style='padding:15px; color:#666;'>Kön är helt tom...</div>";
+            return;
+        }
+
+        queueTarget.innerHTML = queueItems.map((låt, index) => `
+            <div class="song-row">
+                <span>
+                    <strong>${index + 1}.</strong> ${låt.title}
+                    <small style="opacity:0.5; margin-left:6px;">(${låt.addedBy || (låt.isListSong ? 'Listlåt' : 'Gäst')})</small>
+                </span>
+                ${låt.isListSong ? '' : `<button class="btn-delete" onclick="taBortLatFranKo('${låt.id}')">✕</button>`}
+            </div>
+        `).join("");
+    }
+
+    function uppdateraStaffPlayer(state) {
+        if (!state || !state.nowPlaying) {
+            if (staffYtPlayer && typeof staffYtPlayer.stopVideo === 'function') {
+                staffYtPlayer.stopVideo();
+            }
+            aktivStaffVideoId = null;
+            return;
+        }
+
+        const videoId = state.nowPlaying.videoId;
+        if (videoId && staffYtPlayer && typeof staffYtPlayer.loadVideoById === 'function' && aktivStaffVideoId !== videoId) {
+            aktivStaffVideoId = videoId;
+            staffYtPlayer.loadVideoById(videoId);
+        }
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
+        document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
+        document.getElementById(`tab-${tabId}`).classList.add("active");
+        document.getElementById(`view-${tabId}`).style.display = "block";
+    }
+
+    function klickaLista(namn) {
+        socket.emit("player:byt_valv", { valvNamn: namn, pubId: pubId });
+    }
+
+    function klickaHuvudPlus(e, namn) {
+        e.stopPropagation();
+        socket.emit("ADD_TEMP_PLAYLIST", { playlist: namn, pubId: pubId });
+    }
+
+    function taBortTemp(e) {
+        e.stopPropagation();
+        socket.emit("REMOVE_TEMP_PLAYLIST", { pubId: pubId });
+    }
+
+    function laggTillLatIFil() {
+        const inp = document.getElementById("txt-ny-lat");
+        const lat = inp.value.trim();
+        const aktivLista = nuvarandeState ? nuvarandeState.aktivHuvudlista : "";
+        if (!lat || !aktivLista) return;
+        socket.emit("admin:add_to_valv", { valvNamn: aktivLista, lat: lat, pubId: pubId });
+        inp.value = "";
+    }
+
+    function raderaLatFrånFil(valvNamn, latNamn) {
+        socket.emit("admin:remove_from_valv", { valvNamn: valvNamn, latNamn: latNamn, pubId: pubId });
+    }
+
+    function triggaSpelareReady() {
+        socket.emit("player:ready_for_next");
+    }
+
+    function laggTillKoLåt() {
+        const input = document.getElementById("queue-song-input");
+        const title = input.value.trim();
+        if (!title) return;
+        socket.emit("addSong", { pubId: pubId, title: title });
+        input.value = "";
+    }
+
+    function skipLat() {
+        socket.emit("player:skip");
+    }
+
+    function taBortLatFranKo(id) {
+        socket.emit("player:remove_song", { id: id });
+    }
+</script>
+</body>
+</html>

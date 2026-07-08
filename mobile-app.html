@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jukebox - Mobil</title>
+  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+  <style>
+    body { margin:0; font-family:Arial,sans-serif; background:#121212; color:#fff; padding:16px; }
+    .card { background:#1e1e1e; border:1px solid #333; border-radius:12px; padding:16px; margin-bottom:12px; }
+    input, button { width:100%; padding:10px; border-radius:8px; border:none; margin-top:8px; }
+    button { background:#1db954; color:#000; font-weight:bold; cursor:pointer; }
+    .result { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #2a2a2a; }
+    .status { color:#8ddf9a; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Önska en låt</h2>
+    <input id="song-input" placeholder="Sök låt eller artist" />
+    <button onclick="searchSong()">Sök</button>
+    <div id="search-results"></div>
+  </div>
+
+  <div class="card">
+    <h3>Status</h3>
+    <div id="status" class="status">Ansluter...</div>
+  </div>
+
+  <script>
+    const socket = io(`http://${window.location.hostname}:${window.location.port}`);
+    const urlParts = window.location.pathname.split('/');
+    const pubIdx = urlParts.indexOf('pub');
+    const pubId = pubIdx !== -1 ? urlParts[pubIdx + 1] : 'default_pub';
+
+    socket.on('connect', () => {
+      socket.emit('join_pub', pubId);
+      document.getElementById('status').innerText = 'Ansluten till jukeboxen';
+    });
+
+    socket.on('kupong_success', (data) => {
+      document.getElementById('status').innerText = data.msg || 'Låten tillagd!';
+    });
+
+    socket.on('kupong_error', (data) => {
+      document.getElementById('status').innerText = data.msg || 'Något gick fel';
+    });
+
+    socket.on('searchResults', ({ results }) => {
+      const container = document.getElementById('search-results');
+      if (!results || !results.length) {
+        container.innerHTML = '<div>Inga resultat hittades.</div>';
+        return;
+      }
+      container.innerHTML = results.map((item) => `
+        <div class="result">
+          <div>${item.title}</div>
+          <button style="width:auto; padding:6px 10px; margin-top:0;" onclick="requestSong('${item.videoId}', '${item.title.replace(/'/g, "\\'")}')">Önska</button>
+        </div>
+      `).join('');
+    });
+
+    function searchSong() {
+      const query = document.getElementById('song-input').value.trim();
+      if (!query) return;
+      socket.emit('search', { query, pubId });
+    }
+
+    function requestSong(videoId, title) {
+      socket.emit('addSong', { pubId, videoId, title });
+    }
+  </script>
+</body>
+</html>

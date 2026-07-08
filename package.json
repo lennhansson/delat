@@ -1,14 +1,19 @@
 {
-  "name": "7-an-jukebox",
-  "version": "2.0.0",
-  "description": "7-an Jukebox i molnet",
-  "main": "testserver.js",
+  "name": "spotifystaff",
+  "version": "1.0.0",
+  "description": "",
+  "main": "staff-server.js",
   "scripts": {
-    "start": "node testserver.js"
+    "start": "node staff-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5",
-    "youtube-search-api": "^1.1.1"
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "youtube-search-api": "^1.0.0"
   }
 }

@@ -1,100 +1,88 @@
-// jukebox-player-logic.js
 const fs = require('fs');
 const path = require('path');
-const youTubeSearchApi = require('youtube-search-api');
 
-// Hjälpfunktion för att hämta en radiolåt från poolen
-async function hämtaEnRadiolåt(pub) {
-  const pool = pub.config.valv[pub.config.aktivtValv] || [];
-  if (pool.length === 0) return null;
-  const slumpadText = pool[Math.floor(Math.random() * pool.length)];
-  try {
-    const searchResult = await youTubeSearchApi.GetListByKeyword(slumpadText, false, 1);
-    if (searchResult && searchResult.items && searchResult.items.length > 0) {
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        videoId: searchResult.items[0].id,
-        title: searchResult.items[0].title,
-        addedBy: "Radio",
-        isRadio: true
-      };
-    }
-  } catch (err) {
-    console.error("Fel vid hämtning av radiolåt:", err);
-  }
-  return null;
+function ensureDataDirs(DATA_DIR, LISTOR_DIR) {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(LISTOR_DIR)) fs.mkdirSync(LISTOR_DIR, { recursive: true });
 }
 
-// Den centrala motorn som styr kön och vad som ska spelas härnäst
-async function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
-  const pub = hämtaPubData(pubId);
-  if (!pub) return;
-
-  // 1. Om ingenting spelas just nu, ta nästa låt från kön
-  if (!pub.nowPlaying) {
-    // Leta efter den första låten som skickats in av en GÄST (inte radio)
-    let nastaLatIndex = pub.queue.findIndex(l => !l.isRadio);
-    
-    // Om det inte finns några gästlåtar, ta den första radiolåten istället
-    if (nastaLatIndex === -1 && pub.queue.length > 0) {
-      nastaLatIndex = 0;
+function getPlaylistFiles(LISTOR_DIR) {
+  const valv = {};
+  if (!fs.existsSync(LISTOR_DIR)) return valv;
+  const filer = fs.readdirSync(LISTOR_DIR);
+  filer.forEach((fil) => {
+    if (fil.endsWith('.json')) {
+      const listNamn = fil.replace('.json', '');
+      try {
+        valv[listNamn] = JSON.parse(fs.readFileSync(path.join(LISTOR_DIR, fil), 'utf8'));
+      } catch (e) {
+        valv[listNamn] = [];
+      }
     }
-
-    // Om vi hittade en låt att spela
-    if (nastaLatIndex !== -1) {
-      pub.nowPlaying = pub.queue.splice(nastaLatIndex, 1)[0];
-      io.to(pubId).emit("player:change_track", { videoId: pub.nowPlaying.videoId });
-    }
-  }
-
-  // 2. Skicka ut det uppdaterade läget till alla spelare och mobiler
-  io.to(pubId).emit("state", {
-    pubNamn: pub.config.namn,
-    aktivtValv: pub.config.aktivtValv || "Standard Rock",
-    qrKrav: pub.config.qrKrav,
-    låtarPerBiljett: pub.config.låtarPerBiljett,
-    valvLista: Object.keys(pub.config.valv || {}),
-    valvData: pub.config.valv || {}, // Skicka med rådatan så adminfliken kan rendera listorna!
-    valv: pub.config.valv || {},
-    nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title, videoId: pub.nowPlaying.videoId } : null,
-    fullQueue: pub.queue
   });
+  return valv;
+}
 
-  // 3. Se till att det ALLTID ligger minst 2 radiolåtar i slutet av kön
-  let antalRadioIKon = pub.queue.filter(l => l.isRadio).length;
-  if (antalRadioIKon < 2) {
-    // Kör påfyllning i bakgrunden utan att blockera
-    (async () => {
-      let ladesTillNågonLåt = false;
-      while (pubar[pubId] && pub.queue.filter(l => l.isRadio).length < 2) {
-        const nyRadioLat = await hämtaEnRadiolåt(pub);
-        if (nyRadioLat) {
-          pub.queue.push(nyRadioLat);
-          ladesTillNågonLåt = true;
-          
-          // Skicka ut uppdaterad kö till gränssnittet
-          io.to(pubId).emit("state", {
-            pubNamn: pub.config.namn,
-            aktivtValv: pub.config.aktivtValv || "Standard Rock",
-            qrKrav: pub.config.qrKrav,
-            låtarPerBiljett: pub.config.låtarPerBiljett,
-            valvLista: Object.keys(pub.config.valv || {}),
-            valvData: pub.config.valv || {},
-            valv: pub.config.valv || {},
-            nowPlaying: pub.nowPlaying ? { title: pub.nowPlaying.title, videoId: pub.nowPlaying.videoId } : null,
-            fullQueue: pub.queue
-          });
-        } else {
-          break;
-        }
-      }
-      
-      // CRITICAL FIX: Om vi precis fyllde på en tom kö och ingenting spelas, kicka igång motorn!
-      if (ladesTillNågonLåt && !pub.nowPlaying) {
-        hanteraSpelning(pubId, pubar, hämtaPubData, io);
-      }
-    })();
+function buildPubState(pubId, pubar, hämtaPubData, io) {
+  const pub = hämtaPubData(pubId);
+  const config = pub.config;
+  const valv = getPlaylistFiles(path.join(path.dirname(__filename), 'låtlista'));
+  config.valv = valv;
+
+  if (!config.aktivtValv || !config.valv[config.aktivtValv]) {
+    const availableValv = Object.keys(config.valv);
+    config.aktivtValv = availableValv.length > 0 ? availableValv[0] : 'radio';
   }
+
+  const nowPlaying = pub.nowPlaying;
+  const queue = pub.queue || [];
+  const payload = {
+    pubNamn: config.namn || pubId,
+    qrKrav: !!config.qrKrav,
+    statistikKuponger: config.statistikKuponger || 0,
+    statistikTotalt: config.statistikTotalt || 0,
+    aktivHuvudlista: config.aktivtValv || '',
+    aktivTillfalligLista: '',
+    aktivtValv: config.aktivtValv || '',
+    nowPlaying,
+    fullQueue: queue,
+    valv: config.valv || {}
+  };
+
+  io.to(pubId).emit('staff_state', payload);
+  io.to(pubId).emit('state', payload);
+  return payload;
+}
+
+function hanteraSpelning(pubId, pubar, hämtaPubData, io) {
+  const pub = hämtaPubData(pubId);
+  if (!pub) return null;
+
+  const queue = pub.queue || [];
+  const nowPlaying = pub.nowPlaying;
+
+  if (!nowPlaying && queue.length > 0) {
+    const nextSong = queue.shift();
+    pub.nowPlaying = nextSong;
+    pub.queue = queue;
+    buildPubState(pubId, pubar, hämtaPubData, io);
+    return pub.nowPlaying;
+  }
+
+  if (!nowPlaying && pub.config && pub.config.aktivtValv) {
+    const valv = getPlaylistFiles(path.join(path.dirname(__filename), 'låtlista'));
+    const playlist = valv[pub.config.aktivtValv] || [];
+    if (playlist.length > 0) {
+      const randomIndex = Math.floor(Math.random() * playlist.length);
+      const selected = playlist[randomIndex];
+      pub.nowPlaying = { id: 'radio_' + Date.now(), title: selected, videoId: selected.videoId || selected, addedBy: 'Bakgrundsvalv', isRadio: true };
+      buildPubState(pubId, pubar, hämtaPubData, io);
+      return pub.nowPlaying;
+    }
+  }
+
+  buildPubState(pubId, pubar, hämtaPubData, io);
+  return pub.nowPlaying;
 }
 
 module.exports = { hanteraSpelning };
