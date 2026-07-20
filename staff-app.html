@@ -42,6 +42,17 @@
         .btn-delete { background: none; border: none; color: #cd1a2b; cursor: pointer; font-weight: bold; font-size: 16px; padding: 5px; }
         .placeholder-box { background: #151515; border: 1px dashed #444; padding: 30px; text-align: center; color: #888; border-radius: 6px; }
         .btn-action { padding: 8px 16px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; color: white; }
+
+        /* Settings Card & Toggle Switch Styles */
+        .settings-card { background: #191919; border: 1px solid #333; border-radius: 8px; padding: 20px; margin-bottom: 20px; max-width: 600px; }
+        .settings-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .settings-row:last-child { margin-bottom: 0; }
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #1db954; }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
@@ -60,7 +71,6 @@
         <nav class="nav">
             <a id="tab-edit" class="active" onclick="switchTab('edit')">Edit</a>
             <a id="tab-player" onclick="switchTab('player')">Player</a>
-            <a id="tab-mobile" onclick="switchTab('mobile')">Mobile</a>
             <a id="tab-settings" onclick="switchTab('settings')">Settings</a>
             <a id="tab-moments" onclick="switchTab('moments')">Moment</a>
         </nav>
@@ -106,18 +116,40 @@
             </div>
         </div>
 
-        <div id="view-mobile" class="tab-view" style="display: none;"><div class="title">Gästaktivitet</div><div class="placeholder-box">Önskningar från gästernas mobiler.</div></div>
-        <div id="view-settings" class="tab-view" style="display: none;"><div class="title">Inställningar</div><div class="placeholder-box">System- och QR-inställningar.</div></div>
-        <div id="view-moments" class="tab-view" style="display: none;"><div class="title">Moment</div><div class="placeholder-box">Snabbknappar för rums-events.</div></div>
+        <div id="view-settings" class="tab-view" style="display: none;">
+            <div class="title">Systeminställningar</div>
+            <div class="settings-card">
+                <div class="settings-row">
+                    <div>
+                        <strong style="display: block;">Kupongtvång (QR-kod)</strong>
+                        <small style="color: #888;">Gäster måste skanna en biljett för att kunna önska låtar.</small>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="chk-qr-krav" onchange="toggleQrKrav(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3 style="margin-top: 0; font-size: 16px;">Statistik (PoC)</h3>
+                <div class="settings-row">
+                    <span>Önskade låtar via kupong:</span>
+                    <strong id="stat-kuponger" style="color: #1ed760;">0</strong>
+                </div>
+                <div class="settings-row">
+                    <span>Totalt antal önskningar:</span>
+                    <strong id="stat-totalt" style="color: #fff;">0</strong>
+                </div>
+            </div>
+        </div>
     </section>
 </div>
 
 <script>
     const socket = io();
-    
     const urlDelar = window.location.pathname.split('/');
-    const pubIdx = urlDelar.indexOf('pub');
-    const pubId = (pubIdx !== -1 && urlDelar[pubIdx + 1]) ? urlDelar[pubIdx + 1] : "default_pub";
+    const pubId = urlDelar[urlDelar.indexOf('pub') + 1] || "default_pub";
 
     let nuvarandeState = null;
     let staffYtPlayer = null;
@@ -130,35 +162,22 @@
     ];
 
     socket.emit("join_pub", pubId);
-    document.getElementById("app-header").innerText = `Jukebox Staff - ${pubId.toUpperCase()}`;
 
     socket.on("staff_state", (state) => {
         nuvarandeState = state;
-
         document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
-
         renderaBibliotek(state);
         uppdateraEditVy();
         uppdateraPlayerVy();
         uppdateraStaffPlayer(state);
+        uppdateraSettingsVy(state);
     });
 
     window.onYouTubeIframeAPIReady = function () {
-        if (!document.getElementById("staff-yt-player")) return;
         staffYtPlayer = new YT.Player("staff-yt-player", {
-            width: "100%",
-            height: "100%",
-            playerVars: { autoplay: 1, controls: 1, rel: 0, modestbranding: 1 },
-            events: {
-                onStateChange: (event) => {
-                    if (event.data === YT.PlayerState.ENDED) {
-                        triggaSpelareReady();
-                    }
-                },
-                onError: () => {
-                    triggaSpelareReady();
-                }
-            }
+            width: "100%", height: "100%",
+            playerVars: { autoplay: 1, controls: 1 },
+            events: { onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) triggaSpelareReady(); } }
         });
     };
 
@@ -221,117 +240,67 @@
 
     function uppdateraEditVy() {
         const aktivLista = nuvarandeState ? nuvarandeState.aktivHuvudlista : "";
-        const titleTarget = document.getElementById("edit-view-title");
-        const contentTarget = document.getElementById("edit-view-content");
-        
-        if (!aktivLista) { titleTarget.innerText = "Edit - Ingen aktiv lista"; contentTarget.style.display = "none"; return; }
-
-        titleTarget.innerText = `Redigerar aktiv lista: ${aktivLista.replace(/_/g, ' ')}.json`;
-        contentTarget.style.display = "block";
-
+        if (!aktivLista) { document.getElementById("edit-view-content").style.display = "none"; return; }
+        document.getElementById("edit-view-title").innerText = `Edit: ${aktivLista.replace(/_/g, ' ')}.json`;
+        document.getElementById("edit-view-content").style.display = "block";
         const latar = nuvarandeState.valv[aktivLista] || [];
-        const listTarget = document.getElementById("edit-song-list-target");
-        
-        if (latar.length === 0) { listTarget.innerHTML = "<div style='padding:15px; color:#666;'>Inga låtar i listan än.</div>"; return; }
-
-        listTarget.innerHTML = latar.map(lat => `
-            <div class="song-row">
-                <span>${lat}</span>
-                <button class="btn-delete" onclick="raderaLatFrånFil('${aktivLista}', '${lat}')">✕</button>
-            </div>
+        document.getElementById("edit-song-list-target").innerHTML = latar.map(lat => `
+            <div class="song-row"><span>${lat}</span><button class="btn-delete" onclick="raderaLatFrånFil('${aktivLista}', '${lat}')">✕</button></div>
         `).join("");
     }
 
     function uppdateraPlayerVy() {
         const queueTarget = document.getElementById("player-queue-target");
-        const queueItems = Array.isArray(nuvarandeState?.queue)
-            ? nuvarandeState.queue
-            : (Array.isArray(nuvarandeState?.fullQueue) ? nuvarandeState.fullQueue : []);
+        const queueItems = nuvarandeState.fullQueue || nuvarandeState.queue || [];
 
-        if (!queueItems.length) {
-            queueTarget.innerHTML = "<div style='padding:15px; color:#666;'>Kön är helt tom...</div>";
-            return;
-        }
-
+        if (!queueItems.length) { queueTarget.innerHTML = "<div style='padding:15px; color:#666;'>Kön är tom.</div>"; return; }
         queueTarget.innerHTML = queueItems.map((låt, index) => `
             <div class="song-row">
-                <span>
-                    <strong>${index + 1}.</strong> ${låt.title}
-                    <small style="opacity:0.5; margin-left:6px;">(${låt.addedBy || (låt.isListSong ? 'Listlåt' : 'Gäst')})</small>
-                </span>
+                <span><strong>${index + 1}.</strong> ${låt.title} <small>(${låt.addedBy})</small></span>
                 ${låt.isListSong ? '' : `<button class="btn-delete" onclick="taBortLatFranKo('${låt.id}')">✕</button>`}
             </div>
         `).join("");
     }
 
+    function uppdateraSettingsVy(state) {
+        const chkQr = document.getElementById("chk-qr-krav");
+        if (chkQr) chkQr.checked = !!state.qrKrav;
+        document.getElementById("stat-kuponger").innerText = state.statistikKuponger || 0;
+        document.getElementById("stat-totalt").innerText = state.statistikTotalt || 0;
+    }
+
+    function toggleQrKrav(val) {
+        socket.emit("player:toggle_qr", { qrKrav: val });
+    }
+
     function uppdateraStaffPlayer(state) {
-        if (!state || !state.nowPlaying) {
-            if (staffYtPlayer && typeof staffYtPlayer.stopVideo === 'function') {
-                staffYtPlayer.stopVideo();
-            }
-            aktivStaffVideoId = null;
-            return;
-        }
-
-        const videoId = state.nowPlaying.videoId;
-        if (videoId && staffYtPlayer && typeof staffYtPlayer.loadVideoById === 'function' && aktivStaffVideoId !== videoId) {
-            aktivStaffVideoId = videoId;
-            staffYtPlayer.loadVideoById(videoId);
+        if (state.nowPlaying && staffYtPlayer && staffYtPlayer.loadVideoById && aktivStaffVideoId !== state.nowPlaying.videoId) {
+            aktivStaffVideoId = state.nowPlaying.videoId;
+            staffYtPlayer.loadVideoById(state.nowPlaying.videoId);
         }
     }
 
-    function switchTab(tabId) {
+    function switchTab(t) {
         document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
+        document.getElementById("tab-" + t).classList.add("active");
         document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
-        document.getElementById(`tab-${tabId}`).classList.add("active");
-        document.getElementById(`view-${tabId}`).style.display = "block";
+        document.getElementById("view-" + t).style.display = "block";
     }
 
-    function klickaLista(namn) {
-        socket.emit("player:byt_valv", { valvNamn: namn, pubId: pubId });
-    }
-
-    function klickaHuvudPlus(e, namn) {
-        e.stopPropagation();
-        socket.emit("ADD_TEMP_PLAYLIST", { playlist: namn, pubId: pubId });
-    }
-
-    function taBortTemp(e) {
-        e.stopPropagation();
-        socket.emit("REMOVE_TEMP_PLAYLIST", { pubId: pubId });
-    }
-
+    function klickaLista(namn) { socket.emit("player:byt_valv", { valvNamn: namn }); }
+    function klickaHuvudPlus(e, namn) { e.stopPropagation(); socket.emit("ADD_TEMP_PLAYLIST", { playlist: namn }); }
+    function taBortTemp(e) { e.stopPropagation(); socket.emit("REMOVE_TEMP_PLAYLIST"); }
     function laggTillLatIFil() {
-        const inp = document.getElementById("txt-ny-lat");
-        const lat = inp.value.trim();
-        const aktivLista = nuvarandeState ? nuvarandeState.aktivHuvudlista : "";
-        if (!lat || !aktivLista) return;
-        socket.emit("admin:add_to_valv", { valvNamn: aktivLista, lat: lat, pubId: pubId });
-        inp.value = "";
+        const lat = document.getElementById("txt-ny-lat").value.trim();
+        if (lat) { socket.emit("admin:add_to_valv", { valvNamn: nuvarandeState.aktivHuvudlista, lat: lat }); document.getElementById("txt-ny-lat").value = ""; }
     }
-
-    function raderaLatFrånFil(valvNamn, latNamn) {
-        socket.emit("admin:remove_from_valv", { valvNamn: valvNamn, latNamn: latNamn, pubId: pubId });
-    }
-
-    function triggaSpelareReady() {
-        socket.emit("player:ready_for_next");
-    }
-
+    function raderaLatFrånFil(valv, lat) { socket.emit("admin:remove_from_valv", { valvNamn: valv, latNamn: lat }); }
+    function skipLat() { socket.emit("player:skip"); }
+    function taBortLatFranKo(id) { socket.emit("player:remove_song", { id }); }
+    function triggaSpelareReady() { socket.emit("player:ready_for_next"); }
     function laggTillKoLåt() {
-        const input = document.getElementById("queue-song-input");
-        const title = input.value.trim();
-        if (!title) return;
-        socket.emit("addSong", { pubId: pubId, title: title });
-        input.value = "";
-    }
-
-    function skipLat() {
-        socket.emit("player:skip");
-    }
-
-    function taBortLatFranKo(id) {
-        socket.emit("player:remove_song", { id: id });
+        const title = document.getElementById("queue-song-input").value.trim();
+        if (title) { socket.emit("addSong", { title }); document.getElementById("queue-song-input").value = ""; }
     }
 </script>
 </body>

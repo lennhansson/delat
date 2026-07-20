@@ -71,7 +71,7 @@ function getUpcomingListSongs(pub, limit = 2) {
         items.push({
             id: `list_${Date.now()}_${i}`,
             title: songs[index],
-            addedBy: 'Listlåt',
+            addedBy: 'Bakgrundsvalv',
             isListSong: true
         });
     }
@@ -95,8 +95,9 @@ function buildPayload(pubId) {
         aktivTillfalligLista: pub.config.aktivTillfalligLista || '',
         aktivtValv: pub.config.aktivtValv || '',
         nowPlaying: pub.nowPlaying,
-        fullQueue: displayQueue,
         queue: displayQueue,
+        fullQueue: displayQueue,
+        requestedQueue: requestedQueue,
         valv: pub.config.valv || {}
     };
 }
@@ -115,20 +116,14 @@ function broadcastState(pubId, socket = null) {
 
 async function resolveVideoId(song) {
     if (!song) return 'dQw4w9WgXcQ';
-
     if (typeof song === 'object') {
         if (song.videoId) return song.videoId;
         if (song.title) return resolveVideoId(song.title);
         return 'dQw4w9WgXcQ';
     }
-
     const text = String(song);
-    const match = text.match(/[?&]v=([A-Za-z0-9_-]{11})/);
-    if (match) return match[1];
-
     const cacheKey = text.toLowerCase();
     if (videoIdCache.has(cacheKey)) return videoIdCache.get(cacheKey);
-
     try {
         const result = await youtubeSearchApi.GetListByKeyword(text, false, 1);
         const id = result?.items?.[0]?.id || result?.items?.[0]?.videoId || null;
@@ -136,18 +131,8 @@ async function resolveVideoId(song) {
             videoIdCache.set(cacheKey, id);
             return id;
         }
-    } catch (err) {
-        console.error('YouTube-sökning misslyckades:', err.message);
-    }
-
-    const fallbackMap = {
-        'happy birthday to you': 'dQw4w9WgXcQ',
-        'ac dc': 'M7lc1UVf-VE',
-        'queen': '2Vv-BfVoq4g',
-        'abba': 'xFrGuyw1V8s'
-    };
-
-    return fallbackMap[cacheKey] || 'dQw4w9WgXcQ';
+    } catch (err) { console.error(err); }
+    return 'dQw4w9WgXcQ';
 }
 
 async function korNastaLatLogik(pubId) {
@@ -161,9 +146,9 @@ async function korNastaLatLogik(pubId) {
             id: nastaLat.id,
             title: nastaLat.title || nastaLat,
             videoId,
-            addedBy: nastaLat.addedBy || 'Gäst'
+            addedBy: nastaLat.addedBy || 'Gäst',
+            isListSong: false
         };
-        console.log(`Spelaren laddar nästa gästlåt: ${pub.nowPlaying.title}`);
         broadcastState(pubId);
         return pub.nowPlaying;
     }
@@ -176,14 +161,13 @@ async function korNastaLatLogik(pubId) {
         const valdLat = songs[nextIndex % songs.length];
         pub.playlistCursor = (nextIndex + 1) % songs.length;
         const videoId = await resolveVideoId(valdLat);
-
         pub.nowPlaying = {
             id: 'valv_' + Date.now(),
             title: valdLat,
             videoId,
-            addedBy: 'Bakgrundsvalv'
+            addedBy: 'Bakgrundsvalv',
+            isListSong: true
         };
-        console.log(`Kön tom. Automatik plockar från valv [${pub.config.aktivtValv}]: ${valdLat}`);
         broadcastState(pubId);
         return pub.nowPlaying;
     }
@@ -202,13 +186,8 @@ setInterval(() => {
     });
 }, 5000);
 
-app.get('/pub/:pubId/staff', (req, res) => {
-    res.sendFile(path.join(__dirname, 'staff-app.html'));
-});
-
-app.get('/pub/:pubId/mobile', (req, res) => {
-    res.sendFile(path.join(__dirname, 'test-mobile.html'));
-});
+app.get('/pub/:pubId/staff', (req, res) => { res.sendFile(path.join(__dirname, 'staff-app.html')); });
+app.get('/pub/:pubId/mobile', (req, res) => { res.sendFile(path.join(__dirname, 'test-mobile.html')); });
 
 io.on('connection', (socket) => {
     socket.on('join_pub', (pubId) => {
@@ -227,34 +206,48 @@ io.on('connection', (socket) => {
                 thumbnail: item.thumbnail?.thumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.id}/0.jpg`
             }));
             socket.emit('searchResults', { results });
-        } catch (err) {
-            console.error(err);
-        }
+        } catch (err) { console.error(err); }
     });
 
     socket.on('addSong', async (data) => {
+        if (!data || !data.title) return;
         const pubId = data.pubId || socket.pubId;
         if (!pubId || !pubar[pubId]) return;
-
         const pub = pubar[pubId];
+
+        let resterandeKrediter = 0;
+        let addedBy = 'Gäst';
+
+        if (pub.config.qrKrav) {
+            const kod = (data.kupongKod && typeof data.kupongKod === 'string') ? data.kupongKod.trim() : "";
+            if (!kod) return socket.emit('kupong_error', { msg: 'QR-kod krävs!' });
+
+            const delar = kod.split("-");
+            if (delar.length !== 3) return socket.emit('kupong_error', { msg: 'Ogiltigt kodformat!' });
+
+            let antal = parseInt(delar[1]);
+            if (isNaN(antal) || antal <= 0) return socket.emit('kupong_error', { msg: 'Kupongen är förbrukad!' });
+
+            antal--;
+            resterandeKrediter = antal;
+            addedBy = `Biljett (${delar[0]})`;
+            pub.config.statistikKuponger = (pub.config.statistikKuponger || 0) + 1;
+        }
+
+        pub.config.statistikTotalt = (pub.config.statistikTotalt || 0) + 1;
+
         const nyLåt = {
             id: Math.random().toString(36).substr(2, 9),
             videoId: data.videoId || null,
             title: data.title,
-            addedBy: pub.config.qrKrav ? 'Biljett' : 'Gäst',
+            addedBy: addedBy,
             isRadio: false
         };
 
-        const radioIdx = pub.queue.findIndex((l) => l.isRadio);
-        if (radioIdx !== -1) pub.queue.splice(radioIdx, 0, nyLåt);
-        else pub.queue.push(nyLåt);
-
-        socket.emit('kupong_success', { msg: 'Låten tillagd!', resterande: 0 });
-        if (!pub.nowPlaying) {
-            await korNastaLatLogik(pubId);
-        } else {
-            broadcastState(pubId);
-        }
+        pub.queue.push(nyLåt);
+        socket.emit('kupong_success', { msg: 'Låten tillagd!', resterande: resterandeKrediter });
+        if (!pub.nowPlaying) { await korNastaLatLogik(pubId); }
+        else { broadcastState(pubId); }
     });
 
     socket.on('player:toggle_qr', (data) => {
@@ -283,7 +276,6 @@ io.on('connection', (socket) => {
         if (!pubId || !pubar[pubId]) return;
         pubar[pubId].config.aktivtValv = data.valvNamn;
         pubar[pubId].playlistCursor = 0;
-        pubar[pubId].queue = pubar[pubId].queue.filter((l) => !l.isRadio);
         broadcastState(pubId);
     });
 
@@ -313,9 +305,7 @@ io.on('connection', (socket) => {
             const pubId = socket.pubId || data.pubId;
             const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
             let listInnehåll = [];
-            if (fs.existsSync(filStig)) {
-                listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
-            }
+            if (fs.existsSync(filStig)) { listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8')); }
             if (!listInnehåll.includes(data.lat)) {
                 listInnehåll.push(data.lat);
                 fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
@@ -329,9 +319,7 @@ io.on('connection', (socket) => {
         try {
             const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
             let listInnehåll = [];
-            if (fs.existsSync(filStig)) {
-                listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
-            }
+            if (fs.existsSync(filStig)) { listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8')); }
             socket.emit('admin:valv_data', { valvNamn: data.valvNamn, songs: listInnehåll });
         } catch (e) { console.error(e); }
     });
@@ -342,11 +330,8 @@ io.on('connection', (socket) => {
             const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
             if (fs.existsSync(filStig)) {
                 let listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
-                if (Number.isInteger(data.index)) {
-                    listInnehåll.splice(data.index, 1);
-                } else {
-                    listInnehåll = listInnehåll.filter((t) => t !== data.latNamn);
-                }
+                if (Number.isInteger(data.index)) { listInnehåll.splice(data.index, 1); }
+                else { listInnehåll = listInnehåll.filter((t) => t !== data.latNamn); }
                 fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
             }
             hämtaPubData(pubId);
@@ -356,10 +341,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-http.listen(PORT, () => {
-    console.log('\x1b[32m%s\x1b[0m', '==================================================');
-    console.log('\x1b[36m%s\x1b[0m', '  JUKEBOX SERVER STARTAD');
-    console.log(`  http://localhost:${PORT}/pub/default_pub/staff`);
-    console.log(`  http://localhost:${PORT}/pub/default_pub/mobile`);
-    console.log('\x1b[32m%s\x1b[0m', '==================================================');
-});
+http.listen(PORT, () => { console.log(`JUKEBOX SERVER STARTAD PÅ PORT ${PORT}`); });
