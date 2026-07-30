@@ -37,14 +37,12 @@ window.onYouTubeIframeAPIReady = function () {
                     console.log("[Player] Video slutade.");
                     triggaSpelareReady();
                 }
-                // Om videon börjar spela och vi har klickat på sidan, slå på ljudet
                 if (e.data === YT.PlayerState.PLAYING && hasInteracted) {
                     staffYtPlayer.unMute();
                 }
             },
             onError: (e) => {
                 console.error("[Player] YT Error:", e.data);
-                // Hoppa inte direkt vid fel, vänta 5 sekunder
                 setTimeout(triggaSpelareReady, 5000);
             }
         }
@@ -78,8 +76,9 @@ function startaSpelaren() {
 }
 
 function toggleQrKrav() {
-    const isChecked = document.getElementById("chk-qr-krav").checked;
-    socket.emit("admin:toggle_qr", { qrKrav: isChecked });
+    const chk = document.getElementById("chk-qr-krav");
+    if (!chk) return;
+    socket.emit("admin:toggle_qr", { qrKrav: chk.checked });
 }
 
 function uppdateraStaffPlayer(state) {
@@ -102,7 +101,6 @@ function uppdateraStaffPlayer(state) {
     const nyId = state.nowPlaying.videoId;
     if (nyId && nyId !== aktivStaffVideoId) {
         aktivStaffVideoId = nyId;
-        console.log("[Player] Laddar:", state.nowPlaying.title, nyId);
         staffYtPlayer.loadVideoById(nyId);
         if (hasInteracted) {
             staffYtPlayer.unMute();
@@ -127,7 +125,6 @@ function updateMomentsUI(state) {
     if (state.activeMoment) {
         const card = document.getElementById("m-" + state.activeMoment.type);
         if (card) card.classList.add('active');
-
         if (stopBtn) {
             stopBtn.style.display = (state.activeMoment.type === 'pause' || state.activeMoment.type === 'closing') ? "block" : "none";
         }
@@ -209,7 +206,7 @@ function byggPlaylistHtml(namn, typ) {
     if (isMain) klassNamn = "playlist active";
     else if (isTemp) {
         klassNamn = "playlist temp-active";
-        extraElement = `<button class="macro-btn" onclick="socket.emit('REMOVE_TEMP_PLAYLIST')">-</button>`;
+        extraElement = `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">-</button>`;
     } else {
         extraElement = `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${namn.replace(/'/g, "\\'")}'})">+</button>`;
     }
@@ -288,25 +285,35 @@ function laggTillLatIFil() {
 
 // --- SOCKET LISTENERS ---
 
+// Säkerställ att vi ALLTID går med i rummet vid anslutning/återanslutning
+socket.on('connect', () => {
+    console.log("[Staff] Ansluten, skickar join_pub för:", pubId);
+    socket.emit("join_pub", pubId);
+});
+
 socket.on("staff_state", (state) => {
-    nuvarandeState = state;
-    const lbl = document.getElementById("lbl-now-playing");
-    if (lbl) lbl.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+    try {
+        nuvarandeState = state;
+        const lbl = document.getElementById("lbl-now-playing");
+        if (lbl) lbl.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
 
-    // UPPDATERA SETTINGS-VY
-    const qrChk = document.getElementById("chk-qr-krav");
-    if (qrChk) qrChk.checked = !!state.qrKrav;
+        // Inställningar (endast om elementen finns)
+        const qrChk = document.getElementById("chk-qr-krav");
+        if (qrChk) qrChk.checked = !!state.qrKrav;
 
-    const statKup = document.getElementById("stat-kuponger");
-    const statTot = document.getElementById("stat-totalt");
-    if (statKup) statKup.innerText = state.statistikKuponger || 0;
-    if (statTot) statTot.innerText = state.statistikTotalt || 0;
+        const statKup = document.getElementById("stat-kuponger");
+        const statTot = document.getElementById("stat-totalt");
+        if (statKup) statKup.innerText = state.statistikKuponger || 0;
+        if (statTot) statTot.innerText = state.statistikTotalt || 0;
 
-    renderaBibliotek(state);
-    uppdateraEditVy();
-    uppdateraPlayerVy();
-    uppdateraStaffPlayer(state);
-    updateMomentsUI(state);
+        renderaBibliotek(state);
+        uppdateraEditVy();
+        uppdateraPlayerVy();
+        uppdateraStaffPlayer(state);
+        updateMomentsUI(state);
+    } catch (err) {
+        console.error("Fel vid uppdatering av state:", err);
+    }
 });
 
 socket.on("searchResults", (data) => {
@@ -320,6 +327,3 @@ socket.on("searchResults", (data) => {
         `).join("");
     }
 });
-
-// START
-socket.emit("join_pub", pubId);

@@ -6,11 +6,13 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const youtubeSearchApi = require('youtube-search-api');
 const libraryManager = require('./library-manager');
 
 const pubar = {};
 const videoIdCache = new Map();
+const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
 
 // --- UTILS ---
 function getLocalIp() {
@@ -105,19 +107,23 @@ function getBackgroundSongAt(pub, step) {
     return null;
 }
 
-// --- CORE LOGIC ---
+// --- PERSISTENCE ---
+function sparaPubData(pubId) {
+    const pub = pubar[pubId];
+    if (!pub) return;
+    const filePath = path.join(__dirname, 'data', `${pubId}.json`);
+    const dataToSave = {
+        config: pub.config,
+        consumedTickets: pub.consumedTickets || {}
+    };
+    fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
+}
+
 function hämtaPubData(pubId) {
     if (!pubId) return null;
     if (!pubar[pubId]) {
-        pubar[pubId] = {
-            queue: [],
-            nowPlaying: null,
-            playlistCursor: 0,
-            shuffledMain: [],
-            shuffledTemp: [],
-            activeMoment: null,
-            isTransitioning: false,
-            lastNextTrigger: 0,
+        const filePath = path.join(__dirname, 'data', `${pubId}.json`);
+        let initialData = {
             config: {
                 namn: `${pubId.toUpperCase()} Jukebox`,
                 aktivtValv: '',
@@ -132,7 +138,28 @@ function hämtaPubData(pubId) {
                     "shoutout": { videoId: "dQw4w9WgXcQ", title: "Fanfar", defaultMessage: "Uppmärksamhet i huset! 📢" },
                     "tack": { videoId: "h-mXUnmE_Z4", title: "Tack-musik", defaultMessage: "Slut för idag, tack för ikväll!" }
                 }
-            }
+            },
+            consumedTickets: {}
+        };
+
+        if (fs.existsSync(filePath)) {
+            try {
+                const diskData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                initialData.config = { ...initialData.config, ...diskData.config };
+                initialData.consumedTickets = diskData.consumedTickets || {};
+            } catch (e) { console.error("Fel vid inläsning av pubfil:", e); }
+        }
+
+        pubar[pubId] = {
+            ...initialData,
+            queue: [],
+            nowPlaying: null,
+            playlistCursor: 0,
+            shuffledMain: [],
+            shuffledTemp: [],
+            activeMoment: null,
+            isTransitioning: false,
+            lastNextTrigger: 0
         };
     }
 
@@ -143,6 +170,22 @@ function hämtaPubData(pubId) {
     if (pub.shuffledTemp.length === 0 && pub.config.aktivTillfalligLista) refreshShuffled(pub, 'temp');
 
     return pub;
+}
+
+// --- TICKET VALIDATION ---
+function validateTicket(kod) {
+    if (!kod) return null;
+    const delar = kod.split('-');
+    if (delar.length !== 3) return null;
+    const [id, antal, sig] = delar;
+
+    const expectedSig = crypto.createHmac('sha256', MASTER_SECRET)
+                              .update(`${id}-${antal}`)
+                              .digest('hex')
+                              .substring(0, 6).toUpperCase();
+
+    if (sig !== expectedSig) return null;
+    return { id, total: parseInt(antal) };
 }
 
 function getUpcomingListSongs(pub, limit = 2) {
@@ -243,14 +286,19 @@ async function korNastaLatLogik(pubId) {
     pub.isTransitioning = true;
 
     try {
+        const lib = libraryManager.getLibrary();
         if (pub.queue && pub.queue.length > 0) {
             const nastaLat = pub.queue.shift();
-            console.log(`[Server] Spelar från kö för ${pubId}: ${nastaLat.title}`);
             const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
+
+            // Försök hitta thumbnail i biblioteket
+            const entry = Object.values(lib).find(s => s.videoId === videoId);
+
             pub.nowPlaying = {
                 id: nastaLat.id,
                 title: nastaLat.title,
                 videoId,
+                thumbnail: nastaLat.thumbnail || entry?.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
                 addedBy: nastaLat.addedBy || 'Gäst',
                 isListSong: false
             };
@@ -258,19 +306,20 @@ async function korNastaLatLogik(pubId) {
         } else {
             const bgSong = getBackgroundSongAt(pub, pub.playlistCursor);
             if (bgSong) {
-                console.log(`[Server] Spelar bakgrund för ${pubId}: ${bgSong.title} (Index: ${pub.playlistCursor})`);
                 const videoId = await resolveVideoId(bgSong.title);
+                const entry = Object.values(lib).find(s => s.videoId === videoId);
+
                 pub.nowPlaying = {
                     id: 'valv_' + pub.playlistCursor + '_' + Date.now(),
                     title: bgSong.title,
                     videoId,
+                    thumbnail: entry?.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
                     addedBy: bgSong.addedBy,
                     isListSong: true
                 };
                 pub.playlistCursor++;
                 broadcastState(pubId);
             } else {
-                console.log(`[Server] Inga låtar kvar att spela för ${pubId}.`);
                 if (pub.nowPlaying) {
                     pub.nowPlaying = null;
                     broadcastState(pubId);
@@ -312,12 +361,39 @@ io.on('connection', (socket) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
         if (!pub) return;
+
+        let resterande = undefined;
+
+        // --- Kupongvalidering ---
+        if (pub.config.qrKrav) {
+            const biljett = validateTicket(data.kupongKod);
+            if (!biljett) {
+                return socket.emit("kupong_error", { msg: "Ogiltig biljett. Skanna en ny QR-kod." });
+            }
+
+            const usedCount = pub.consumedTickets[biljett.id] || 0;
+            if (usedCount >= biljett.total) {
+                return socket.emit("kupong_error", { msg: "Biljetten är redan förbrukad." });
+            }
+
+            // Markera som använd
+            pub.consumedTickets[biljett.id] = usedCount + 1;
+            resterande = biljett.total - (usedCount + 1);
+            pub.config.statistikKuponger++;
+            sparaPubData(socket.pubId);
+        }
+
         pub.queue.push({
             id: Math.random().toString(36).substr(2, 9),
             videoId: data.videoId || null,
             title: data.title,
+            thumbnail: data.thumbnail || null,
             addedBy: 'Gäst'
         });
+
+        pub.config.statistikTotalt++;
+        socket.emit("kupong_success", { msg: "Låten tillagd!", resterande: resterande });
+
         if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(socket.pubId);
         else broadcastState(socket.pubId);
     });
@@ -329,6 +405,7 @@ io.on('connection', (socket) => {
         pub.config.aktivtValv = data.valvNamn;
         pub.playlistCursor = 0;
         refreshShuffled(pub, 'main');
+        sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
         if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
@@ -338,6 +415,7 @@ io.on('connection', (socket) => {
         const pub = hämtaPubData(socket.pubId);
         if (!pub) return;
         pub.config.qrKrav = !!data.qrKrav;
+        sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
     });
 
@@ -354,10 +432,10 @@ io.on('connection', (socket) => {
 
     socket.on('REMOVE_TEMP_PLAYLIST', () => {
         if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-        pub.config.aktivTillfalligLista = '';
-        pub.shuffledTemp = [];
+        const pubarData = hämtaPubData(socket.pubId);
+        if (!pubarData) return;
+        pubarData.config.aktivTillfalligLista = '';
+        pubarData.shuffledTemp = [];
         broadcastState(socket.pubId);
     });
 
@@ -398,8 +476,6 @@ io.on('connection', (socket) => {
         const pub = hämtaPubData(socket.pubId);
         if (!pub) return;
 
-        console.log("[Moment] Aktiverar:", data.type);
-
         if (data.type === 'pause') {
             pub.activeMoment = { type: 'pause', message: data.message || "Paus" };
             pub.nowPlaying = null;
@@ -411,6 +487,7 @@ io.on('connection', (socket) => {
                 id: 'm_' + Date.now(),
                 title: cfg.title,
                 videoId: cfg.videoId,
+                thumbnail: `https://img.youtube.com/vi/${cfg.videoId}/0.jpg`,
                 addedBy: 'Staff',
                 isMoment: true
             };

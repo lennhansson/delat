@@ -4,9 +4,22 @@ const pubId = urlDelar[urlDelar.indexOf('pub') + 1] || "default_pub";
 
 let nuvarandeState = null;
 let mittSaldo = 0;
+let html5QrCode = null;
 
-// Gå med i pubens rum för att få realtidsuppdateringar
+// Gå med i pubens rum
 socket.emit("join_pub", pubId);
+
+// KOLLA URL-PARAMETRAR VID START (Om man skannat med vanlig kamera)
+window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const biljettKod = params.get('t');
+    if (biljettKod) {
+        console.log("[Mobile] Hittade biljett i URL:", biljettKod);
+        setKupong(biljettKod);
+        // Rensa URL så man inte råkar ladda om och lägga till igen
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+});
 
 // FLIK-NAVIGERING
 function bytFlik(tab) {
@@ -20,16 +33,14 @@ function bytFlik(tab) {
     if (targetBtn) targetBtn.classList.add('active');
 }
 
-// UPPDATERA STATE (Låtlista, nu spelas, etc)
+// UPPDATERA STATE
 socket.on("state", (data) => {
     if (!data) return;
     nuvarandeState = data;
 
-    // Pub Titel
     const pubTitelEl = document.getElementById("pub-titel");
     if (pubTitelEl) pubTitelEl.innerText = data.pubNamn || "Jukebox";
 
-    // Nu Spelas
     const npImg = document.getElementById("now-playing-img-container");
     const npText = document.getElementById("now-playing-text");
     const npMeta = document.getElementById("now-playing-meta");
@@ -44,7 +55,6 @@ socket.on("state", (data) => {
         if (npMeta) npMeta.innerText = "";
     }
 
-    // Låtlistan (Kön)
     const queueLista = document.getElementById("queue-lista");
     if (queueLista) {
         const queue = data.fullQueue || [];
@@ -63,7 +73,6 @@ socket.on("state", (data) => {
         }
     }
 
-    // Saldo / QR Krav
     const knappSaldo = document.getElementById("knapp-saldo");
     if (knappSaldo) {
         if (data.qrKrav) {
@@ -74,22 +83,17 @@ socket.on("state", (data) => {
         }
     }
 
-    // MOMENT HANDLING (Overlay)
     const overlay = document.getElementById("moment-overlay");
     if (overlay) {
         if (data.activeMoment) {
             const msgEl = document.getElementById("moment-msg");
             if (msgEl) msgEl.innerText = data.activeMoment.message || "";
-
             const titleEl = document.getElementById("moment-title");
             const iconEl = overlay.querySelector(".icon");
-
             if (data.activeMoment.type === 'birthday') { if(titleEl) titleEl.innerText = "FÖDELSEDAG! 🎂"; if(iconEl) iconEl.innerText = "🥳"; }
             else if (data.activeMoment.type === 'lastcall') { if(titleEl) titleEl.innerText = "SISTA BESTÄLLNINGEN"; if(iconEl) iconEl.innerText = "🔔"; }
             else if (data.activeMoment.type === 'closing') { if(titleEl) titleEl.innerText = "TACK FÖR IKVÄLL"; if(iconEl) iconEl.innerText = "🌙"; }
             else if (data.activeMoment.type === 'pause') { if(titleEl) titleEl.innerText = "MEDDELANDE"; if(iconEl) iconEl.innerText = "📢"; }
-            else { if(titleEl) titleEl.innerText = "Viktigt meddelande"; if(iconEl) iconEl.innerText = "📢"; }
-
             overlay.style.display = "flex";
         } else {
             overlay.style.display = "none";
@@ -97,7 +101,6 @@ socket.on("state", (data) => {
     }
 });
 
-// SÖK-FUNKTION
 function sök() {
     const q = document.getElementById("query").value.trim();
     if (!q) return;
@@ -107,7 +110,6 @@ function sök() {
 socket.on("searchResults", (data) => {
     const resDiv = document.getElementById("results");
     if (!resDiv) return;
-
     if (!data.results || data.results.length === 0) {
         resDiv.innerHTML = "<div style='padding:20px; text-align:center; color:#888;'>Inga låtar hittades.</div>";
         return;
@@ -123,7 +125,6 @@ socket.on("searchResults", (data) => {
     `).join("");
 });
 
-// ÖNSKA LÅT
 function önskaLåt(videoId, title, thumbnail) {
     const kupongKod = document.getElementById("kupong-input").value;
     socket.emit("addSong", {
@@ -137,16 +138,13 @@ function önskaLåt(videoId, title, thumbnail) {
 
 socket.on("kupong_success", (data) => {
     showToast(data.msg || "Låten tillagd!");
-    if (data.resterande !== undefined) {
-        mittSaldo = data.resterande;
-        const saldoText = document.getElementById("saldo-info-text");
-        const knappSaldo = document.getElementById("knapp-saldo");
-        if (saldoText) saldoText.innerText = mittSaldo;
-        if (knappSaldo) knappSaldo.innerText = mittSaldo;
-    }
     document.getElementById("query").value = "";
     const resDiv = document.getElementById("results");
     if (resDiv) resDiv.innerHTML = "";
+    // Om vi fick tillbaka ett nytt saldo (t.ex. vid första inlösen eller efter varje låt)
+    if (data.resterande !== undefined) {
+        uppdateraSaldo(data.resterande);
+    }
 });
 
 socket.on("kupong_error", (data) => {
@@ -161,23 +159,45 @@ function showToast(msg) {
     setTimeout(() => { t.style.display = "none"; }, 3000);
 }
 
-// KONTROLLERA OM QR KRÄVS
 function kontrolleraKrav() {
     if (nuvarandeState && nuvarandeState.qrKrav && mittSaldo <= 0) {
         bytFlik('qr');
     }
 }
 
-// QR SKANNING (SIMULERAD)
-function scannaQR() {
-    document.getElementById("qr-camera-input").click();
+// --- LIVE SCANNER LOGIK ---
+function startaScanner() {
+    const scannerLayer = document.getElementById("scanner-layer");
+    scannerLayer.style.display = "flex";
+
+    if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+        console.log("[Scanner] Träff:", decodedText);
+        stoppaScanner();
+
+        // Extrahera kod från URL om det behövs
+        let kod = decodedText;
+        if (decodedText.includes("?t=")) {
+            kod = decodedText.split("?t=")[1].split("&")[0];
+        }
+
+        setKupong(kod);
+    }).catch(err => {
+        console.error("[Scanner] Fel:", err);
+        stoppaScanner();
+        alert("Kunde inte starta kameran.");
+    });
 }
 
-function lasQR(input) {
-    if (input.files && input.files[0]) {
-        // Simulerar avkodning av QR
-        const demoKod = "TEST-5-" + Math.floor(Math.random()*1000);
-        setKupong(demoKod);
+function stoppaScanner() {
+    document.getElementById("scanner-layer").style.display = "none";
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop();
     }
 }
 
@@ -185,17 +205,26 @@ function setKupong(kod) {
     const input = document.getElementById("kupong-input");
     if (input) input.value = kod;
 
+    // Här kan vi antingen lita på klienten (osäkert) eller skicka till servern
+    // Jag rekommenderar att vi bara visar att nåt hänt och låter addSong validera
     const delar = kod.split('-');
-    if (delar.length === 3) {
-        mittSaldo = parseInt(delar[1]);
-        const saldoText = document.getElementById("saldo-info-text");
-        const knappSaldo = document.getElementById("knapp-saldo");
-        if (saldoText) saldoText.innerText = mittSaldo;
-        if (knappSaldo) {
-            knappSaldo.innerText = mittSaldo;
-            knappSaldo.style.display = "flex";
+    if (delar.length >= 2) {
+        const antal = parseInt(delar[1]);
+        if (!isNaN(antal)) {
+            uppdateraSaldo(antal);
+            showToast("Biljett aktiverad!");
+            bytFlik('sok');
         }
-        showToast("Biljett aktiverad!");
-        bytFlik('sok');
+    }
+}
+
+function uppdateraSaldo(nyttSaldo) {
+    mittSaldo = nyttSaldo;
+    const saldoText = document.getElementById("saldo-info-text");
+    const knappSaldo = document.getElementById("knapp-saldo");
+    if (saldoText) saldoText.innerText = mittSaldo;
+    if (knappSaldo) {
+        knappSaldo.innerText = mittSaldo;
+        knappSaldo.style.display = (nuvarandeState && nuvarandeState.qrKrav) ? "flex" : "none";
     }
 }
