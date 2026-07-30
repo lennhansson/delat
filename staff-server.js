@@ -1,32 +1,111 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
+app.use(express.static(__dirname));
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const youtubeSearchApi = require('youtube-search-api');
+const libraryManager = require('./library-manager');
 
-const MAPPE = path.join(__dirname, 'låtlista');
 const pubar = {};
 const videoIdCache = new Map();
 
-function hämtaGemensammaListor() {
-    if (!fs.existsSync(MAPPE)) fs.mkdirSync(MAPPE, { recursive: true });
-    const valv = {};
-    const filer = fs.readdirSync(MAPPE);
-    filer.forEach((fil) => {
-        if (fil.endsWith('.json')) {
-            const listNamn = fil.replace('.json', '');
-            try {
-                valv[listNamn] = JSON.parse(fs.readFileSync(path.join(MAPPE, fil), 'utf8'));
-            } catch (e) {
-                valv[listNamn] = [];
+// --- UTILS ---
+function getLocalIp() {
+    const interfaces = os.networkInterfaces();
+    for (const devName in interfaces) {
+        const iface = interfaces[devName];
+        for (let i = 0; i < iface.length; i++) {
+            const alias = iface[i];
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                return alias.address;
             }
         }
-    });
-    return valv;
+    }
+    return 'localhost';
 }
 
+function shuffleArray(array) {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+}
+
+function hämtaGemensammaListor() {
+    try {
+        const lib = libraryManager.getLibrary();
+        const valv = {};
+        Object.values(lib).forEach(song => {
+            if (song.playlists && Array.isArray(song.playlists)) {
+                const songString = `${song.artist} - ${song.title}`;
+                song.playlists.forEach(playlistName => {
+                    if (!valv[playlistName]) valv[playlistName] = [];
+                    if (!valv[playlistName].includes(songString)) {
+                        valv[playlistName].push(songString);
+                    }
+                });
+            }
+        });
+        return valv;
+    } catch (e) {
+        console.error("Fel i hämtaGemensammaListor:", e);
+        return {};
+    }
+}
+
+function refreshShuffled(pub, type) {
+    if (!pub || !pub.config) return;
+    const valv = hämtaGemensammaListor();
+    if (type === 'main') {
+        const listName = pub.config.aktivtValv;
+        pub.shuffledMain = (listName && valv[listName]) ? shuffleArray(valv[listName]) : [];
+    } else if (type === 'temp') {
+        const listName = pub.config.aktivTillfalligLista;
+        pub.shuffledTemp = (listName && valv[listName]) ? shuffleArray(valv[listName]) : [];
+    }
+}
+
+function getBackgroundSongAt(pub, step) {
+    if (!pub) return null;
+    const hasMain = Array.isArray(pub.shuffledMain) && pub.shuffledMain.length > 0;
+    const hasTemp = Array.isArray(pub.shuffledTemp) && pub.shuffledTemp.length > 0;
+
+    if (hasMain && hasTemp) {
+        if (step % 2 === 0) {
+            return {
+                title: pub.shuffledMain[Math.floor(step / 2) % pub.shuffledMain.length],
+                addedBy: 'Bakgrundsvalv (Huvud)',
+                playlist: pub.config.aktivtValv
+            };
+        } else {
+            return {
+                title: pub.shuffledTemp[Math.floor(step / 2) % pub.shuffledTemp.length],
+                addedBy: 'Bakgrundsvalv (Extra)',
+                playlist: pub.config.aktivTillfalligLista
+            };
+        }
+    } else if (hasMain) {
+        return {
+            title: pub.shuffledMain[step % pub.shuffledMain.length],
+            addedBy: 'Bakgrundsvalv',
+            playlist: pub.config.aktivtValv
+        };
+    } else if (hasTemp) {
+        return {
+            title: pub.shuffledTemp[step % pub.shuffledTemp.length],
+            addedBy: 'Bakgrundsvalv',
+            playlist: pub.config.aktivTillfalligLista
+        };
+    }
+    return null;
+}
+
+// --- CORE LOGIC ---
 function hämtaPubData(pubId) {
     if (!pubId) return null;
     if (!pubar[pubId]) {
@@ -34,46 +113,52 @@ function hämtaPubData(pubId) {
             queue: [],
             nowPlaying: null,
             playlistCursor: 0,
+            shuffledMain: [],
+            shuffledTemp: [],
+            activeMoment: null,
+            isTransitioning: false,
+            lastNextTrigger: 0,
             config: {
                 namn: `${pubId.toUpperCase()} Jukebox`,
                 aktivtValv: '',
+                aktivTillfalligLista: '',
                 qrKrav: false,
                 statistikKuponger: 0,
                 statistikTotalt: 0,
-                användaKoder: {},
-                valv: {}
+                moments: {
+                    "birthday": { videoId: "hS7GAnO146U", title: "Ja må han leva (Standard)", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂" },
+                    "closing": { videoId: "xGytDsqkQY8", title: "Closing Time - Semisonic", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙" },
+                    "lastcall": { videoId: "Ryt_mY8u9p8", title: "Ship Bell Signal", defaultMessage: "Sista beställningen i baren! 🔔" },
+                    "shoutout": { videoId: "dQw4w9WgXcQ", title: "Fanfar", defaultMessage: "Uppmärksamhet i huset! 📢" },
+                    "tack": { videoId: "h-mXUnmE_Z4", title: "Tack-musik", defaultMessage: "Slut för idag, tack för ikväll!" }
+                }
             }
         };
     }
 
     const pub = pubar[pubId];
     pub.config.valv = hämtaGemensammaListor();
-    if (!pub.config.aktivtValv || !pub.config.valv[pub.config.aktivtValv]) {
-        const availableValv = Object.keys(pub.config.valv);
-        pub.config.aktivtValv = availableValv.length > 0 ? availableValv[0] : '';
-    }
+
+    if (pub.shuffledMain.length === 0 && pub.config.aktivtValv) refreshShuffled(pub, 'main');
+    if (pub.shuffledTemp.length === 0 && pub.config.aktivTillfalligLista) refreshShuffled(pub, 'temp');
+
     return pub;
 }
 
-function getPlaylistSongs(pub) {
-    const activeList = pub.config.aktivtValv;
-    const valv = pub.config.valv || {};
-    return Array.isArray(valv[activeList]) ? valv[activeList] : [];
-}
-
 function getUpcomingListSongs(pub, limit = 2) {
-    const songs = getPlaylistSongs(pub);
-    if (!songs.length) return [];
+    if (!pub) return [];
     const items = [];
     const start = pub.playlistCursor || 0;
     for (let i = 0; i < limit; i += 1) {
-        const index = (start + i) % songs.length;
-        items.push({
-            id: `list_${Date.now()}_${i}`,
-            title: songs[index],
-            addedBy: 'Bakgrundsvalv',
-            isListSong: true
-        });
+        const bgSong = getBackgroundSongAt(pub, start + i);
+        if (bgSong) {
+            items.push({
+                id: `list_${pub.config.aktivtValv}_${start + i}`,
+                title: bgSong.title,
+                addedBy: bgSong.addedBy,
+                isListSong: true
+            });
+        }
     }
     return items;
 }
@@ -93,12 +178,12 @@ function buildPayload(pubId) {
         statistikTotalt: pub.config.statistikTotalt || 0,
         aktivHuvudlista: pub.config.aktivtValv || '',
         aktivTillfalligLista: pub.config.aktivTillfalligLista || '',
-        aktivtValv: pub.config.aktivtValv || '',
         nowPlaying: pub.nowPlaying,
         queue: displayQueue,
         fullQueue: displayQueue,
-        requestedQueue: requestedQueue,
-        valv: pub.config.valv || {}
+        valv: pub.config.valv || {},
+        activeMoment: pub.activeMoment,
+        momentsConfig: pub.config.moments
     };
 }
 
@@ -116,81 +201,98 @@ function broadcastState(pubId, socket = null) {
 
 async function resolveVideoId(song) {
     if (!song) return 'dQw4w9WgXcQ';
-    if (typeof song === 'object') {
-        if (song.videoId) return song.videoId;
-        if (song.title) return resolveVideoId(song.title);
-        return 'dQw4w9WgXcQ';
-    }
-    const text = String(song);
+    const text = typeof song === 'object' ? (song.title || 'dQw4w9WgXcQ') : String(song);
     const cacheKey = text.toLowerCase();
+
+    try {
+        const lib = libraryManager.getLibrary();
+        const entry = Object.values(lib).find(s => {
+            const full = (s.artist + " - " + s.title).toLowerCase();
+            return (full === cacheKey) || (s.title.toLowerCase() === cacheKey);
+        });
+        if (entry && entry.videoId) return entry.videoId;
+    } catch (e) { }
+
     if (videoIdCache.has(cacheKey)) return videoIdCache.get(cacheKey);
+
     try {
         const result = await youtubeSearchApi.GetListByKeyword(text, false, 1);
-        const id = result?.items?.[0]?.id || result?.items?.[0]?.videoId || null;
-        if (id) {
+        const firstResult = result?.items?.[0];
+        let id = firstResult?.id || firstResult?.videoId || null;
+        if (typeof id === 'object' && id !== null) id = id.videoId || id.id;
+        if (id && typeof id === 'string') {
             videoIdCache.set(cacheKey, id);
             return id;
         }
-    } catch (err) { console.error(err); }
+    } catch (err) { }
     return 'dQw4w9WgXcQ';
 }
 
 async function korNastaLatLogik(pubId) {
     const pub = hämtaPubData(pubId);
-    if (!pub) return null;
+    if (!pub || pub.isTransitioning) return;
 
-    if (pub.queue && pub.queue.length > 0) {
-        const nastaLat = pub.queue.shift();
-        const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title || nastaLat);
-        pub.nowPlaying = {
-            id: nastaLat.id,
-            title: nastaLat.title || nastaLat,
-            videoId,
-            addedBy: nastaLat.addedBy || 'Gäst',
-            isListSong: false
-        };
-        broadcastState(pubId);
-        return pub.nowPlaying;
+    // Om ett permanent moment är aktivt (Paus/Stängning), byt inte låt!
+    if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) {
+        return;
     }
 
-    if (pub.nowPlaying) return pub.nowPlaying;
+    const nu = Date.now();
+    if (nu - pub.lastNextTrigger < 5000) return; // Stenhård 5s-spärr
+    pub.lastNextTrigger = nu;
 
-    const songs = getPlaylistSongs(pub);
-    if (songs.length > 0) {
-        const nextIndex = pub.playlistCursor || 0;
-        const valdLat = songs[nextIndex % songs.length];
-        pub.playlistCursor = (nextIndex + 1) % songs.length;
-        const videoId = await resolveVideoId(valdLat);
-        pub.nowPlaying = {
-            id: 'valv_' + Date.now(),
-            title: valdLat,
-            videoId,
-            addedBy: 'Bakgrundsvalv',
-            isListSong: true
-        };
-        broadcastState(pubId);
-        return pub.nowPlaying;
+    pub.isTransitioning = true;
+
+    try {
+        if (pub.queue && pub.queue.length > 0) {
+            const nastaLat = pub.queue.shift();
+            console.log(`[Server] Spelar från kö för ${pubId}: ${nastaLat.title}`);
+            const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
+            pub.nowPlaying = {
+                id: nastaLat.id,
+                title: nastaLat.title,
+                videoId,
+                addedBy: nastaLat.addedBy || 'Gäst',
+                isListSong: false
+            };
+            broadcastState(pubId);
+        } else {
+            const bgSong = getBackgroundSongAt(pub, pub.playlistCursor);
+            if (bgSong) {
+                console.log(`[Server] Spelar bakgrund för ${pubId}: ${bgSong.title} (Index: ${pub.playlistCursor})`);
+                const videoId = await resolveVideoId(bgSong.title);
+                pub.nowPlaying = {
+                    id: 'valv_' + pub.playlistCursor + '_' + Date.now(),
+                    title: bgSong.title,
+                    videoId,
+                    addedBy: bgSong.addedBy,
+                    isListSong: true
+                };
+                pub.playlistCursor++;
+                broadcastState(pubId);
+            } else {
+                console.log(`[Server] Inga låtar kvar att spela för ${pubId}.`);
+                if (pub.nowPlaying) {
+                    pub.nowPlaying = null;
+                    broadcastState(pubId);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Fel i korNastaLatLogik:", e);
+    } finally {
+        pub.isTransitioning = false;
     }
-
-    pub.nowPlaying = null;
-    broadcastState(pubId);
-    return null;
 }
 
-setInterval(() => {
-    Object.keys(pubar).forEach((pubId) => {
-        const pub = pubar[pubId];
-        if (!pub.nowPlaying) {
-            korNastaLatLogik(pubId).catch((err) => console.error(err));
-        }
-    });
-}, 5000);
+
 
 app.get('/pub/:pubId/staff', (req, res) => { res.sendFile(path.join(__dirname, 'staff-app.html')); });
 app.get('/pub/:pubId/mobile', (req, res) => { res.sendFile(path.join(__dirname, 'test-mobile.html')); });
 
 io.on('connection', (socket) => {
     socket.on('join_pub', (pubId) => {
+        if (!pubId) return;
         socket.join(pubId);
         socket.pubId = pubId;
         hämtaPubData(pubId);
@@ -199,146 +301,142 @@ io.on('connection', (socket) => {
 
     socket.on('search', async (data) => {
         try {
-            const searchResult = await youtubeSearchApi.GetListByKeyword(data.query, false, 8);
-            const results = (searchResult.items || []).map((item) => ({
-                videoId: item.id,
-                title: item.title,
-                thumbnail: item.thumbnail?.thumbnails?.[0]?.url || `https://img.youtube.com/vi/${item.id}/0.jpg`
+            const res = await youtubeSearchApi.GetListByKeyword(data.query, false, 8);
+            const results = (res.items || []).map(i => ({
+                videoId: (typeof i.id === 'object' ? i.id.videoId : i.id),
+                title: i.title,
+                thumbnail: i.thumbnail?.thumbnails?.[0]?.url || ""
             }));
             socket.emit('searchResults', { results });
-        } catch (err) { console.error(err); }
+        } catch (e) { console.error(e); }
     });
 
     socket.on('addSong', async (data) => {
-        if (!data || !data.title) return;
-        const pubId = data.pubId || socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        const pub = pubar[pubId];
-
-        let resterandeKrediter = 0;
-        let addedBy = 'Gäst';
-
-        if (pub.config.qrKrav) {
-            const kod = (data.kupongKod && typeof data.kupongKod === 'string') ? data.kupongKod.trim() : "";
-            if (!kod) return socket.emit('kupong_error', { msg: 'QR-kod krävs!' });
-
-            const delar = kod.split("-");
-            if (delar.length !== 3) return socket.emit('kupong_error', { msg: 'Ogiltigt kodformat!' });
-
-            let antal = parseInt(delar[1]);
-            if (isNaN(antal) || antal <= 0) return socket.emit('kupong_error', { msg: 'Kupongen är förbrukad!' });
-
-            antal--;
-            resterandeKrediter = antal;
-            addedBy = `Biljett (${delar[0]})`;
-            pub.config.statistikKuponger = (pub.config.statistikKuponger || 0) + 1;
-        }
-
-        pub.config.statistikTotalt = (pub.config.statistikTotalt || 0) + 1;
-
-        const nyLåt = {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.queue.push({
             id: Math.random().toString(36).substr(2, 9),
             videoId: data.videoId || null,
             title: data.title,
-            addedBy: addedBy,
-            isRadio: false
-        };
-
-        pub.queue.push(nyLåt);
-        socket.emit('kupong_success', { msg: 'Låten tillagd!', resterande: resterandeKrediter });
-        if (!pub.nowPlaying) { await korNastaLatLogik(pubId); }
-        else { broadcastState(pubId); }
-    });
-
-    socket.on('player:toggle_qr', (data) => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].config.qrKrav = !!data.qrKrav;
-        broadcastState(pubId);
-    });
-
-    socket.on('player:skip', async () => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].nowPlaying = null;
-        await korNastaLatLogik(pubId);
-    });
-
-    socket.on('player:remove_song', (data) => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].queue = pubar[pubId].queue.filter((l) => l.id !== data.id);
-        broadcastState(pubId);
+            addedBy: 'Gäst'
+        });
+        if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(socket.pubId);
+        else broadcastState(socket.pubId);
     });
 
     socket.on('player:byt_valv', (data) => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].config.aktivtValv = data.valvNamn;
-        pubar[pubId].playlistCursor = 0;
-        broadcastState(pubId);
-    });
-
-    socket.on('player:ready_for_next', async () => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].nowPlaying = null;
-        await korNastaLatLogik(pubId);
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.config.aktivtValv = data.valvNamn;
+        pub.playlistCursor = 0;
+        refreshShuffled(pub, 'main');
+        broadcastState(socket.pubId);
+        if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
 
     socket.on('ADD_TEMP_PLAYLIST', (data) => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].config.aktivTillfalligLista = data.playlist;
-        broadcastState(pubId);
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.config.aktivTillfalligLista = data.playlist;
+        pub.playlistCursor = 0;
+        refreshShuffled(pub, 'temp');
+        broadcastState(socket.pubId);
+        if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
 
     socket.on('REMOVE_TEMP_PLAYLIST', () => {
-        const pubId = socket.pubId;
-        if (!pubId || !pubar[pubId]) return;
-        pubar[pubId].config.aktivTillfalligLista = '';
-        broadcastState(pubId);
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.config.aktivTillfalligLista = '';
+        pub.shuffledTemp = [];
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('player:skip', () => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('player:ready_for_next', () => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        const nu = Date.now();
+        if (nu - pub.lastNextTrigger < 5000) return;
+
+        // Om ett engångs-moment (fanfar/grattis) precis slutade, rensa det
+        if (pub.activeMoment && !['pause', 'closing'].includes(pub.activeMoment.type)) {
+            pub.activeMoment = null;
+        }
+
+        pub.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
     });
 
     socket.on('admin:add_to_valv', (data) => {
-        try {
-            const pubId = socket.pubId || data.pubId;
-            const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
-            let listInnehåll = [];
-            if (fs.existsSync(filStig)) { listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8')); }
-            if (!listInnehåll.includes(data.lat)) {
-                listInnehåll.push(data.lat);
-                fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
-            }
-            hämtaPubData(pubId);
-            broadcastState(pubId);
-        } catch (e) { console.error(e); }
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        libraryManager.addOrUpdateSong({ title: data.lat }, data.valvNamn);
+        refreshShuffled(pub, 'main');
+        broadcastState(socket.pubId);
     });
 
-    socket.on('admin:request_valv_data', (data) => {
-        try {
-            const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
-            let listInnehåll = [];
-            if (fs.existsSync(filStig)) { listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8')); }
-            socket.emit('admin:valv_data', { valvNamn: data.valvNamn, songs: listInnehåll });
-        } catch (e) { console.error(e); }
+    socket.on('moment:activate', (data) => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+
+        console.log("[Moment] Aktiverar:", data.type);
+
+        if (data.type === 'pause') {
+            pub.activeMoment = { type: 'pause', message: data.message || "Paus" };
+            pub.nowPlaying = null; // Stoppa all musik
+        } else {
+            const cfg = pub.config.moments[data.type];
+            if (!cfg) return;
+            pub.activeMoment = { type: data.type, message: data.message || cfg.defaultMessage, videoId: cfg.videoId };
+            pub.nowPlaying = {
+                id: 'm_' + Date.now(),
+                title: cfg.title,
+                videoId: cfg.videoId,
+                addedBy: 'Staff',
+                isMoment: true
+            };
+            pub.lastNextTrigger = Date.now();
+        }
+        broadcastState(socket.pubId);
     });
 
-    socket.on('admin:remove_from_valv', (data) => {
-        try {
-            const pubId = socket.pubId || data.pubId;
-            const filStig = path.join(MAPPE, `${data.valvNamn}.json`);
-            if (fs.existsSync(filStig)) {
-                let listInnehåll = JSON.parse(fs.readFileSync(filStig, 'utf8'));
-                if (Number.isInteger(data.index)) { listInnehåll.splice(data.index, 1); }
-                else { listInnehåll = listInnehåll.filter((t) => t !== data.latNamn); }
-                fs.writeFileSync(filStig, JSON.stringify(listInnehåll, null, 2));
-            }
-            hämtaPubData(pubId);
-            broadcastState(pubId);
-        } catch (e) { console.error(e); }
+    socket.on('moment:stop', () => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.activeMoment = null;
+        pub.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('moment:save_settings', (data) => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (pub && pub.config.moments[data.type]) {
+            pub.config.moments[data.type].videoId = data.videoId || pub.config.moments[data.type].videoId;
+            pub.config.moments[data.type].title = data.title || pub.config.moments[data.type].title;
+            pub.config.moments[data.type].defaultMessage = data.defaultMessage || pub.config.moments[data.type].defaultMessage;
+            broadcastState(socket.pubId);
+        }
     });
 });
 
 const PORT = process.env.PORT || 3001;
-http.listen(PORT, () => { console.log(`JUKEBOX SERVER STARTAD PÅ PORT ${PORT}`); });
+http.listen(PORT, () => {
+    console.log(`Server körs på port ${PORT}. http://${getLocalIp()}:${PORT}/pub/test/staff`);
+});
