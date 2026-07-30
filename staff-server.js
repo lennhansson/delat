@@ -232,13 +232,12 @@ async function korNastaLatLogik(pubId) {
     const pub = hämtaPubData(pubId);
     if (!pub || pub.isTransitioning) return;
 
-    // Om ett permanent moment är aktivt (Paus/Stängning), byt inte låt!
     if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) {
         return;
     }
 
     const nu = Date.now();
-    if (nu - pub.lastNextTrigger < 5000) return; // Stenhård 5s-spärr
+    if (nu - pub.lastNextTrigger < 5000) return;
     pub.lastNextTrigger = nu;
 
     pub.isTransitioning = true;
@@ -284,8 +283,6 @@ async function korNastaLatLogik(pubId) {
         pub.isTransitioning = false;
     }
 }
-
-
 
 app.get('/pub/:pubId/staff', (req, res) => { res.sendFile(path.join(__dirname, 'staff-app.html')); });
 app.get('/pub/:pubId/mobile', (req, res) => { res.sendFile(path.join(__dirname, 'test-mobile.html')); });
@@ -336,6 +333,14 @@ io.on('connection', (socket) => {
         if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
 
+    socket.on('admin:toggle_qr', (data) => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        if (!pub) return;
+        pub.config.qrKrav = !!data.qrKrav;
+        broadcastState(socket.pubId);
+    });
+
     socket.on('ADD_TEMP_PLAYLIST', (data) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
@@ -371,7 +376,6 @@ io.on('connection', (socket) => {
         const nu = Date.now();
         if (nu - pub.lastNextTrigger < 5000) return;
 
-        // Om ett engångs-moment (fanfar/grattis) precis slutade, rensa det
         if (pub.activeMoment && !['pause', 'closing'].includes(pub.activeMoment.type)) {
             pub.activeMoment = null;
         }
@@ -398,7 +402,7 @@ io.on('connection', (socket) => {
 
         if (data.type === 'pause') {
             pub.activeMoment = { type: 'pause', message: data.message || "Paus" };
-            pub.nowPlaying = null; // Stoppa all musik
+            pub.nowPlaying = null;
         } else {
             const cfg = pub.config.moments[data.type];
             if (!cfg) return;

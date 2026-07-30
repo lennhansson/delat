@@ -5,25 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/deviceManager.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/alla_låtar.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/library-manager.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/staff-app.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test-mobile.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test-mobile.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iframe data-testid=embed-iframe sty.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/jukebox-player-logic.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile-app.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/radio.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/gubbrock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/lattlyssnat.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/radio.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-app.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/staff-app.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-server.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -27,7 +27,7 @@
             <a id="tab-moments" onclick="switchTab('moments')">Moment</a>
         </nav>
 
-        <!-- Player View - Nu standard (visas direkt) -->
+        <!-- Player View -->
         <div id="view-player" class="tab-view">
             <div class="title">Spelare-status</div>
             <div style="margin-bottom: 15px; display: flex; gap: 10px;">
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <!-- Edit View - Nu dold vid start -->
+        <!-- Edit View -->
         <div id="view-edit" class="tab-view" style="display: none;">
             <div class="title" id="edit-view-title">Edit - Ingen aktiv lista</div>
             <div id="edit-view-content" style="display: none;">
@@ -62,6 +62,38 @@
             </div>
         </div>
 
+        <!-- Settings View -->
+        <div id="view-settings" class="tab-view" style="display: none;">
+            <div class="title">Inställningar</div>
+            <div class="card" style="background: #191919; padding: 20px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h3 style="margin: 0; color: #fff;">QR-kodskrav</h3>
+                        <p style="margin: 5px 0 0 0; color: #aaa; font-size: 14px;">Kräv att gäster skannar en biljett för att önska låtar.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="chk-qr-krav" onchange="toggleQrKrav()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div style="border-top: 1px solid #333; padding-top: 20px;">
+                    <h3 style="margin: 0 0 10px 0; color: #fff;">Statistik</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="background: #222; padding: 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 12px; color: #aaa; text-transform: uppercase;">Antal Kuponger</div>
+                            <div id="stat-kuponger" style="font-size: 24px; color: #1ed760; font-weight: bold; margin-top: 5px;">0</div>
+                        </div>
+                        <div style="background: #222; padding: 15px; border-radius: 6px; text-align: center;">
+                            <div style="font-size: 12px; color: #aaa; text-transform: uppercase;">Totalt önskade</div>
+                            <div id="stat-totalt" style="font-size: 24px; color: #1ed760; font-weight: bold; margin-top: 5px;">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Moments View -->
         <div id="view-moments" class="tab-view" style="display: none;">
             <div class="title">Moments Dashboard</div>
             <input type="text" id="moment-text-input" class="big-message-input" placeholder="Manuellt meddelande (lämna tom för standardtext)...">

@@ -51,7 +51,6 @@ window.onYouTubeIframeAPIReady = function () {
     });
 };
 
-// Ladda YouTube API dynamiskt för att undvika race conditions
 if (!window.YT) {
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -59,7 +58,6 @@ if (!window.YT) {
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
-// Lyssna på första klicket för att låsa upp ljudet (Viktigt för Chrome & Mobiler!)
 document.addEventListener('click', () => {
     hasInteracted = true;
     if (staffYtPlayer && typeof staffYtPlayer.unMute === 'function') {
@@ -76,14 +74,17 @@ function startaSpelaren() {
         staffYtPlayer.unMute();
         staffYtPlayer.playVideo();
     }
-    // Rapportera redo till servern för att kicka igång kön/bakgrundsmusik
     socket.emit("player:ready_for_next");
+}
+
+function toggleQrKrav() {
+    const isChecked = document.getElementById("chk-qr-krav").checked;
+    socket.emit("admin:toggle_qr", { qrKrav: isChecked });
 }
 
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer || typeof staffYtPlayer.loadVideoById !== 'function') return;
 
-    // Om vi har ett aktivt Moment som INTE är en video (t.ex. Paus-skärm)
     if (state.activeMoment && state.activeMoment.type === 'pause') {
         staffYtPlayer.stopVideo();
         aktivStaffVideoId = null;
@@ -102,11 +103,7 @@ function uppdateraStaffPlayer(state) {
     if (nyId && nyId !== aktivStaffVideoId) {
         aktivStaffVideoId = nyId;
         console.log("[Player] Laddar:", state.nowPlaying.title, nyId);
-
-        // Ladda video. Den startar tyst pga playerVars: mute: 1
         staffYtPlayer.loadVideoById(nyId);
-
-        // Om användaren redan har klickat, unmuta direkt
         if (hasInteracted) {
             staffYtPlayer.unMute();
         }
@@ -114,7 +111,6 @@ function uppdateraStaffPlayer(state) {
 }
 
 function triggaSpelareReady() {
-    console.log("[Player] Rapporterar klar...");
     aktivStaffVideoId = null;
     socket.emit("player:ready_for_next");
 }
@@ -296,6 +292,15 @@ socket.on("staff_state", (state) => {
     nuvarandeState = state;
     const lbl = document.getElementById("lbl-now-playing");
     if (lbl) lbl.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+
+    // UPPDATERA SETTINGS-VY
+    const qrChk = document.getElementById("chk-qr-krav");
+    if (qrChk) qrChk.checked = !!state.qrKrav;
+
+    const statKup = document.getElementById("stat-kuponger");
+    const statTot = document.getElementById("stat-totalt");
+    if (statKup) statKup.innerText = state.statistikKuponger || 0;
+    if (statTot) statTot.innerText = state.statistikTotalt || 0;
 
     renderaBibliotek(state);
     uppdateraEditVy();
