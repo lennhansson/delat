@@ -12,7 +12,8 @@ socket.emit("join_pub", pubId);
 // KOLLA URL-PARAMETRAR VID START (Om man skannat med vanlig kamera)
 window.addEventListener('load', () => {
     const params = new URLSearchParams(window.location.search);
-    const biljettKod = params.get('t');
+    // ÄNDRAT: Vi letar efter 'kod' istället för 't'
+    const biljettKod = params.get('kod');
     if (biljettKod) {
         console.log("[Mobile] Hittade biljett i URL:", biljettKod);
         setKupong(biljettKod);
@@ -141,7 +142,6 @@ socket.on("kupong_success", (data) => {
     document.getElementById("query").value = "";
     const resDiv = document.getElementById("results");
     if (resDiv) resDiv.innerHTML = "";
-    // Om vi fick tillbaka ett nytt saldo (t.ex. vid första inlösen eller efter varje låt)
     if (data.resterande !== undefined) {
         uppdateraSaldo(data.resterande);
     }
@@ -180,10 +180,10 @@ function startaScanner() {
         console.log("[Scanner] Träff:", decodedText);
         stoppaScanner();
 
-        // Extrahera kod från URL om det behövs
+        // ÄNDRAT: Vi letar efter 'kod' istället för 't'
         let kod = decodedText;
-        if (decodedText.includes("?t=")) {
-            kod = decodedText.split("?t=")[1].split("&")[0];
+        if (decodedText.includes("kod=")) {
+            kod = decodedText.split("kod=")[1].split("&")[0];
         }
 
         setKupong(kod);
@@ -202,12 +202,14 @@ function stoppaScanner() {
 }
 
 function setKupong(kod) {
-    const input = document.getElementById("kupong-input");
-    if (input) input.value = kod;
+    // Rensa eventuella URL-rester om de kommit med
+    let renKod = kod;
+    if (kod.includes("kod=")) renKod = kod.split("kod=")[1].split("&")[0];
 
-    // Här kan vi antingen lita på klienten (osäkert) eller skicka till servern
-    // Jag rekommenderar att vi bara visar att nåt hänt och låter addSong validera
-    const delar = kod.split('-');
+    const input = document.getElementById("kupong-input");
+    if (input) input.value = renKod;
+
+    const delar = renKod.split('-');
     if (delar.length >= 2) {
         const antal = parseInt(delar[1]);
         if (!isNaN(antal)) {
