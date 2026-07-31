@@ -7,10 +7,11 @@ console.log("[Staff] Ansluter till pub:", pubId);
 
 let nuvarandeState = null;
 let staffYtPlayer = null;
-let aktivStaffVideoId = null;
+let aktivUniqueId = null; // Vi kollar nu på unikt ID istället för bara videoId
 let editingMomentType = null;
 let selectedVideoId = null;
 let selectedTitle = null;
+let selectedThumbnail = null;
 let hasInteracted = false;
 
 // YouTube API Setup
@@ -25,7 +26,7 @@ window.onYouTubeIframeAPIReady = function () {
             origin: window.location.origin,
             enablejsapi: 1,
             rel: 0,
-            mute: 0 // Starta med ljudet på (kräver interaktion för autoplay)
+            mute: 0
         },
         events: {
             onReady: (e) => {
@@ -84,37 +85,38 @@ function toggleQrKrav() {
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer || typeof staffYtPlayer.loadVideoById !== 'function') return;
 
-    // Hantera Paus-moment
     if (state.activeMoment && state.activeMoment.type === 'pause') {
         staffYtPlayer.stopVideo();
-        aktivStaffVideoId = null;
+        aktivUniqueId = null;
         return;
     }
 
     if (!state.nowPlaying) {
-        if (aktivStaffVideoId !== null) {
+        if (aktivUniqueId !== null) {
             staffYtPlayer.stopVideo();
-            aktivStaffVideoId = null;
+            aktivUniqueId = null;
         }
         return;
     }
 
     const nyId = state.nowPlaying.videoId;
-    // Om vi byter låt (eller återgår från ett Moment), ladda den nya videon
-    if (nyId && nyId !== aktivStaffVideoId) {
-        aktivStaffVideoId = nyId;
+    const uniqueId = state.nowPlaying.id;
+
+    // Vi triggar på unikt ID för att tillåta omstart av samma låt/moment
+    if (uniqueId && uniqueId !== aktivUniqueId) {
+        aktivUniqueId = uniqueId;
         staffYtPlayer.loadVideoById(nyId);
-        console.log("[Player] Laddar:", state.nowPlaying.title);
+        console.log("[Player] Laddar:", state.nowPlaying.title, "(ID:", uniqueId, ")");
     }
 }
 
 function triggaSpelareReady() {
-    aktivStaffVideoId = null;
+    aktivUniqueId = null;
     socket.emit("player:ready_for_next");
 }
 
 function skipLat() {
-    aktivStaffVideoId = null;
+    aktivUniqueId = null;
     socket.emit("player:skip");
 }
 
@@ -160,6 +162,7 @@ function openMomentEdit(e, type) {
     document.getElementById("modal-msg-input").value = config ? (config.defaultMessage || "") : "";
     selectedVideoId = config ? config.videoId : null;
     selectedTitle = config ? config.title : null;
+    selectedThumbnail = config ? config.thumbnail : null;
     document.getElementById("moment-modal").style.display = "flex";
 }
 
@@ -173,9 +176,10 @@ function searchMomentVideo() {
     if (q) socket.emit("search", { query: q });
 }
 
-function pickVideo(id, title) {
+function pickVideo(id, title, thumbnail) {
     selectedVideoId = id;
     selectedTitle = title;
+    selectedThumbnail = thumbnail;
     document.getElementById("modal-results").innerHTML = `<div style="padding:15px; color:#1ed760; font-weight:bold;">VALD: ${title}</div>`;
 }
 
@@ -184,6 +188,7 @@ function saveMomentSettings() {
         type: editingMomentType,
         videoId: selectedVideoId,
         title: selectedTitle,
+        thumbnail: selectedThumbnail,
         defaultMessage: document.getElementById("modal-msg-input").value.trim()
     });
     closeModal();
@@ -318,7 +323,7 @@ socket.on("searchResults", (data) => {
     const modal = document.getElementById("moment-modal");
     if (modal && modal.style.display === "flex") {
         document.getElementById("modal-results").innerHTML = data.results.map(i => `
-            <div class="song-row" style="cursor:pointer; padding:8px; border-bottom:1px solid #333;" onclick="pickVideo('${i.videoId}', '${i.title.replace(/'/g, "")}')">
+            <div class="song-row" style="cursor:pointer; padding:8px; border-bottom:1px solid #333;" onclick="pickVideo('${i.videoId}', '${i.title.replace(/'/g, "")}', '${i.thumbnail}')">
                 <img src="${i.thumbnail}" style="width:40px; vertical-align:middle; margin-right:10px;">
                 <span style="font-size:12px;">${i.title}</span>
             </div>
