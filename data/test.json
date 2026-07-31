@@ -1,15 +1,15 @@
 {
   "config": {
     "namn": "TEST Jukebox",
-    "aktivtValv": "",
-    "aktivTillfalligLista": "",
+    "aktivtValv": "Fredags-AW_och_Cocktail",
+    "aktivTillfalligLista": "Tidig_Middag",
     "qrKrav": false,
     "statistikKuponger": 0,
     "statistikTotalt": 0,
     "moments": {
       "birthday": {
-        "videoId": "hS7GAnO146U",
-        "title": "Ja må han leva (Standard)",
+        "videoId": "n_GFN3a0yj0",
+        "title": "AC/DC - Thunderstruck (Live At River Plate, December 2009)",
         "defaultMessage": "GRATTIS PÅ FÖDELSEDAGEN! 🎂"
       },
       "closing": {

@@ -154,6 +154,7 @@ function hämtaPubData(pubId) {
             ...initialData,
             queue: [],
             nowPlaying: null,
+            interruptedSong: null,
             playlistCursor: 0,
             shuffledMain: [],
             shuffledTemp: [],
@@ -275,6 +276,14 @@ async function korNastaLatLogik(pubId) {
     const pub = hämtaPubData(pubId);
     if (!pub || pub.isTransitioning) return;
 
+    // Återuppta avbruten låt om momentet är över
+    if (!pub.activeMoment && pub.interruptedSong) {
+        pub.nowPlaying = pub.interruptedSong;
+        pub.interruptedSong = null;
+        broadcastState(pubId);
+        return;
+    }
+
     if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) {
         return;
     }
@@ -290,8 +299,6 @@ async function korNastaLatLogik(pubId) {
         if (pub.queue && pub.queue.length > 0) {
             const nastaLat = pub.queue.shift();
             const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
-
-            // Försök hitta thumbnail i biblioteket
             const entry = Object.values(lib).find(s => s.videoId === videoId);
 
             pub.nowPlaying = {
@@ -363,20 +370,11 @@ io.on('connection', (socket) => {
         if (!pub) return;
 
         let resterande = undefined;
-
-        // --- Kupongvalidering ---
         if (pub.config.qrKrav) {
             const biljett = validateTicket(data.kupongKod);
-            if (!biljett) {
-                return socket.emit("kupong_error", { msg: "Ogiltig biljett. Skanna en ny QR-kod." });
-            }
-
+            if (!biljett) return socket.emit("kupong_error", { msg: "Ogiltig biljett." });
             const usedCount = pub.consumedTickets[biljett.id] || 0;
-            if (usedCount >= biljett.total) {
-                return socket.emit("kupong_error", { msg: "Biljetten är redan förbrukad." });
-            }
-
-            // Markera som använd
+            if (usedCount >= biljett.total) return socket.emit("kupong_error", { msg: "Biljetten är redan förbrukad." });
             pub.consumedTickets[biljett.id] = usedCount + 1;
             resterande = biljett.total - (usedCount + 1);
             pub.config.statistikKuponger++;
@@ -390,10 +388,8 @@ io.on('connection', (socket) => {
             thumbnail: data.thumbnail || null,
             addedBy: 'Gäst'
         });
-
         pub.config.statistikTotalt++;
         socket.emit("kupong_success", { msg: "Låten tillagd!", resterande: resterande });
-
         if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(socket.pubId);
         else broadcastState(socket.pubId);
     });
@@ -444,6 +440,7 @@ io.on('connection', (socket) => {
         const pub = hämtaPubData(socket.pubId);
         if (!pub) return;
         pub.nowPlaying = null;
+        pub.interruptedSong = null;
         korNastaLatLogik(socket.pubId);
     });
 
@@ -453,11 +450,9 @@ io.on('connection', (socket) => {
         if (!pub) return;
         const nu = Date.now();
         if (nu - pub.lastNextTrigger < 5000) return;
-
         if (pub.activeMoment && !['pause', 'closing'].includes(pub.activeMoment.type)) {
             pub.activeMoment = null;
         }
-
         pub.nowPlaying = null;
         korNastaLatLogik(socket.pubId);
     });
@@ -475,6 +470,11 @@ io.on('connection', (socket) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
         if (!pub) return;
+
+        // Spara låten som spelas nu om det inte redan är ett moment
+        if (pub.nowPlaying && !pub.nowPlaying.isMoment) {
+            pub.interruptedSong = pub.nowPlaying;
+        }
 
         if (data.type === 'pause') {
             pub.activeMoment = { type: 'pause', message: data.message || "Paus" };

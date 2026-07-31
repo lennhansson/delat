@@ -6,7 +6,6 @@
     <title>Jukebox</title>
     <link rel="stylesheet" href="/test-mobile.css">
     <script src="/socket.io/socket.io.js"></script>
-    <!-- Lagt till html5-qrcode biblioteket -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         #moment-overlay {
@@ -25,35 +24,29 @@
         #moment-overlay .icon { font-size: 60px; margin-bottom: 20px; }
         #moment-overlay h2 { font-size: 28px; margin-bottom: 15px; color: var(--accent); }
         #moment-overlay p { font-size: 18px; line-height: 1.4; }
-
-        /* Styling för QR-scannern */
-        #qr-reader {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            border: none !important;
+        .close-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
         }
+        #qr-reader { width: 100%; max-width: 400px; margin: 0 auto; border: none !important; }
         #qr-reader__scan_region { background: #000; }
         #qr-reader video { border-radius: 8px; }
-        .scanner-container {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 10000;
-            flex-direction: column;
-        }
-        .scanner-header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .scanner-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; }
+        .scanner-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-<div id="moment-overlay">
+<div id="moment-overlay" onclick="döljMomentOverlay()">
+    <button class="close-overlay">✕</button>
     <div class="icon">📢</div>
     <h2 id="moment-title">Viktigt meddelande</h2>
     <p id="moment-msg"></p>
@@ -61,7 +54,6 @@
 
 <div id="toast">Låten tillagd! 🎵</div>
 
-<!-- LIVE SCANNER OVERLAY -->
 <div id="scanner-layer" class="scanner-container">
     <div class="scanner-header">
         <h2 style="margin:0; font-size:18px;">Skanna biljett</h2>

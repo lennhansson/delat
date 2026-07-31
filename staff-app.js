@@ -25,7 +25,7 @@ window.onYouTubeIframeAPIReady = function () {
             origin: window.location.origin,
             enablejsapi: 1,
             rel: 0,
-            mute: 1 // Starta ALLTID tystad för att tillåta Autoplay i alla miljöer
+            mute: 0 // Starta med ljudet på (kräver interaktion för autoplay)
         },
         events: {
             onReady: (e) => {
@@ -36,9 +36,6 @@ window.onYouTubeIframeAPIReady = function () {
                 if (e.data === YT.PlayerState.ENDED) {
                     console.log("[Player] Video slutade.");
                     triggaSpelareReady();
-                }
-                if (e.data === YT.PlayerState.PLAYING && hasInteracted) {
-                    staffYtPlayer.unMute();
                 }
             },
             onError: (e) => {
@@ -56,20 +53,23 @@ if (!window.YT) {
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 }
 
+// Lås upp ljudet vid första klicket på sidan
 document.addEventListener('click', () => {
+    if (hasInteracted) return;
     hasInteracted = true;
     if (staffYtPlayer && typeof staffYtPlayer.unMute === 'function') {
         staffYtPlayer.unMute();
-        staffYtPlayer.playVideo();
-        console.log("[Player] Ljud upplåst via klick.");
+        staffYtPlayer.setVolume(100);
+        console.log("[Player] Ljud upplåst via interaktion.");
     }
 }, { once: true });
 
 function startaSpelaren() {
     console.log("[Staff] Startar spelaren manuellt...");
     hasInteracted = true;
-    if (staffYtPlayer && typeof staffYtPlayer.unMute === 'function') {
-        staffYtPlayer.unMute();
+    if (staffYtPlayer) {
+        if (typeof staffYtPlayer.unMute === 'function') staffYtPlayer.unMute();
+        if (typeof staffYtPlayer.setVolume === 'function') staffYtPlayer.setVolume(100);
         staffYtPlayer.playVideo();
     }
     socket.emit("player:ready_for_next");
@@ -84,6 +84,7 @@ function toggleQrKrav() {
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer || typeof staffYtPlayer.loadVideoById !== 'function') return;
 
+    // Hantera Paus-moment
     if (state.activeMoment && state.activeMoment.type === 'pause') {
         staffYtPlayer.stopVideo();
         aktivStaffVideoId = null;
@@ -99,12 +100,11 @@ function uppdateraStaffPlayer(state) {
     }
 
     const nyId = state.nowPlaying.videoId;
+    // Om vi byter låt (eller återgår från ett Moment), ladda den nya videon
     if (nyId && nyId !== aktivStaffVideoId) {
         aktivStaffVideoId = nyId;
         staffYtPlayer.loadVideoById(nyId);
-        if (hasInteracted) {
-            staffYtPlayer.unMute();
-        }
+        console.log("[Player] Laddar:", state.nowPlaying.title);
     }
 }
 
@@ -285,7 +285,6 @@ function laggTillLatIFil() {
 
 // --- SOCKET LISTENERS ---
 
-// Säkerställ att vi ALLTID går med i rummet vid anslutning/återanslutning
 socket.on('connect', () => {
     console.log("[Staff] Ansluten, skickar join_pub för:", pubId);
     socket.emit("join_pub", pubId);
@@ -297,7 +296,6 @@ socket.on("staff_state", (state) => {
         const lbl = document.getElementById("lbl-now-playing");
         if (lbl) lbl.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
 
-        // Inställningar (endast om elementen finns)
         const qrChk = document.getElementById("chk-qr-krav");
         if (qrChk) qrChk.checked = !!state.qrKrav;
 
