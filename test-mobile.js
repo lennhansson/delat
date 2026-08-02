@@ -5,6 +5,7 @@ const pubId = urlDelar[urlDelar.indexOf('pub') + 1] || "default_pub";
 let nuvarandeState = null;
 let mittSaldo = 0;
 let html5QrCode = null;
+let momentTimestamp = null;
 let momentTimeout = null;
 
 socket.emit("join_pub", pubId);
@@ -35,7 +36,6 @@ function döljMomentOverlay() {
 
 socket.on("state", (data) => {
     if (!data) return;
-    const gammaltMoment = nuvarandeState?.activeMoment?.type;
     nuvarandeState = data;
 
     const pubTitelEl = document.getElementById("pub-titel");
@@ -87,20 +87,32 @@ socket.on("state", (data) => {
     if (overlay) {
         if (data.activeMoment) {
             const msgEl = document.getElementById("moment-msg");
-            if (msgEl) msgEl.innerText = data.activeMoment.message || "";
             const titleEl = document.getElementById("moment-title");
             const iconEl = overlay.querySelector(".icon");
-            if (data.activeMoment.type === 'birthday') { if(titleEl) titleEl.innerText = "FÖDELSEDAG! 🎂"; if(iconEl) iconEl.innerText = "🥳"; }
-            else if (data.activeMoment.type === 'lastcall') { if(titleEl) titleEl.innerText = "SISTA BESTÄLLNINGEN"; if(iconEl) iconEl.innerText = "🔔"; }
-            else if (data.activeMoment.type === 'closing') { if(titleEl) titleEl.innerText = "TACK FÖR IKVÄLL"; if(iconEl) iconEl.innerText = "🌙"; }
-            else if (data.activeMoment.type === 'pause') { if(titleEl) titleEl.innerText = "MEDDELANDE"; if(iconEl) iconEl.innerText = "📢"; }
 
-            if (data.activeMoment.type !== gammaltMoment) {
+            if (msgEl) msgEl.innerText = data.activeMoment.message || "";
+
+            // LOGIK FÖR ATT SÄTTA TITEL OCH IKON
+            let t = "MEDDELANDE", i = "📢";
+            if (data.activeMoment.type === 'birthday') { t = "FÖDELSEDAG! 🎂"; i = "🥳"; }
+            else if (data.activeMoment.type === 'lastcall') { t = "SISTA BESTÄLLNINGEN"; i = "🔔"; }
+            else if (data.activeMoment.type === 'closing') { t = "TACK FÖR IKVÄLL"; i = "🌙"; }
+            else if (data.activeMoment.type === 'pause') { t = "PAUS / TYST"; i = "🤫"; }
+            else {
+                // Fallback för custom moments: använd namnet från servern om det finns
+                const cfg = data.momentsConfig ? data.momentsConfig[data.activeMoment.type] : null;
+                if (cfg && cfg.title) t = cfg.title.toUpperCase();
+            }
+
+            if (titleEl) titleEl.innerText = t;
+            if (iconEl) iconEl.innerText = i;
+
+            // Visa bara om det är en ny aktivering (baserat på tidsstämpel)
+            if (data.activeMoment.time && data.activeMoment.time !== momentTimestamp) {
+                momentTimestamp = data.activeMoment.time;
                 overlay.style.display = "flex";
                 if (momentTimeout) clearTimeout(momentTimeout);
-                momentTimeout = setTimeout(() => {
-                    overlay.style.display = "none";
-                }, 10000);
+                momentTimeout = setTimeout(() => { overlay.style.display = "none"; }, 10000);
             }
         } else {
             overlay.style.display = "none";

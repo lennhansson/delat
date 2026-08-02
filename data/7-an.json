@@ -1,7 +1,65 @@
 {
   "namn": "7-AN Jukebox",
-  "aktivtValv": "",
-  "qrKrav": false,
-  "låtarPerBiljett": 1,
-  "användaKoder": {}
+  "aktivtValv": "Tidig_Middag",
+  "aktivTillfalligLista": "ABBA",
+  "qrKrav": true,
+  "statistikKuponger": 0,
+  "statistikTotalt": 6,
+  "moments": {
+    "pause": {
+      "title": "TYST / PAUS",
+      "category": "drift",
+      "type": "pause",
+      "isLocked": true
+    },
+    "lastcall": {
+      "videoId": "Ryt_mY8u9p8",
+      "title": "Last Call",
+      "songTitle": "Last Call",
+      "thumbnail": "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg",
+      "defaultMessage": "Sista beställningen i baren! 🔔",
+      "category": "drift"
+    },
+    "birthday": {
+      "videoId": "i8o956Fd-os",
+      "title": "Födelsedag",
+      "songTitle": "Best Happy Birthday Song 🎁 Celebrate Your Day 🎉",
+      "thumbnail": "https://i.ytimg.com/vi/i8o956Fd-os/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDJD3USl7Z12CRTljiDukMbYjd5DA",
+      "defaultMessage": "GRATTIS PÅ FÖDELSEDAGEN! 🎂",
+      "category": "firande"
+    },
+    "shoutout": {
+      "videoId": "dQw4w9WgXcQ",
+      "title": "Hälsning",
+      "songTitle": "Attention",
+      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg",
+      "defaultMessage": "Uppmärksamhet i huset! 📢",
+      "category": "firande"
+    },
+    "closing": {
+      "videoId": "xGytDsqkQY8",
+      "title": "Stängning",
+      "songTitle": "Closing Time",
+      "thumbnail": "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg",
+      "defaultMessage": "Tack för ikväll, vi stänger nu! 🌙",
+      "category": "avslut"
+    },
+    "tack": {
+      "videoId": "h-mXUnmE_Z4",
+      "title": "Tack",
+      "songTitle": "Thank You",
+      "thumbnail": "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg",
+      "defaultMessage": "Slut för idag, tack för ikväll!",
+      "category": "avslut"
+    },
+    "avslut_hit_the_road_jack!_1785674456967": {
+      "category": "avslut",
+      "videoId": "uSiHqxgE2d0",
+      "title": "Avslut  Hit the road Jack!",
+      "songTitle": "Ray Charles - Hit The Road Jack (Official Lyrics Video)",
+      "thumbnail": "https://i.ytimg.com/vi/uSiHqxgE2d0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBmXL7bfkYkoFOOjMS37Q0bvNL6mQ",
+      "defaultMessage": "dags att gå, eller stanna och städa."
+    }
+  },
+  "consumedTickets": {}
 }

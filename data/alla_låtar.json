@@ -14847,5 +14847,49 @@
       "F3",
       "F4"
     ]
+  },
+  "1945": {
+    "videoId": "V1Xxh8WUErE",
+    "artist": "Okänd Artist",
+    "title": "eva dahlgen",
+    "thumbnail": "https://img.youtube.com/vi/V1Xxh8WUErE/0.jpg",
+    "playlists": [],
+    "duration": 0,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1946": {
+    "videoId": "Ks2-e-_C6JQ",
+    "artist": "Okänd Artist",
+    "title": "kalle sändare",
+    "thumbnail": "https://img.youtube.com/vi/Ks2-e-_C6JQ/0.jpg",
+    "playlists": [],
+    "duration": 0,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1947": {
+    "videoId": "NvFN99oRRmA",
+    "artist": "Cornelis Vreeswijk",
+    "title": "Mördar-Anders (live 70 talet)",
+    "thumbnail": "https://img.youtube.com/vi/NvFN99oRRmA/0.jpg",
+    "playlists": [
+      "Cornelis_Vreeswijk"
+    ],
+    "duration": 0,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
   }
 }

@@ -112,8 +112,6 @@ function sparaPubData(pubId) {
     const pub = pubar[pubId];
     if (!pub) return;
     const filePath = path.join(__dirname, 'data', `${pubId}.json`);
-
-    // Vi sparar en platt struktur direkt
     const dataToSave = {
         namn: pub.namn,
         aktivtValv: pub.aktivtValv,
@@ -132,7 +130,6 @@ function hämtaPubData(pubId) {
     if (!pubar[pubId]) {
         const filePath = path.join(__dirname, 'data', `${pubId}.json`);
 
-        // Standardvärden i platt struktur
         let initialData = {
             namn: `${pubId.toUpperCase()} Jukebox`,
             aktivtValv: '',
@@ -141,11 +138,12 @@ function hämtaPubData(pubId) {
             statistikKuponger: 0,
             statistikTotalt: 0,
             moments: {
-                "birthday": { videoId: "hS7GAnO146U", title: "Ja må han leva (Standard)", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂" },
-                "closing": { videoId: "xGytDsqkQY8", title: "Closing Time - Semisonic", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙" },
-                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Ship Bell Signal", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔" },
-                "shoutout": { videoId: "dQw4w9WgXcQ", title: "Fanfar", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i huset! 📢" },
-                "tack": { videoId: "h-mXUnmE_Z4", title: "Tack-musik", thumbnail: "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg", defaultMessage: "Slut för idag, tack för ikväll!" }
+                "pause": { title: "TYST / PAUS", category: "drift", type: "pause", isLocked: true },
+                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Last Call", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift" },
+                "birthday": { videoId: "hS7GAnO146U", title: "Födelsedag", songTitle: "Happy Birthday", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂", category: "firande" },
+                "shoutout": { videoId: "dQw4w9WgXcQ", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i huset! 📢", category: "firande" },
+                "closing": { videoId: "xGytDsqkQY8", title: "Stängning", songTitle: "Closing Time", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙", category: "avslut" },
+                "tack": { videoId: "h-mXUnmE_Z4", title: "Tack", songTitle: "Thank You", thumbnail: "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg", defaultMessage: "Slut för idag, tack för ikväll!", category: "avslut" }
             },
             consumedTickets: {}
         };
@@ -153,7 +151,6 @@ function hämtaPubData(pubId) {
         if (fs.existsSync(filePath)) {
             try {
                 const diskData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-                // Hantera både gammalt format med config och det nya platta formatet
                 const source = diskData.config ? diskData.config : diskData;
 
                 Object.keys(initialData).forEach(key => {
@@ -192,48 +189,12 @@ function hämtaPubData(pubId) {
     return pub;
 }
 
-// --- TICKET VALIDATION ---
-function validateTicket(kod) {
-    if (!kod) return null;
-    const delar = kod.split('-');
-    if (delar.length !== 3) return null;
-    const [id, antal, sig] = delar;
-
-    const expectedSig = crypto.createHmac('sha256', MASTER_SECRET)
-                              .update(`${id}-${antal}`)
-                              .digest('hex')
-                              .substring(0, 6).toUpperCase();
-
-    if (sig !== expectedSig) return null;
-    return { id, total: parseInt(antal) };
-}
-
-function getUpcomingListSongs(pub, limit = 2) {
-    if (!pub) return [];
-    const items = [];
-    const start = pub.playlistCursor || 0;
-    for (let i = 0; i < limit; i += 1) {
-        const bgSong = getBackgroundSongAt(pub, start + i);
-        if (bgSong) {
-            items.push({
-                id: `list_${pub.aktivtValv}_${start + i}`,
-                title: bgSong.title,
-                addedBy: bgSong.addedBy,
-                isListSong: true
-            });
-        }
-    }
-    return items;
-}
-
 function buildPayload(pubId) {
     const pub = hämtaPubData(pubId);
     if (!pub) return null;
-
     const requestedQueue = Array.isArray(pub.queue) ? pub.queue : [];
     const listSongs = getUpcomingListSongs(pub, 2);
     const displayQueue = [...requestedQueue, ...listSongs];
-
     return {
         pubNamn: pub.namn || pubId,
         qrKrav: !!pub.qrKrav,
@@ -253,40 +214,49 @@ function buildPayload(pubId) {
 function broadcastState(pubId, socket = null) {
     const payload = buildPayload(pubId);
     if (!payload) return;
-    if (socket) {
-        socket.emit('staff_state', payload);
-        socket.emit('state', payload);
-    } else {
-        io.to(pubId).emit('staff_state', payload);
-        io.to(pubId).emit('state', payload);
+    if (socket) { socket.emit('staff_state', payload); socket.emit('state', payload); }
+    else { io.to(pubId).emit('staff_state', payload); io.to(pubId).emit('state', payload); }
+}
+
+function getUpcomingListSongs(pub, limit = 2) {
+    if (!pub) return [];
+    const items = [];
+    const start = pub.playlistCursor || 0;
+    for (let i = 0; i < limit; i += 1) {
+        const bgSong = getBackgroundSongAt(pub, start + i);
+        if (bgSong) {
+            items.push({ id: `list_${pub.aktivtValv}_${start + i}`, title: bgSong.title, addedBy: bgSong.addedBy, isListSong: true });
+        }
     }
+    return items;
+}
+
+function validateTicket(kod) {
+    if (!kod) return null;
+    const delar = kod.split('-');
+    if (delar.length !== 3) return null;
+    const [id, antal, sig] = delar;
+    const expectedSig = crypto.createHmac('sha256', MASTER_SECRET).update(`${id}-${antal}`).digest('hex').substring(0, 6).toUpperCase();
+    if (sig !== expectedSig) return null;
+    return { id, total: parseInt(antal) };
 }
 
 async function resolveVideoId(song) {
     if (!song) return 'dQw4w9WgXcQ';
     const text = typeof song === 'object' ? (song.title || 'dQw4w9WgXcQ') : String(song);
     const cacheKey = text.toLowerCase();
-
     try {
         const lib = libraryManager.getLibrary();
-        const entry = Object.values(lib).find(s => {
-            const full = (s.artist + " - " + s.title).toLowerCase();
-            return (full === cacheKey) || (s.title.toLowerCase() === cacheKey);
-        });
+        const entry = Object.values(lib).find(s => (s.artist + " - " + s.title).toLowerCase() === cacheKey || s.title.toLowerCase() === cacheKey);
         if (entry && entry.videoId) return entry.videoId;
     } catch (e) { }
-
     if (videoIdCache.has(cacheKey)) return videoIdCache.get(cacheKey);
-
     try {
         const result = await youtubeSearchApi.GetListByKeyword(text, false, 1);
         const firstResult = result?.items?.[0];
         let id = firstResult?.id || firstResult?.videoId || null;
         if (typeof id === 'object' && id !== null) id = id.videoId || id.id;
-        if (id && typeof id === 'string') {
-            videoIdCache.set(cacheKey, id);
-            return id;
-        }
+        if (id && typeof id === 'string') { videoIdCache.set(cacheKey, id); return id; }
     } catch (err) { }
     return 'dQw4w9WgXcQ';
 }
@@ -294,111 +264,72 @@ async function resolveVideoId(song) {
 async function korNastaLatLogik(pubId) {
     const pub = hämtaPubData(pubId);
     if (!pub || pub.isTransitioning) return;
-
-    // Återuppta avbruten låt om momentet är över
     if (!pub.activeMoment && pub.interruptedSong) {
         pub.nowPlaying = { ...pub.interruptedSong, id: 'resumed_' + Date.now() };
         pub.interruptedSong = null;
         broadcastState(pubId);
         return;
     }
-
-    if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) {
-        return;
-    }
-
+    if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) return;
     const nu = Date.now();
-    // Tidsspärr ignoreras om vi inte har någon låt alls som spelas
     if (pub.nowPlaying && nu - pub.lastNextTrigger < 5000) return;
     pub.lastNextTrigger = nu;
-
     pub.isTransitioning = true;
-
     try {
-        const lib = libraryManager.getLibrary();
         if (pub.queue && pub.queue.length > 0) {
             const nastaLat = pub.queue.shift();
             const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
-            const entry = Object.values(lib).find(s => s.videoId === videoId);
-
-            pub.nowPlaying = {
-                id: nastaLat.id,
-                title: nastaLat.title,
-                videoId,
-                thumbnail: nastaLat.thumbnail || entry?.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-                addedBy: nastaLat.addedBy || 'Gäst',
-                isListSong: false
-            };
+            pub.nowPlaying = { id: nastaLat.id, title: nastaLat.title, videoId, thumbnail: nastaLat.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`, addedBy: nastaLat.addedBy || 'Gäst', isListSong: false };
             broadcastState(pubId);
         } else {
             const bgSong = getBackgroundSongAt(pub, pub.playlistCursor);
             if (bgSong) {
                 const videoId = await resolveVideoId(bgSong.title);
-                const entry = Object.values(lib).find(s => s.videoId === videoId);
-
-                pub.nowPlaying = {
-                    id: 'valv_' + pub.playlistCursor + '_' + Date.now(),
-                    title: bgSong.title,
-                    videoId,
-                    thumbnail: entry?.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
-                    addedBy: bgSong.addedBy,
-                    isListSong: true
-                };
+                pub.nowPlaying = { id: 'valv_' + pub.playlistCursor + '_' + Date.now(), title: bgSong.title, videoId, thumbnail: `https://img.youtube.com/vi/${videoId}/0.jpg`, addedBy: bgSong.addedBy, isListSong: true };
                 pub.playlistCursor++;
                 broadcastState(pubId);
-            } else {
-                if (pub.nowPlaying) {
-                    pub.nowPlaying = null;
-                    broadcastState(pubId);
-                }
-            }
+            } else { if (pub.nowPlaying) { pub.nowPlaying = null; broadcastState(pubId); } }
         }
-    } catch (e) {
-        console.error("Fel i korNastaLatLogik:", e);
-    } finally {
-        pub.isTransitioning = false;
-    }
+    } catch (e) { } finally { pub.isTransitioning = false; }
 }
 
+// --- ROUTES ---
+app.get('/', (req, res) => {
+    const files = fs.readdirSync(path.join(__dirname, 'data')).filter(f => f.endsWith('.json'));
+    const defaultPub = files.length > 0 ? files[0].replace('.json', '') : '7-an';
+    res.redirect(`/pub/${defaultPub}/staff`);
+});
 app.get('/pub/:pubId/staff', (req, res) => { res.sendFile(path.join(__dirname, 'staff-app.html')); });
+app.get('/pub/:pubId/staff-mobile', (req, res) => { res.sendFile(path.join(__dirname, 'staff-mobile.html')); });
 app.get('/pub/:pubId/mobile', (req, res) => { res.sendFile(path.join(__dirname, 'test-mobile.html')); });
+app.get('/pub/:pubId/player', (req, res) => { res.sendFile(path.join(__dirname, 'test-player.html')); });
 
 io.on('connection', (socket) => {
-    socket.on('join_pub', (pubId) => {
-        if (!pubId) return;
-        socket.join(pubId);
-        socket.pubId = pubId;
-        hämtaPubData(pubId);
-        broadcastState(pubId, socket);
-    });
-
+    socket.on('join_pub', (pubId) => { if (!pubId) return; socket.join(pubId); socket.pubId = pubId; hämtaPubData(pubId); broadcastState(pubId, socket); });
     socket.on('search', async (data) => {
         try {
             const res = await youtubeSearchApi.GetListByKeyword(data.query, false, 8);
-            const results = (res.items || []).map(i => ({
-                videoId: (typeof i.id === 'object' ? i.id.videoId : i.id),
-                title: i.title,
-                thumbnail: i.thumbnail?.thumbnails?.[0]?.url || ""
-            }));
+            const results = (res.items || []).map(i => ({ videoId: (typeof i.id === 'object' ? i.id.videoId : i.id), title: i.title, thumbnail: i.thumbnail?.thumbnails?.[0]?.url || "" }));
             socket.emit('searchResults', { results });
-        } catch (e) { console.error(e); }
+        } catch (e) { }
     });
-
     socket.on('addSong', async (data) => {
-        if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
+        const activePubId = data.pubId || socket.pubId;
+        if (!activePubId) return;
+        const pub = hämtaPubData(activePubId);
         if (!pub) return;
 
-        let resterande = undefined;
+        let resObj = { msg: "Låten tillagd!" };
         if (pub.qrKrav) {
             const biljett = validateTicket(data.kupongKod);
             if (!biljett) return socket.emit("kupong_error", { msg: "Ogiltig biljett." });
-            const usedCount = pub.consumedTickets[biljett.id] || 0;
-            if (usedCount >= biljett.total) return socket.emit("kupong_error", { msg: "Biljetten är redan förbrukad." });
-            pub.consumedTickets[biljett.id] = usedCount + 1;
-            resterande = biljett.total - (usedCount + 1);
+
+            const used = pub.consumedTickets[biljett.id] || 0;
+            if (used >= biljett.total) return socket.emit("kupong_error", { msg: "Biljetten är slut." });
+
+            pub.consumedTickets[biljett.id] = used + 1;
             pub.statistikKuponger++;
-            sparaPubData(socket.pubId);
+            resObj.resterande = biljett.total - pub.consumedTickets[biljett.id];
         }
 
         pub.queue.push({
@@ -409,135 +340,112 @@ io.on('connection', (socket) => {
             addedBy: 'Gäst'
         });
         pub.statistikTotalt++;
-        socket.emit("kupong_success", { msg: "Låten tillagd!", resterande: resterande });
-        if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(socket.pubId);
-        else broadcastState(socket.pubId);
-    });
+        sparaPubData(activePubId);
 
+        socket.emit("kupong_success", resObj);
+
+        if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(activePubId);
+        else broadcastState(activePubId);
+    });
     socket.on('player:byt_valv', (data) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
         pub.aktivtValv = data.valvNamn;
         pub.playlistCursor = 0;
         refreshShuffled(pub, 'main');
         sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
-        if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
-
-    socket.on('admin:toggle_qr', (data) => {
-        if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-        pub.qrKrav = !!data.qrKrav;
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
     socket.on('ADD_TEMP_PLAYLIST', (data) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
         pub.aktivTillfalligLista = data.playlist;
-        pub.playlistCursor = 0;
         refreshShuffled(pub, 'temp');
+        sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
-        if (!pub.nowPlaying && !pub.activeMoment) korNastaLatLogik(socket.pubId);
     });
-
     socket.on('REMOVE_TEMP_PLAYLIST', () => {
         if (!socket.pubId) return;
-        const pubarData = hämtaPubData(socket.pubId);
-        if (!pubarData) return;
-        pubarData.aktivTillfalligLista = '';
-        pubarData.shuffledTemp = [];
+        const pub = hämtaPubData(socket.pubId);
+        pub.aktivTillfalligLista = '';
+        pub.shuffledTemp = [];
+        sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
     });
-
-    socket.on('player:skip', () => {
+    socket.on('admin:add_to_valv', async (data) => {
         if (!socket.pubId) return;
         const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-        pub.nowPlaying = null;
-        pub.interruptedSong = null;
-        korNastaLatLogik(socket.pubId);
-    });
 
-    socket.on('player:ready_for_next', () => {
-        if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-
-        if (pub.activeMoment && !['pause', 'closing'].includes(pub.activeMoment.type)) {
-            pub.activeMoment = null;
+        let songData = { title: data.lat };
+        if (data.videoId) {
+            songData = { videoId: data.videoId, title: data.title, thumbnail: data.thumbnail };
+        } else {
+            songData.videoId = await resolveVideoId(data.lat);
         }
-        pub.nowPlaying = null;
-        korNastaLatLogik(socket.pubId);
-    });
 
-    socket.on('admin:add_to_valv', (data) => {
-        if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-        libraryManager.addOrUpdateSong({ title: data.lat }, data.valvNamn);
-        refreshShuffled(pub, 'main');
+        libraryManager.addOrUpdateSong(songData, data.valvNamn);
+
+        if (data.valvNamn === pub.aktivtValv) refreshShuffled(pub, 'main');
+        if (data.valvNamn === pub.aktivTillfalligLista) refreshShuffled(pub, 'temp');
         broadcastState(socket.pubId);
     });
-
+    socket.on('admin:remove_from_valv', (data) => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        libraryManager.removeSongFromPlaylist(data.latNamn, data.valvNamn);
+        if (data.valvNamn === pub.aktivtValv) refreshShuffled(pub, 'main');
+        if (data.valvNamn === pub.aktivTillfalligLista) refreshShuffled(pub, 'temp');
+        broadcastState(socket.pubId);
+    });
+    socket.on('admin:toggle_qr', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.qrKrav = !!data.qrKrav; sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
+    socket.on('player:skip', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; p.interruptedSong = null; korNastaLatLogik(socket.pubId); } });
+    socket.on('player:ready_for_next', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); if (p.activeMoment && !['pause','closing'].includes(p.activeMoment.type)) p.activeMoment = null; p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
+    socket.on('player:remove_song', (data) => {
+        if (!socket.pubId) return;
+        const pub = hämtaPubData(socket.pubId);
+        pub.queue = pub.queue.filter(s => s.id !== data.id);
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
     socket.on('moment:activate', (data) => {
         if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-
-        if (pub.nowPlaying && !pub.nowPlaying.isMoment) {
-            pub.interruptedSong = pub.nowPlaying;
-        }
-
-        if (data.type === 'pause') {
-            pub.activeMoment = { type: 'pause', message: data.message || "Paus" };
-            pub.nowPlaying = null;
-        } else {
-            const cfg = pub.moments[data.type];
+        const p = hämtaPubData(socket.pubId);
+        if (p.nowPlaying && !p.nowPlaying.isMoment) p.interruptedSong = p.nowPlaying;
+        if (data.type === 'pause') { p.activeMoment = { type: 'pause', message: data.message || "Paus", time: Date.now() }; p.nowPlaying = null; }
+        else {
+            const cfg = p.moments[data.type];
             if (!cfg) return;
-            pub.activeMoment = { type: data.type, message: data.message || cfg.defaultMessage, videoId: cfg.videoId };
-            pub.nowPlaying = {
-                id: 'm_' + Date.now(),
-                title: cfg.title,
-                videoId: cfg.videoId,
-                thumbnail: cfg.thumbnail || `https://img.youtube.com/vi/${cfg.videoId}/0.jpg`,
-                addedBy: 'Staff',
-                isMoment: true
-            };
-            pub.lastNextTrigger = 0; // Tvinga genom byte
+            p.activeMoment = { type: data.type, message: data.message || cfg.defaultMessage, videoId: cfg.videoId, time: Date.now() };
+            p.nowPlaying = { id: 'm_'+Date.now(), title: cfg.title, videoId: cfg.videoId, thumbnail: cfg.thumbnail, addedBy: 'Staff', isMoment: true };
+            p.lastNextTrigger = 0;
         }
         broadcastState(socket.pubId);
     });
-
-    socket.on('moment:stop', () => {
-        if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (!pub) return;
-        pub.activeMoment = null;
-        pub.nowPlaying = null;
-        korNastaLatLogik(socket.pubId);
-    });
-
+    socket.on('moment:stop', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.activeMoment = null; p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
     socket.on('moment:save_settings', (data) => {
         if (!socket.pubId) return;
-        const pub = hämtaPubData(socket.pubId);
-        if (pub && pub.moments[data.type]) {
-            pub.moments[data.type].videoId = data.videoId || pub.moments[data.type].videoId;
-            pub.moments[data.type].title = data.title || pub.moments[data.type].title;
-            pub.moments[data.type].thumbnail = data.thumbnail || pub.moments[data.type].thumbnail;
-            pub.moments[data.type].defaultMessage = data.defaultMessage || pub.moments[data.type].defaultMessage;
-            sparaPubData(socket.pubId); // VIKTIGT: Spara till disk!
-            broadcastState(socket.pubId);
-        }
+        const p = hämtaPubData(socket.pubId);
+        if (!p.moments[data.type]) p.moments[data.type] = { category: data.category };
+        Object.assign(p.moments[data.type], {
+            videoId: data.videoId,
+            title: data.title,
+            songTitle: data.songTitle,
+            thumbnail: data.thumbnail,
+            defaultMessage: data.defaultMessage
+        });
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
     });
 });
 
-const PORT = process.env.PORT || 3001;
-http.listen(PORT, () => {
-    console.log(`Server körs på port ${PORT}. http://${getLocalIp()}:${PORT}/pub/test/staff`);
+http.listen(process.env.PORT || 3001, () => {
+    const ip = getLocalIp();
+    console.log(`\n=================================================`);
+    console.log(`SERVER KÖRS!`);
+    console.log(`-------------------------------------------------`);
+    console.log(`Staff App (PC/Padda): http://${ip}:3001/pub/7-an/staff`);
+    console.log(`Staff Mobile (Mobil): http://${ip}:3001/pub/7-an/staff-mobile`);
+    console.log(`-------------------------------------------------`);
+    console.log(`Gäst-sida: http://${ip}:3001/pub/7-an/mobile`);
+    console.log(`=================================================\n`);
 });

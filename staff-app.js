@@ -3,330 +3,262 @@ const urlDelar = window.location.pathname.split('/');
 const pubIndex = urlDelar.indexOf('pub');
 const pubId = (pubIndex !== -1 && urlDelar[pubIndex + 1]) ? urlDelar[pubIndex + 1] : "default_pub";
 
-console.log("[Staff] Ansluter till pub:", pubId);
-
 let nuvarandeState = null;
 let staffYtPlayer = null;
-let aktivUniqueId = null; // Vi kollar nu på unikt ID istället för bara videoId
+let aktivUniqueId = null;
 let editingMomentType = null;
-let selectedVideoId = null;
-let selectedTitle = null;
-let selectedThumbnail = null;
+let editingMomentCategory = null;
+let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
 
-// YouTube API Setup
 window.onYouTubeIframeAPIReady = function () {
-    console.log("[Player] Initierar YouTube API...");
     staffYtPlayer = new YT.Player("staff-yt-player", {
-        width: "100%",
-        height: "100%",
-        playerVars: {
-            autoplay: 1,
-            controls: 1,
-            origin: window.location.origin,
-            enablejsapi: 1,
-            rel: 0,
-            mute: 0
-        },
+        width: "100%", height: "100%",
+        playerVars: { autoplay: 1, controls: 1, origin: window.location.origin, enablejsapi: 1, rel: 0, mute: 0 },
         events: {
-            onReady: (e) => {
-                console.log("[Player] Spelare redo.");
-                if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState);
-            },
-            onStateChange: (e) => {
-                if (e.data === YT.PlayerState.ENDED) {
-                    console.log("[Player] Video slutade.");
-                    triggaSpelareReady();
-                }
-            },
-            onError: (e) => {
-                console.error("[Player] YT Error:", e.data);
-                setTimeout(triggaSpelareReady, 5000);
-            }
+            onReady: () => { if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState); },
+            onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) triggaSpelareReady(); }
         }
     });
 };
 
 if (!window.YT) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
 }
 
-// Lås upp ljudet vid första klicket på sidan
 document.addEventListener('click', () => {
     if (hasInteracted) return;
     hasInteracted = true;
-    if (staffYtPlayer && typeof staffYtPlayer.unMute === 'function') {
-        staffYtPlayer.unMute();
-        staffYtPlayer.setVolume(100);
-        console.log("[Player] Ljud upplåst via interaktion.");
-    }
+    if (staffYtPlayer?.unMute) { staffYtPlayer.unMute(); staffYtPlayer.setVolume(100); }
 }, { once: true });
 
 function startaSpelaren() {
-    console.log("[Staff] Startar spelaren manuellt...");
     hasInteracted = true;
-    if (staffYtPlayer) {
-        if (typeof staffYtPlayer.unMute === 'function') staffYtPlayer.unMute();
-        if (typeof staffYtPlayer.setVolume === 'function') staffYtPlayer.setVolume(100);
-        staffYtPlayer.playVideo();
-    }
+    if (staffYtPlayer) { if (staffYtPlayer.unMute) staffYtPlayer.unMute(); staffYtPlayer.playVideo(); }
     socket.emit("player:ready_for_next");
-}
-
-function toggleQrKrav() {
-    const chk = document.getElementById("chk-qr-krav");
-    if (!chk) return;
-    socket.emit("admin:toggle_qr", { qrKrav: chk.checked });
 }
 
 function uppdateraStaffPlayer(state) {
-    if (!staffYtPlayer || typeof staffYtPlayer.loadVideoById !== 'function') return;
-
-    if (state.activeMoment && state.activeMoment.type === 'pause') {
-        staffYtPlayer.stopVideo();
-        aktivUniqueId = null;
-        return;
-    }
-
-    if (!state.nowPlaying) {
-        if (aktivUniqueId !== null) {
-            staffYtPlayer.stopVideo();
-            aktivUniqueId = null;
-        }
-        return;
-    }
-
-    const nyId = state.nowPlaying.videoId;
-    const uniqueId = state.nowPlaying.id;
-
-    // Vi triggar på unikt ID för att tillåta omstart av samma låt/moment
-    if (uniqueId && uniqueId !== aktivUniqueId) {
-        aktivUniqueId = uniqueId;
-        staffYtPlayer.loadVideoById(nyId);
-        console.log("[Player] Laddar:", state.nowPlaying.title, "(ID:", uniqueId, ")");
+    if (!staffYtPlayer?.loadVideoById) return;
+    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; return; }
+    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; } return; }
+    if (state.nowPlaying.id !== aktivUniqueId) {
+        aktivUniqueId = state.nowPlaying.id;
+        staffYtPlayer.loadVideoById(state.nowPlaying.videoId);
     }
 }
 
-function triggaSpelareReady() {
-    aktivUniqueId = null;
-    socket.emit("player:ready_for_next");
-}
+// MOBIL: Fyll rullistorna
+function fillMobileDropdowns(state) {
+    const mainSel = document.getElementById("select-main-playlist");
+    const tempSel = document.getElementById("select-temp-playlist");
+    const editSel = document.getElementById("select-edit-playlist");
+    const momSel = document.getElementById("select-moment-type");
 
-function skipLat() {
-    aktivUniqueId = null;
-    socket.emit("player:skip");
+    if (!mainSel) return; // Inte i mobilvyn
+
+    const playlists = Object.keys(state.valv || {});
+    [mainSel, tempSel, editSel].forEach(sel => {
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = (sel === mainSel ? '' : '<option value="">Välj lista...</option>') +
+            playlists.map(p => `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p.toUpperCase()}</option>`).join("");
+
+        if (sel === mainSel) sel.value = state.aktivHuvudlista || "";
+        if (sel === tempSel) sel.value = state.aktivTillfalligLista || "";
+    });
+
+    if (momSel) {
+        const currentMom = momSel.value;
+        momSel.innerHTML = '<option value="">Välj Moment...</option>' +
+            Object.keys(state.momentsConfig || {}).map(m => `<option value="${m}" ${m === currentMom ? 'selected' : ''}>${state.momentsConfig[m].title.toUpperCase()}</option>`).join("");
+    }
 }
 
 function updateMomentsUI(state) {
-    document.querySelectorAll('.moment-card').forEach(c => c.classList.remove('active'));
-    const stopBtn = document.getElementById("btn-stop-moment");
+    if (!state.momentsConfig) return;
+    const launchpad = document.getElementById('custom-drift');
+    if (!launchpad) {
+        fillMobileDropdowns(state);
+        document.getElementById("btn-stop-moment").style.display = state.activeMoment ? "block" : "none";
+        return;
+    }
 
-    if (state.activeMoment) {
-        const card = document.getElementById("m-" + state.activeMoment.type);
-        if (card) card.classList.add('active');
-        if (stopBtn) {
-            stopBtn.style.display = (state.activeMoment.type === 'pause' || state.activeMoment.type === 'closing') ? "block" : "none";
+    ['drift', 'firande', 'avslut'].forEach(c => document.getElementById('custom-'+c).innerHTML = '');
+
+    Object.keys(state.momentsConfig).forEach(key => {
+        const cfg = state.momentsConfig[key];
+        const descEl = document.getElementById(`txt-${key}-desc`);
+        const card = document.getElementById(`m-${key}`);
+        const displaySong = cfg.songTitle || cfg.title || "-";
+
+        if (card) {
+            card.classList.toggle('active', state.activeMoment?.type === key);
+            if (descEl) descEl.innerHTML = `<strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${displaySong}</small>`;
+        } else if (key !== 'pause') {
+            const container = document.getElementById('custom-' + (cfg.category || 'drift'));
+            const customCard = document.createElement('div');
+            customCard.className = `moment-card moment-${cfg.category === 'drift' ? 'blue' : cfg.category === 'firande' ? 'gold' : 'red'}`;
+            if (state.activeMoment?.type === key) customCard.classList.add('active');
+            customCard.onclick = () => activateMoment(key);
+            customCard.innerHTML = `<h4>${cfg.title.toUpperCase()}</h4><p><strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${displaySong}</small></p><button class="edit-btn" onclick="openMomentEdit(event, '${key}')">⚙️</button>`;
+            container.appendChild(customCard);
         }
-    } else if (stopBtn) {
-        stopBtn.style.display = "none";
-    }
-
-    if (state.momentsConfig) {
-        Object.keys(state.momentsConfig).forEach(type => {
-            const el = document.getElementById(`txt-${type}-desc`);
-            if (el) {
-                const cfg = state.momentsConfig[type];
-                el.innerHTML = `<strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${cfg.title || "Standard"}</small>`;
-            }
-        });
-    }
+    });
+    document.getElementById("btn-stop-moment").style.display = state.activeMoment ? "block" : "none";
 }
 
-function activateMoment(type) {
-    const input = document.getElementById("moment-text-input");
-    const manualMsg = input ? input.value.trim() : "";
-    socket.emit("moment:activate", { type: type, message: manualMsg });
-    if (input) input.value = "";
+function addNewMoment(cat) {
+    const name = prompt("Namn på momentet?");
+    if (!name) return;
+    editingMomentType = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+    editingMomentCategory = cat;
+    selectedTitle = name; selectedSongTitle = ""; selectedVideoId = null; selectedThumbnail = null;
+    document.getElementById("modal-title").innerText = "Nytt: " + name.toUpperCase();
+    document.getElementById("modal-msg-input").value = "";
+    document.getElementById("moment-modal").style.display = "flex";
 }
-
-function stopMoment() { socket.emit("moment:stop"); }
 
 function openMomentEdit(e, type) {
     e.stopPropagation();
     editingMomentType = type;
-    const config = nuvarandeState.momentsConfig[type];
-    document.getElementById("modal-title").innerText = "Programmera: " + type.toUpperCase();
-    document.getElementById("modal-msg-input").value = config ? (config.defaultMessage || "") : "";
-    selectedVideoId = config ? config.videoId : null;
-    selectedTitle = config ? config.title : null;
-    selectedThumbnail = config ? config.thumbnail : null;
+    const cfg = nuvarandeState.momentsConfig[type];
+    editingMomentCategory = cfg.category;
+    document.getElementById("modal-title").innerText = "Edit: " + (cfg.title || type).toUpperCase();
+    document.getElementById("modal-msg-input").value = cfg.defaultMessage || "";
+    selectedVideoId = cfg.videoId; selectedTitle = cfg.title; selectedSongTitle = cfg.songTitle; selectedThumbnail = cfg.thumbnail;
     document.getElementById("moment-modal").style.display = "flex";
-}
-
-function closeModal() {
-    document.getElementById("moment-modal").style.display = "none";
-    document.getElementById("modal-results").innerHTML = "";
-}
-
-function searchMomentVideo() {
-    const q = document.getElementById("modal-search-input").value;
-    if (q) socket.emit("search", { query: q });
-}
-
-function pickVideo(id, title, thumbnail) {
-    selectedVideoId = id;
-    selectedTitle = title;
-    selectedThumbnail = thumbnail;
-    document.getElementById("modal-results").innerHTML = `<div style="padding:15px; color:#1ed760; font-weight:bold;">VALD: ${title}</div>`;
 }
 
 function saveMomentSettings() {
     socket.emit("moment:save_settings", {
         type: editingMomentType,
+        category: editingMomentCategory,
         videoId: selectedVideoId,
         title: selectedTitle,
+        songTitle: selectedSongTitle,
         thumbnail: selectedThumbnail,
         defaultMessage: document.getElementById("modal-msg-input").value.trim()
     });
     closeModal();
 }
 
-function genInitialer(namn) {
-    if (!namn) return "";
-    const rentNamn = namn.replace(/_/g, ' ');
-    const delar = rentNamn.split(' ').filter(n => n.length > 0);
-    if (delar.length === 0) return "";
-    if (delar.length === 1) return delar[0].substring(0, 2).toUpperCase();
-    return (delar[0][0] + delar[1][0]).toUpperCase();
+function activateMoment(type) { socket.emit("moment:activate", { type, message: document.getElementById("moment-text-input").value.trim() }); document.getElementById("moment-text-input").value = ""; }
+function stopMoment() { socket.emit("moment:stop"); }
+function closeModal() { document.getElementById("moment-modal").style.display = "none"; }
+function searchMomentVideo() { const q = document.getElementById("modal-search-input").value; if (q) socket.emit("search", { query: q }); }
+
+function sokLatTillEdit() {
+    const q = document.getElementById("txt-edit-search").value.trim();
+    if (q) socket.emit("search", { query: q });
 }
 
-function byggPlaylistHtml(namn, typ) {
-    const isMain = (typ === 'main');
-    const isTemp = (typ === 'temp');
-    let klassNamn = "playlist";
-    let extraElement = "";
-    if (isMain) klassNamn = "playlist active";
-    else if (isTemp) {
-        klassNamn = "playlist temp-active";
-        extraElement = `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">-</button>`;
-    } else {
-        extraElement = `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${namn.replace(/'/g, "\\'")}'})">+</button>`;
+function pickVideo(id, title, thumb) { selectedVideoId = id; selectedSongTitle = title; selectedThumbnail = thumb; document.getElementById("modal-results").innerHTML = `<div style="padding:10px; color:#1ed760;">VALD: ${title}</div>`; }
+
+function laggTillLatIPermanentLista(videoId, title, thumbnail) {
+    const valv = document.getElementById("select-edit-playlist")?.value || nuvarandeState?.aktivHuvudlista;
+    if (valv) {
+        socket.emit("admin:add_to_valv", { valvNamn: valv, videoId, title, thumbnail });
+        document.getElementById("edit-search-results").innerHTML = `<div style="padding:15px; color:#1ed760;">✓ TILLAGD: ${title}</div>`;
+        document.getElementById("txt-edit-search").value = "";
     }
-    return `
-        <div class="${klassNamn}" onclick="socket.emit('player:byt_valv', {valvNamn: '${namn.replace(/'/g, "\\'")}'})">
-            <div class="cover">${genInitialer(namn)}</div>
-            <div class="playlist-name">${namn.replace(/_/g, ' ')}</div>
-            ${extraElement}
-        </div>
-    `;
 }
 
-function renderaBibliotek(state) {
-    const stickyTarget = document.getElementById("active-sticky-target");
-    const scrollTarget = document.getElementById("playlist-library-target");
-    if (!stickyTarget || !scrollTarget) return;
-
-    const allaListor = Object.keys(state.valv || {});
-    let stickyHtml = "", scrollHtml = "";
-    if (state.aktivHuvudlista) stickyHtml += byggPlaylistHtml(state.aktivHuvudlista, 'main');
-    if (state.aktivTillfalligLista) stickyHtml += byggPlaylistHtml(state.aktivTillfalligLista, 'temp');
-    allaListor.forEach(n => {
-        if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) {
-            scrollHtml += byggPlaylistHtml(n, 'inactive');
-        }
-    });
-    stickyTarget.innerHTML = stickyHtml || "Ingen aktiv.";
-    scrollTarget.innerHTML = scrollHtml || "Tomt.";
-}
-
-function uppdateraEditVy() {
-    const aktiv = nuvarandeState?.aktivHuvudlista;
+function uppdateraEditVyMobil(valvNamn) {
     const content = document.getElementById("edit-view-content");
     if (!content) return;
-    if (!aktiv) { content.style.display = "none"; return; }
-    document.getElementById("edit-view-title").innerText = "Edit: " + aktiv;
+    if (!valvNamn) {
+        content.style.display = "none";
+        return;
+    }
     content.style.display = "block";
-    const latar = nuvarandeState.valv[aktiv] || [];
-    document.getElementById("edit-song-list-target").innerHTML = latar.map(l => `
-        <div class="song-row">
-            <span>${l}</span>
-            <button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${aktiv.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button>
-        </div>
-    `).join("");
+    if (!nuvarandeState) return;
+    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[valvNamn] || []).map(l => `<div class="song-row" style="justify-content:space-between;"><span>${l}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${valvNamn.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button></div>`).join("");
 }
 
-function uppdateraPlayerVy() {
-    const target = document.getElementById("player-queue-target");
-    if (!target) return;
-    const q = nuvarandeState?.queue || [];
-    target.innerHTML = q.map((l,i) => `
-        <div class="song-row">
-            <span>${i+1}. ${l.title}</span>
-            <button class="btn-delete" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
-        </div>
-    `).join("");
-}
+function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
+function triggaSpelareReady() { aktivUniqueId = null; socket.emit("player:ready_for_next"); }
+function skipLat() { socket.emit("player:skip"); }
+function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 
-function switchTab(t) {
-    document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
-    const tab = document.getElementById("tab-" + t);
-    if (tab) tab.classList.add("active");
-    document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
-    const view = document.getElementById("view-" + t);
-    if (view) view.style.display = "block";
-}
-
-function laggTillLatIFil() {
-    const input = document.getElementById("txt-ny-lat");
-    const lat = input ? input.value.trim() : "";
-    if (lat) {
-        socket.emit("admin:add_to_valv", { valvNamn: nuvarandeState.aktivHuvudlista, lat: lat });
-        if (input) input.value = "";
-    }
-}
-
-// --- SOCKET LISTENERS ---
-
-socket.on('connect', () => {
-    console.log("[Staff] Ansluten, skickar join_pub för:", pubId);
-    socket.emit("join_pub", pubId);
-});
-
+socket.on('connect', () => socket.emit("join_pub", pubId));
 socket.on("staff_state", (state) => {
-    try {
-        nuvarandeState = state;
-        const lbl = document.getElementById("lbl-now-playing");
-        if (lbl) lbl.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+    nuvarandeState = state;
+    document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+    document.getElementById("chk-qr-krav").checked = !!state.qrKrav;
+    document.getElementById("stat-kuponger").innerText = state.statistikKuponger || 0;
+    document.getElementById("stat-totalt").innerText = state.statistikTotalt || 0;
 
-        const qrChk = document.getElementById("chk-qr-krav");
-        if (qrChk) qrChk.checked = !!state.qrKrav;
-
-        const statKup = document.getElementById("stat-kuponger");
-        const statTot = document.getElementById("stat-totalt");
-        if (statKup) statKup.innerText = state.statistikKuponger || 0;
-        if (statTot) statTot.innerText = state.statistikTotalt || 0;
-
-        renderaBibliotek(state);
+    renderaBibliotek(state);
+    if (document.getElementById("select-edit-playlist")) {
+        fillMobileDropdowns(state);
+        uppdateraEditVyMobil(document.getElementById("select-edit-playlist").value);
+    } else {
         uppdateraEditVy();
-        uppdateraPlayerVy();
-        uppdateraStaffPlayer(state);
-        updateMomentsUI(state);
-    } catch (err) {
-        console.error("Fel vid uppdatering av state:", err);
     }
+    uppdateraPlayerVy();
+    uppdateraStaffPlayer(state);
+    updateMomentsUI(state);
 });
 
 socket.on("searchResults", (data) => {
     const modal = document.getElementById("moment-modal");
     if (modal && modal.style.display === "flex") {
-        document.getElementById("modal-results").innerHTML = data.results.map(i => `
-            <div class="song-row" style="cursor:pointer; padding:8px; border-bottom:1px solid #333;" onclick="pickVideo('${i.videoId}', '${i.title.replace(/'/g, "")}', '${i.thumbnail}')">
-                <img src="${i.thumbnail}" style="width:40px; vertical-align:middle; margin-right:10px;">
-                <span style="font-size:12px;">${i.title}</span>
-            </div>
-        `).join("");
+        document.getElementById("modal-results").innerHTML = data.results.map(i => `<div class="song-row" style="cursor:pointer; padding:8px;" onclick="pickVideo('${i.videoId}', '${i.title.replace(/'/g, "")}', '${i.thumbnail}')"><img src="${i.thumbnail}" style="width:40px; margin-right:10px;"><span>${i.title}</span></div>`).join("");
+    }
+
+    const editRes = document.getElementById("edit-search-results");
+    if (editRes) {
+        editRes.innerHTML = data.results.map(i => `
+            <div class="song-row" style="padding:10px;">
+                <img src="${i.thumbnail}" style="width:40px; margin-right:10px; border-radius:4px;">
+                <span style="flex:1;">${i.title}</span>
+                <button class="btn-action" style="background:#1ed760; color:#000; padding:6px 12px;" onclick="laggTillLatIPermanentLista('${i.videoId}', '${i.title.replace(/'/g, "\\'")}', '${i.thumbnail}')">LÄGG TILL</button>
+            </div>`).join("");
     }
 });
+
+function genInitialer(namn) { if (!namn) return ""; const delar = namn.replace(/_/g, ' ').split(' ').filter(n => n.length > 0); return delar.length === 1 ? delar[0].substring(0, 2).toUpperCase() : (delar[0][0] + delar[1][0]).toUpperCase(); }
+function byggPlaylistHtml(namn, typ) {
+    const isMain = typ === 'main', isTemp = typ === 'temp';
+    let klass = isMain ? "playlist active" : (isTemp ? "playlist temp-active" : "playlist");
+    let btn = isTemp ? `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">-</button>` : (isMain ? "" : `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${namn.replace(/'/g, "\\'")}'})">+</button>`);
+    return `<div class="${klass}" onclick="socket.emit('player:byt_valv', {valvNamn: '${namn.replace(/'/g, "\\'")}'})"><div class="cover">${genInitialer(namn)}</div><div class="playlist-name">${namn.replace(/_/g, ' ')}</div>${btn}</div>`;
+}
+function renderaBibliotek(state) {
+    const s = document.getElementById("active-sticky-target"), sc = document.getElementById("playlist-library-target");
+    if (!s) return;
+    let sH = "", scH = "";
+    if (state.aktivHuvudlista) sH += byggPlaylistHtml(state.aktivHuvudlista, 'main');
+    if (state.aktivTillfalligLista) sH += byggPlaylistHtml(state.aktivTillfalligLista, 'temp');
+    Object.keys(state.valv || {}).forEach(n => { if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive'); });
+    s.innerHTML = sH || "Ingen."; sc.innerHTML = scH || "Tomt.";
+}
+function uppdateraEditVy() {
+    const a = nuvarandeState?.aktivHuvudlista; if (!a || !document.getElementById("edit-view-content")) return;
+    document.getElementById("edit-view-title").innerText = "Edit: " + a; document.getElementById("edit-view-content").style.display = "block";
+    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[a] || []).map(l => `<div class="song-row"><span>${l}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${a.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button></div>`).join("");
+}
+function uppdateraPlayerVy() {
+    const t = document.getElementById("player-queue-target");
+    if (!t) return;
+
+    const isMobile = !!document.getElementById("select-main-playlist");
+    const q = nuvarandeState?.queue || [];
+    const displayQ = isMobile ? q.slice(0, 2) : q;
+
+    t.innerHTML = displayQ.map((l,i) => `
+        <div class="song-row" style="padding:8px 0; border-bottom:1px solid #111;">
+            <span>${i+1}. ${l.title}</span>
+            <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
+        </div>`).join("");
+}
+function laggTillLatIFil() {
+    const i = document.getElementById("txt-ny-lat");
+    const valv = nuvarandeState?.aktivHuvudlista;
+    if (i && i.value.trim() && valv) {
+        socket.emit("admin:add_to_valv", { valvNamn: valv, lat: i.value.trim() });
+        i.value = "";
+    }
+}

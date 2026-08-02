@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Staff Mobile - Jukebox</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="stylesheet" href="/staff-mobile.css">
+</head>
+<body>
+
+<div class="mobile-container">
+    <header class="mobile-header">JUKEBOX STAFF 📱</header>
+
+    <!-- 1. SPELAREN -->
+    <section class="mobile-section player-section">
+        <div id="staff-player-container" class="mobile-yt-frame">
+            <div id="staff-yt-player"></div>
+        </div>
+
+        <div class="now-playing-box">
+            <div class="status-dot"></div>
+            <strong id="lbl-now-playing">Laddar spelare...</strong>
+        </div>
+
+        <div class="main-controls">
+            <button class="mobile-btn btn-start" onclick="startaSpelaren()">STARTA LJUD</button>
+            <button class="mobile-btn btn-skip" onclick="skipLat()">SKIP LÅT</button>
+        </div>
+
+        <div class="queue-mini">
+            <h3 style="font-size:12px; color:#666; margin-bottom:10px;">KOMMANDE (NÄSTA 2):</h3>
+            <div id="player-queue-target" class="compact-queue"></div>
+        </div>
+    </section>
+
+    <!-- 2. VÄLJ LÅTLISTOR -->
+    <section class="mobile-section">
+        <h2 class="section-title">BAKGRUNDSMUSIK</h2>
+
+        <div class="input-group">
+            <label>Huvudlista (Aktiv):</label>
+            <select id="select-main-playlist" onchange="socket.emit('player:byt_valv', {valvNamn: this.value})">
+                <option value="">Välj lista...</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>Extra lista (Tillfällig):</label>
+            <select id="select-temp-playlist" onchange="if(this.value) socket.emit('ADD_TEMP_PLAYLIST', {playlist: this.value}); else socket.emit('REMOVE_TEMP_PLAYLIST');">
+                <option value="">Ingen extra lista</option>
+            </select>
+        </div>
+    </section>
+
+    <!-- 3. MOMENTS -->
+    <section class="mobile-section">
+        <h2 class="section-title">MOMENTS</h2>
+        <input type="text" id="moment-text-input" class="mobile-input-big" placeholder="Manuellt meddelande (valfritt)...">
+
+        <div class="moment-controls">
+            <select id="select-moment-type" class="mobile-input-big">
+                <option value="">Välj Moment...</option>
+            </select>
+            <button class="mobile-btn btn-gold" style="width:100%; margin-top:10px;" onclick="const m = document.getElementById('select-moment-type').value; if(m) activateMoment(m);">AKTIVERA MOMENT</button>
+        </div>
+        <button id="btn-stop-moment" class="mobile-btn btn-stop" style="display:none;" onclick="stopMoment()">STOPPA MOMENT</button>
+    </section>
+
+    <!-- 4. EDITERA LÅTLISTA -->
+    <section class="mobile-section" id="view-edit">
+        <h2 class="section-title">EDITERA BIBLIOTEK</h2>
+
+        <div class="input-group">
+            <label>Välj lista att redigera:</label>
+            <select id="select-edit-playlist" onchange="uppdateraEditVyMobil(this.value)">
+                <option value="">Välj lista...</option>
+            </select>
+        </div>
+
+        <div id="edit-view-content" style="margin-top:20px; display:none;">
+            <div class="mobile-search-box">
+                <input type="text" id="txt-edit-search" placeholder="Sök låt på YouTube...">
+                <button onclick="sokLatTillEdit()">SÖK</button>
+            </div>
+            <div id="edit-search-results" class="mobile-search-results"></div>
+
+            <div class="current-list-box">
+                <h3 id="edit-view-title" style="font-size:13px; color:#888;">Låtar i listan:</h3>
+                <div id="edit-song-list-target" class="compact-list"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. ADMIN & STATS -->
+    <footer class="mobile-footer">
+        <h2 class="section-title">INSTÄLLNINGAR & STATS</h2>
+        <div class="admin-row">
+            <span>QR-Kuponger krävs:</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="chk-qr-krav" onchange="toggleQrKrav()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="stats-box">
+            <div class="stat-item">
+                <span class="stat-label">Kuponger:</span>
+                <strong id="stat-kuponger">0</strong>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Totalt:</span>
+                <strong id="stat-totalt">0</strong>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script src="/staff-app.js"></script>
+</body>
+</html>

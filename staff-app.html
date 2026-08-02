@@ -54,10 +54,15 @@
         <div id="view-edit" class="tab-view" style="display: none;">
             <div class="title" id="edit-view-title">Edit - Ingen aktiv lista</div>
             <div id="edit-view-content" style="display: none;">
+                <h3 style="font-size: 14px; margin-bottom: 10px; color: #aaa;">Sök låt att lägga till</h3>
                 <div class="input-row">
-                    <input type="text" id="txt-ny-lat" placeholder="Artist - Låttitel...">
-                    <button onclick="laggTillLatIFil()">Lägg till</button>
+                    <input type="text" id="txt-edit-search" placeholder="Artist eller låt..." onkeypress="if(event.key==='Enter') sokLatTillEdit()">
+                    <button onclick="sokLatTillEdit()" style="background:#1ed760; color:#000;">SÖK</button>
                 </div>
+                <!-- Här hamnar sökresultaten (Mobil-stil) -->
+                <div id="edit-search-results" style="margin-bottom: 20px; max-height: 280px; overflow-y: auto; background: #111; border-radius: 6px;"></div>
+
+                <div class="title" style="font-size: 16px; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">Låtar i spellistan</div>
                 <div class="song-list-container" id="edit-song-list-target"></div>
             </div>
         </div>
@@ -79,16 +84,14 @@
             </div>
 
             <div class="settings-card">
-                <h3 style="margin: 0 0 15px 0; color: #fff;">Statistik</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="background: #222; padding: 15px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 11px; color: #888; text-transform: uppercase;">Antal Kuponger</div>
-                        <div id="stat-kuponger" style="font-size: 24px; color: #1ed760; font-weight: bold; margin-top: 5px;">0</div>
-                    </div>
-                    <div style="background: #222; padding: 15px; border-radius: 6px; text-align: center;">
-                        <div style="font-size: 11px; color: #888; text-transform: uppercase;">Totalt önskade</div>
-                        <div id="stat-totalt" style="font-size: 24px; color: #1ed760; font-weight: bold; margin-top: 5px;">0</div>
-                    </div>
+                <h3 style="margin: 0 0 15px 0; color: #1ed760; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Statistik</h3>
+                <div class="settings-row">
+                    <span style="color: #aaa;">Antal låtar via kupong:</span>
+                    <strong id="stat-kuponger" style="color: #1ed760; font-size: 18px;">0</strong>
+                </div>
+                <div class="settings-row" style="margin-bottom: 0; border-top: 1px solid #2a2a2a; padding-top: 15px;">
+                    <span style="color: #aaa;">Totalt antal önskningar:</span>
+                    <strong id="stat-totalt" style="color: #fff; font-size: 18px;">0</strong>
                 </div>
             </div>
         </div>
@@ -102,16 +105,22 @@
                     <h3>Drift & Info</h3>
                     <div id="m-pause" class="moment-card moment-blue" onclick="activateMoment('pause')"><h4>TYST / PAUS</h4><p>Stoppar allt ljud.</p></div>
                     <div id="m-lastcall" class="moment-card moment-blue" onclick="activateMoment('lastcall')"><h4>LAST CALL</h4><p id="txt-lastcall-desc">...</p><button class="edit-btn" onclick="openMomentEdit(event, 'lastcall')">⚙️</button></div>
+                    <div id="custom-drift"></div>
+                    <button class="add-moment-btn" onclick="addNewMoment('drift')">+</button>
                 </div>
                 <div class="moment-col">
                     <h3>Firande</h3>
                     <div id="m-birthday" class="moment-card moment-gold" onclick="activateMoment('birthday')"><h4>FÖDELSEDAG</h4><p id="txt-birthday-desc">...</p><button class="edit-btn" onclick="openMomentEdit(event, 'birthday')">⚙️</button></div>
                     <div id="m-shoutout" class="moment-card moment-gold" onclick="activateMoment('shoutout')"><h4>HÄLSNING</h4><p id="txt-shoutout-desc">...</p><button class="edit-btn" onclick="openMomentEdit(event, 'shoutout')">⚙️</button></div>
+                    <div id="custom-firande"></div>
+                    <button class="add-moment-btn" onclick="addNewMoment('firande')">+</button>
                 </div>
                 <div class="moment-col">
                     <h3>Avslut</h3>
                     <div id="m-closing" class="moment-card moment-red" onclick="activateMoment('closing')"><h4>STÄNGNINGSLÅT</h4><p id="txt-closing-desc">...</p><button class="edit-btn" onclick="openMomentEdit(event, 'closing')">⚙️</button></div>
                     <div id="m-tack" class="moment-card moment-red" onclick="activateMoment('tack')"><h4>TACK FÖR IKVÄLL</h4><p id="txt-tack-desc">...</p><button class="edit-btn" onclick="openMomentEdit(event, 'tack')">⚙️</button></div>
+                    <div id="custom-avslut"></div>
+                    <button class="add-moment-btn" onclick="addNewMoment('avslut')">+</button>
                 </div>
             </div>
             <button id="btn-stop-moment" class="btn-action" style="background: #cd1a2b; width: 100%; margin-top: 20px; display: none;" onclick="stopMoment()">AVSLUTA MOMENT</button>
@@ -119,15 +128,15 @@
     </section>
 </div>
 
-<div id="moment-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000;">
-    <div class="modal-content" style="background:#222; padding:20px; border-radius:8px; width:90%; max-width:400px;">
+<div id="moment-modal" class="modal">
+    <div class="modal-content">
         <h3 id="modal-title">Programmera Moment</h3>
-        <input type="text" id="modal-msg-input" placeholder="Standardmeddelande..." style="width:100%; padding:10px; margin-bottom:10px; background:#111; color:white; border:1px solid #444;">
+        <input type="text" id="modal-msg-input" class="modal-input" placeholder="Standardmeddelande...">
         <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input type="text" id="modal-search-input" placeholder="Sök nytt ljud (YouTube)..." style="flex:1; padding:10px; background:#111; color:white; border:1px solid #444;">
-            <button onclick="searchMomentVideo()" style="padding:10px;">SÖK</button>
+            <input type="text" id="modal-search-input" class="modal-input" style="flex:1; margin-bottom:0;" placeholder="Sök nytt ljud (YouTube)...">
+            <button class="btn-action" onclick="searchMomentVideo()">SÖK</button>
         </div>
-        <div id="modal-results" style="max-height:150px; overflow-y:auto; border:1px solid #333; margin-bottom:15px;"></div>
+        <div id="modal-results" style="max-height:150px; overflow-y:auto; border:1px solid #333; margin-bottom:15px; border-radius:4px;"></div>
         <button class="btn-action" style="background:#1ed760; color:#000; width:100%; margin-bottom:10px;" onclick="saveMomentSettings()">SPARA</button>
         <button class="btn-action" style="background:#444; width:100%;" onclick="closeModal()">AVBRYT</button>
     </div>
