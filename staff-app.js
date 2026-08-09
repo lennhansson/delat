@@ -11,6 +11,18 @@ let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
 
+// KUNDSPECIFIK ORDNING FÖR SPELALISTOR
+const ORDERED_PLAYLISTS = [
+    "happy birthday to you",
+    "acdc",
+    "celiks lista",
+    "saras lista",
+    "la muzika",
+    "favoriter",
+    "before i ieave",
+    "highway man"
+];
+
 window.onYouTubeIframeAPIReady = function () {
     staffYtPlayer = new YT.Player("staff-yt-player", {
         width: "100%", height: "100%",
@@ -49,16 +61,29 @@ function uppdateraStaffPlayer(state) {
     }
 }
 
-// MOBIL: Fyll rullistorna
+function getSortedPlaylistNames(valv) {
+    const allNames = Object.keys(valv || {});
+    const sorted = [];
+
+    // 1. Lägg till de som finns i prioritetslistan (i rätt ordning)
+    ORDERED_PLAYLISTS.forEach(name => {
+        if (allNames.includes(name)) sorted.push(name);
+    });
+
+    // 2. Lägg till resten alfabetiskt
+    const remaining = allNames.filter(n => !ORDERED_PLAYLISTS.includes(n)).sort();
+    return [...sorted, ...remaining];
+}
+
 function fillMobileDropdowns(state) {
     const mainSel = document.getElementById("select-main-playlist");
     const tempSel = document.getElementById("select-temp-playlist");
     const editSel = document.getElementById("select-edit-playlist");
     const momSel = document.getElementById("select-moment-type");
 
-    if (!mainSel) return; // Inte i mobilvyn
+    if (!mainSel) return;
 
-    const playlists = Object.keys(state.valv || {});
+    const playlists = getSortedPlaylistNames(state.valv);
     [mainSel, tempSel, editSel].forEach(sel => {
         if (!sel) return;
         const currentVal = sel.value;
@@ -226,20 +251,29 @@ function byggPlaylistHtml(namn, typ) {
     let btn = isTemp ? `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">-</button>` : (isMain ? "" : `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${namn.replace(/'/g, "\\'")}'})">+</button>`);
     return `<div class="${klass}" onclick="socket.emit('player:byt_valv', {valvNamn: '${namn.replace(/'/g, "\\'")}'})"><div class="cover">${genInitialer(namn)}</div><div class="playlist-name">${namn.replace(/_/g, ' ')}</div>${btn}</div>`;
 }
+
 function renderaBibliotek(state) {
     const s = document.getElementById("active-sticky-target"), sc = document.getElementById("playlist-library-target");
     if (!s) return;
     let sH = "", scH = "";
     if (state.aktivHuvudlista) sH += byggPlaylistHtml(state.aktivHuvudlista, 'main');
     if (state.aktivTillfalligLista) sH += byggPlaylistHtml(state.aktivTillfalligLista, 'temp');
-    Object.keys(state.valv || {}).forEach(n => { if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive'); });
+
+    // ANVÄND SORTERINGSLOGIKEN
+    const playlists = getSortedPlaylistNames(state.valv);
+    playlists.forEach(n => {
+        if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive');
+    });
+
     s.innerHTML = sH || "Ingen."; sc.innerHTML = scH || "Tomt.";
 }
+
 function uppdateraEditVy() {
     const a = nuvarandeState?.aktivHuvudlista; if (!a || !document.getElementById("edit-view-content")) return;
     document.getElementById("edit-view-title").innerText = "Edit: " + a; document.getElementById("edit-view-content").style.display = "block";
     document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[a] || []).map(l => `<div class="song-row"><span>${l}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${a.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button></div>`).join("");
 }
+
 function uppdateraPlayerVy() {
     const t = document.getElementById("player-queue-target");
     if (!t) return;
@@ -254,6 +288,7 @@ function uppdateraPlayerVy() {
             <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
         </div>`).join("");
 }
+
 function laggTillLatIFil() {
     const i = document.getElementById("txt-ny-lat");
     const valv = nuvarandeState?.aktivHuvudlista;

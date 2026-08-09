@@ -21,62 +21,60 @@
 </head>
 <body>
 
-    <div class="kontroller">
-        <h2>Skriv ut Smart-biljetter</h2>
-        <input type="text" id="domain-input" placeholder="Render-url (t.ex. https://app.onrender.com)">
-        <input type="text" id="pub-input" value="7_an" placeholder="Pub ID">
-        <label>Antal låtar per lapp:</label>
-        <select id="lator-select">
-            <option value="1">1 Låt (Standard)</option>
-            <option value="2">2 Låtar</option>
-            <option value="3">3 Låtar (AW-erbjudande)</option>
-            <option value="5">5 Låtar (Helkväll)</option>
-        </select>
-        <button onclick="genereraArk()">Generera Sida 🖨️</button>
-    </div>
+<div class="kontroller">
+    <h2>Skriv ut Smart-biljetter</h2>
+    <input type="text" id="domain-input" placeholder="Render-url (lämna tom för automatisk)">
+    <input type="text" id="pub-input" value="7-an" placeholder="Pub ID">
+    <label>Antal låtar per lapp:</label>
+    <select id="lator-select">
+        <option value="1">1 Låt (Standard)</option>
+        <option value="2">2 Låtar</option>
+        <option value="3">3 Låtar (AW-erbjudande)</option>
+        <option value="5">5 Låtar (Helkväll)</option>
+    </select>
+    <button onclick="genereraArk()">Generera Sida 🖨️</button>
+</div>
 
-    <div class="ark" id="ark-container"></div>
+<div class="ark" id="ark-container"></div>
 
-    <script>
-        function genereraArk() {
-            let doman = document.getElementById("domain-input").value.trim() || window.location.origin;
-            if(doman.endsWith("/")) doman = doman.slice(0, -1);
-            const pubId = document.getElementById("pub-input").value.trim();
-            const antalLator = parseInt(document.getElementById("lator-select").value);
-            const masterSecret = "din-hemliga-globala-paniknyckel-2026";
-            
-            const container = document.getElementById("ark-container");
-            container.innerHTML = "";
+<script>
+    function genereraArk() {
+        let doman = document.getElementById("domain-input").value.trim() || window.location.origin;
+        if(doman.endsWith("/")) doman = doman.slice(0, -1);
+        const pubId = document.getElementById("pub-input").value.trim();
+        const antalLator = parseInt(document.getElementById("lator-select").value);
+        const masterSecret = "din-hemliga-globala-paniknyckel-2026";
 
-            for (let i = 0; i < 12; i++) {
-                const kupongId = Math.floor(1000 + Math.random() * 9000).toString();
-                // Kryptosignera BÅDE id och antal låtar tillsammans
-                const strang = `${kupongId}-${antalLator}`;
-                const hash = CryptoJS.HmacSHA256(strang, masterSecret);
-                const signatur = CryptoJS.enc.Hex.stringify(hash).substring(0, 6).toUpperCase();
-                
-                // Koden får formatet: ID-ANTAL-SIGNATUR
-                const fullstandigKod = `${kupongId}-${antalLator}-${signatur}`;
-                const malLank = `${doman}/pub/${pubId}/mobile?kod=${fullstandigKod}`;
+        const container = document.getElementById("ark-container");
+        container.innerHTML = "";
 
-                const div = document.createElement("div");
-                div.className = "kupong";
-                div.innerHTML = `
-                    <div>
-                        <h2>Global Jukebox</h2>
-                        <p style="color:#007aff; font-size:14px;">VÄRDE: ${antalLator} LÅT${antalLator > 1 ? 'AR' : ''}</p>
-                    </div>
-                    <div class="qr-kod" id="qr-${kupongId}"></div>
-                    <div class="kod-text">${fullstandigKod}</div>
-                `;
-                container.appendChild(div);
+        for (let i = 0; i < 12; i++) {
+            const kupongId = Math.floor(1000 + Math.random() * 9000).toString();
+            const strang = `${kupongId}-${antalLator}`;
+            const hash = CryptoJS.HmacSHA256(strang, masterSecret);
+            const signatur = CryptoJS.enc.Hex.stringify(hash).substring(0, 6).toUpperCase();
 
-                new QRCode(document.getElementById(`qr-${kupongId}`), {
-                    text: malLank, width: 115, height: 115
-                });
-            }
+            const fullstandigKod = `${kupongId}-${antalLator}-${signatur}`;
+            const malLank = `${doman}/pub/${pubId}/mobile?kod=${fullstandigKod}`;
+
+            const div = document.createElement("div");
+            div.className = "kupong";
+            div.innerHTML = `
+                <div>
+                    <h2>Global Jukebox</h2>
+                    <p style="color:#007aff; font-size:14px;">VÄRDE: ${antalLator} LÅT${antalLator > 1 ? 'AR' : ''}</p>
+                </div>
+                <div class="qr-kod" id="qr-${kupongId}"></div>
+                <div class="kod-text">${fullstandigKod}</div>
+            `;
+            container.appendChild(div);
+
+            new QRCode(document.getElementById(`qr-${kupongId}`), {
+                text: malLank, width: 115, height: 115
+            });
         }
-        genereraArk();
-    </script>
+    }
+    genereraArk();
+</script>
 </body>
 </html>

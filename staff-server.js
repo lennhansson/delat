@@ -445,6 +445,7 @@ http.listen(process.env.PORT || 3001, () => {
     console.log(`-------------------------------------------------`);
     console.log(`Staff App (PC/Padda): http://${ip}:3001/pub/7-an/staff`);
     console.log(`Staff Mobile (Mobil): http://${ip}:3001/pub/7-an/staff-mobile`);
+    console.log(`Utskrift biljetter:   http://${ip}:3001/skriv-ut-kuponger.html`);
     console.log(`-------------------------------------------------`);
     console.log(`Gäst-sida: http://${ip}:3001/pub/7-an/mobile`);
     console.log(`=================================================\n`);
