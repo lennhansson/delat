@@ -98,7 +98,7 @@
     function taBortLåt(id) { socket.emit("player:remove_song", { id }); }
 
     function toggleQrKrav() {
-        socket.emit("player:toggle_qr", { qrKrav: !nuvarandeQrKrav });
+        socket.emit("admin:toggle_qr", { qrKrav: !nuvarandeQrKrav });
     }
 
     function bytBakgrundsValv() {
@@ -106,7 +106,6 @@
         socket.emit("player:byt_valv", { valvNamn: val });
     }
 
-    // Initierar YouTubes spelare när API:et har laddats klart
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('yt-player', {
             width: '100%',
@@ -114,19 +113,21 @@
             playerVars: {
                 'autoplay': 1,
                 'controls': 1,
-                'rel': 0
+                'rel': 0,
+                'origin': window.location.origin,
+                'enablejsapi': 1
             },
             events: {
                 'onStateChange': onPlayerStateChange,
                 'onError': (e) => {
                     console.error("Spelarfel:", e);
+                    // Om videon inte kan laddas, gå till nästa direkt
                     socket.emit("player:ready_for_next");
                 }
             }
         });
     }
 
-    // När en låt tar slut skickas signalen till servern att ladda nästa direkt
     function onPlayerStateChange(event) {
         if (event.data === YT.PlayerState.ENDED) {
             socket.emit("player:ready_for_next");
@@ -151,12 +152,14 @@
 
         document.getElementById("player-now-playing").innerText = data.nowPlaying ? data.nowPlaying.title : "Ingen låt i kön...";
 
-        // Kontrollera om videon ska bytas eller startas
+        // --- FIX: Säkerställ att videoId är en sträng och faktiskt har ändrats ---
         if (data.nowPlaying && data.nowPlaying.videoId) {
-            if (nuvarandeVideoId !== data.nowPlaying.videoId) {
-                nuvarandeVideoId = data.nowPlaying.videoId;
+            const vidIdStr = String(data.nowPlaying.videoId);
+            if (nuvarandeVideoId !== vidIdStr && vidIdStr.length > 0) {
+                console.log("Byter video till:", vidIdStr);
+                nuvarandeVideoId = vidIdStr;
                 if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                    ytPlayer.loadVideoById(nuvarandeVideoId);
+                    ytPlayer.loadVideoById(vidIdStr);
                 }
             }
         } else {
@@ -175,14 +178,13 @@
                 </div>
             `).join("");
 
-            const väljare = document.getElementById("valv-väljare");
+        const väljare = document.getElementById("valv-väljare");
         if(data.valv && väljare.children.length === 0) {
             väljare.innerHTML = Object.keys(data.valv).map(v => `
                 <option value="${v}" ${data.aktivtValv === v ? 'selected' : ''}>${v.toUpperCase()}</option>
             `).join("");
         }
 
-        // Adminfilredigering
         const editFileSelect = document.getElementById("edit-valv-file");
         if (data.valv && editFileSelect.children.length === 0) {
             editFileSelect.innerHTML = Object.keys(data.valv).map(v => `
@@ -205,7 +207,7 @@
             list.innerHTML = "<div style='opacity:0.6;'>Ingen låt i filen.</div>";
             return;
         }
-        list.innerHTML = songs.map((song, idx) => {
+        list.innerHTML = songs.map((song) => {
             const title = typeof song === 'object' ? song.title : song;
             return `
             <div class="row" style="justify-content:space-between; font-size:13px;">
@@ -232,12 +234,12 @@
         }
     });
 
-    // Fallback-trigg om spelaren stannat av någon anledning
+    // Snabbare fallback-trigg (2 sekunder)
     setInterval(() => {
         if (document.getElementById("player-now-playing").innerText === "Ingen låt i kön...") {
             socket.emit("player:ready_for_next");
         }
-    }, 1000); // Sänkt till 1s
+    }, 2000);
 </script>
 </body>
 </html>

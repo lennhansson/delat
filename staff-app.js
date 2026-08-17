@@ -11,7 +11,6 @@ let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
 
-// KUNDSPECIFIK ORDNING FÖR SPELALISTOR
 const ORDERED_PLAYLISTS = [
     "happy birthday to you",
     "acdc",
@@ -55,22 +54,20 @@ function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
     if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; return; }
     if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; } return; }
-    if (state.nowPlaying.id !== aktivUniqueId) {
+
+    const vidIdStr = String(state.nowPlaying.videoId);
+    if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
-        staffYtPlayer.loadVideoById(state.nowPlaying.videoId);
+        staffYtPlayer.loadVideoById(vidIdStr);
     }
 }
 
 function getSortedPlaylistNames(valv) {
     const allNames = Object.keys(valv || {});
     const sorted = [];
-
-    // 1. Lägg till de som finns i prioritetslistan (i rätt ordning)
     ORDERED_PLAYLISTS.forEach(name => {
         if (allNames.includes(name)) sorted.push(name);
     });
-
-    // 2. Lägg till resten alfabetiskt
     const remaining = allNames.filter(n => !ORDERED_PLAYLISTS.includes(n)).sort();
     return [...sorted, ...remaining];
 }
@@ -80,20 +77,16 @@ function fillMobileDropdowns(state) {
     const tempSel = document.getElementById("select-temp-playlist");
     const editSel = document.getElementById("select-edit-playlist");
     const momSel = document.getElementById("select-moment-type");
-
     if (!mainSel) return;
-
     const playlists = getSortedPlaylistNames(state.valv);
     [mainSel, tempSel, editSel].forEach(sel => {
         if (!sel) return;
         const currentVal = sel.value;
         sel.innerHTML = (sel === mainSel ? '' : '<option value="">Välj lista...</option>') +
             playlists.map(p => `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p.toUpperCase()}</option>`).join("");
-
         if (sel === mainSel) sel.value = state.aktivHuvudlista || "";
         if (sel === tempSel) sel.value = state.aktivTillfalligLista || "";
     });
-
     if (momSel) {
         const currentMom = momSel.value;
         momSel.innerHTML = '<option value="">Välj Moment...</option>' +
@@ -109,15 +102,12 @@ function updateMomentsUI(state) {
         document.getElementById("btn-stop-moment").style.display = state.activeMoment ? "block" : "none";
         return;
     }
-
     ['drift', 'firande', 'avslut'].forEach(c => document.getElementById('custom-'+c).innerHTML = '');
-
     Object.keys(state.momentsConfig).forEach(key => {
         const cfg = state.momentsConfig[key];
         const descEl = document.getElementById(`txt-${key}-desc`);
         const card = document.getElementById(`m-${key}`);
         const displaySong = cfg.songTitle || cfg.title || "-";
-
         if (card) {
             card.classList.toggle('active', state.activeMoment?.type === key);
             if (descEl) descEl.innerHTML = `<strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${displaySong}</small>`;
@@ -158,12 +148,9 @@ function openMomentEdit(e, type) {
 
 function saveMomentSettings() {
     socket.emit("moment:save_settings", {
-        type: editingMomentType,
-        category: editingMomentCategory,
-        videoId: selectedVideoId,
-        title: selectedTitle,
-        songTitle: selectedSongTitle,
-        thumbnail: selectedThumbnail,
+        type: editingMomentType, category: editingMomentCategory,
+        videoId: selectedVideoId, title: selectedTitle,
+        songTitle: selectedSongTitle, thumbnail: selectedThumbnail,
         defaultMessage: document.getElementById("modal-msg-input").value.trim()
     });
     closeModal();
@@ -192,14 +179,12 @@ function laggTillLatIPermanentLista(videoId, title, thumbnail) {
 
 function uppdateraEditVyMobil(valvNamn) {
     const content = document.getElementById("edit-view-content");
-    if (!content) return;
-    if (!valvNamn) {
-        content.style.display = "none";
-        return;
-    }
+    if (!content || !valvNamn || !nuvarandeState) return;
     content.style.display = "block";
-    if (!nuvarandeState) return;
-    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[valvNamn] || []).map(l => `<div class="song-row" style="justify-content:space-between;"><span>${l}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${valvNamn.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button></div>`).join("");
+    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[valvNamn] || []).map(l => {
+        const title = typeof l === 'object' ? l.title : l;
+        return `<div class="song-row" style="justify-content:space-between;"><span>${title}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${valvNamn.replace(/'/g, "\\'")}', latNamn: '${title.replace(/'/g, "\\'")}'})">✕</button></div>`
+    }).join("");
 }
 
 function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
@@ -214,7 +199,6 @@ socket.on("staff_state", (state) => {
     document.getElementById("chk-qr-krav").checked = !!state.qrKrav;
     document.getElementById("stat-kuponger").innerText = state.statistikKuponger || 0;
     document.getElementById("stat-totalt").innerText = state.statistikTotalt || 0;
-
     renderaBibliotek(state);
     if (document.getElementById("select-edit-playlist")) {
         fillMobileDropdowns(state);
@@ -232,7 +216,6 @@ socket.on("searchResults", (data) => {
     if (modal && modal.style.display === "flex") {
         document.getElementById("modal-results").innerHTML = data.results.map(i => `<div class="song-row" style="cursor:pointer; padding:8px;" onclick="pickVideo('${i.videoId}', '${i.title.replace(/'/g, "")}', '${i.thumbnail}')"><img src="${i.thumbnail}" style="width:40px; margin-right:10px;"><span>${i.title}</span></div>`).join("");
     }
-
     const editRes = document.getElementById("edit-search-results");
     if (editRes) {
         editRes.innerHTML = data.results.map(i => `
@@ -258,42 +241,30 @@ function renderaBibliotek(state) {
     let sH = "", scH = "";
     if (state.aktivHuvudlista) sH += byggPlaylistHtml(state.aktivHuvudlista, 'main');
     if (state.aktivTillfalligLista) sH += byggPlaylistHtml(state.aktivTillfalligLista, 'temp');
-
-    // ANVÄND SORTERINGSLOGIKEN
     const playlists = getSortedPlaylistNames(state.valv);
     playlists.forEach(n => {
         if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive');
     });
-
     s.innerHTML = sH || "Ingen."; sc.innerHTML = scH || "Tomt.";
 }
 
 function uppdateraEditVy() {
     const a = nuvarandeState?.aktivHuvudlista; if (!a || !document.getElementById("edit-view-content")) return;
     document.getElementById("edit-view-title").innerText = "Edit: " + a; document.getElementById("edit-view-content").style.display = "block";
-    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[a] || []).map(l => `<div class="song-row"><span>${l}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${a.replace(/'/g, "\\'")}', latNamn: '${l.replace(/'/g, "\\'")}'})">✕</button></div>`).join("");
+    document.getElementById("edit-song-list-target").innerHTML = (nuvarandeState.valv[a] || []).map(l => {
+        const title = typeof l === 'object' ? l.title : l;
+        return `<div class="song-row"><span>${title}</span><button class="btn-delete" onclick="socket.emit('admin:remove_from_valv', {valvNamn: '${a.replace(/'/g, "\\'")}', latNamn: '${title.replace(/'/g, "\\'")}'})">✕</button></div>`
+    }).join("");
 }
 
 function uppdateraPlayerVy() {
-    const t = document.getElementById("player-queue-target");
-    if (!t) return;
-
+    const t = document.getElementById("player-queue-target"); if (!t) return;
     const isMobile = !!document.getElementById("select-main-playlist");
     const q = nuvarandeState?.queue || [];
     const displayQ = isMobile ? q.slice(0, 2) : q;
-
     t.innerHTML = displayQ.map((l,i) => `
         <div class="song-row" style="padding:8px 0; border-bottom:1px solid #111;">
             <span>${i+1}. ${l.title}</span>
             <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
         </div>`).join("");
-}
-
-function laggTillLatIFil() {
-    const i = document.getElementById("txt-ny-lat");
-    const valv = nuvarandeState?.aktivHuvudlista;
-    if (i && i.value.trim() && valv) {
-        socket.emit("admin:add_to_valv", { valvNamn: valv, lat: i.value.trim() });
-        i.value = "";
-    }
 }
