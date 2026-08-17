@@ -38,22 +38,27 @@ function shuffleArray(array) {
     return newArr;
 }
 
+// HJÄLPFUNKTION FÖR ATT SÄKERSTÄLLA STRÄNG-ID
+function flattenId(id) {
+    if (!id) return null;
+    if (typeof id === 'object') return id.videoId || id.id || null;
+    return String(id);
+}
+
 function hämtaGemensammaListor() {
     try {
         const lib = libraryManager.getLibrary();
         const valv = {};
         Object.values(lib).forEach(song => {
             if (song.playlists && Array.isArray(song.playlists)) {
-                // VIKTIGT: Spara objekt med videoId, inte bara sträng
                 const songObj = {
                     title: `${song.artist} - ${song.title}`,
-                    videoId: song.videoId,
+                    videoId: flattenId(song.videoId), // TVÄTTA HÄR
                     thumbnail: song.thumbnail
                 };
                 song.playlists.forEach(playlistName => {
                     if (!valv[playlistName]) valv[playlistName] = [];
-                    // Undvik dubbletter baserat på videoId
-                    if (!valv[playlistName].some(s => s.videoId === song.videoId)) {
+                    if (!valv[playlistName].some(s => s.videoId === songObj.videoId)) {
                         valv[playlistName].push(songObj);
                     }
                 });
@@ -243,15 +248,14 @@ async function resolveVideoId(song) {
     try {
         const lib = libraryManager.getLibrary();
         const entry = Object.values(lib).find(s => (s.artist + " - " + s.title).toLowerCase() === cacheKey || s.title.toLowerCase() === cacheKey);
-        if (entry && entry.videoId) return entry.videoId;
+        if (entry && entry.videoId) return flattenId(entry.videoId); // TVÄTTA HÄR
     } catch (e) { }
     if (videoIdCache.has(cacheKey)) return videoIdCache.get(cacheKey);
     try {
         const result = await youtubeSearchApi.GetListByKeyword(text, false, 1);
         const firstResult = result?.items?.[0];
-        let id = firstResult?.id || firstResult?.videoId || null;
-        if (typeof id === 'object' && id !== null) id = id.videoId || id.id;
-        if (id && typeof id === 'string') { videoIdCache.set(cacheKey, id); return id; }
+        let id = flattenId(firstResult?.id || firstResult?.videoId || null); // TVÄTTA HÄR
+        if (id) { videoIdCache.set(cacheKey, id); return id; }
     } catch (err) { }
     return 'dQw4w9WgXcQ';
 }
@@ -268,7 +272,6 @@ async function korNastaLatLogik(pubId) {
     if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) return;
     const nu = Date.now();
 
-    // Förhindra dubbel-trigger, men sänk spärren till 1 sekund för snabbare svar
     if (pub.nowPlaying && nu - pub.lastNextTrigger < 1000) return;
     pub.lastNextTrigger = nu;
     pub.isTransitioning = true;
@@ -276,8 +279,7 @@ async function korNastaLatLogik(pubId) {
     try {
         if (pub.queue && pub.queue.length > 0) {
             const nastaLat = pub.queue.shift();
-            // Om videoId saknas (mot förmodan), hämta det, men annars går det direkt!
-            const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
+            const videoId = flattenId(nastaLat.videoId) || await resolveVideoId(nastaLat.title);
             pub.nowPlaying = {
                 id: nastaLat.id,
                 title: nastaLat.title,
@@ -290,8 +292,7 @@ async function korNastaLatLogik(pubId) {
         } else {
             const bgSong = getBackgroundSongAt(pub, pub.playlistCursor);
             if (bgSong) {
-                // Här har bgSong redan videoId om den fanns i biblioteket!
-                const videoId = bgSong.videoId || await resolveVideoId(bgSong.title);
+                const videoId = flattenId(bgSong.videoId) || await resolveVideoId(bgSong.title);
                 pub.nowPlaying = {
                     id: 'valv_' + pub.playlistCursor + '_' + Date.now(),
                     title: bgSong.title,
@@ -323,7 +324,7 @@ io.on('connection', (socket) => {
     socket.on('search', async (data) => {
         try {
             const res = await youtubeSearchApi.GetListByKeyword(data.query, false, 8);
-            const results = (res.items || []).map(i => ({ videoId: (typeof i.id === 'object' ? i.id.videoId : i.id), title: i.title, thumbnail: i.thumbnail?.thumbnails?.[0]?.url || "" }));
+            const results = (res.items || []).map(i => ({ videoId: flattenId(typeof i.id === 'object' ? i.id.videoId : i.id), title: i.title, thumbnail: i.thumbnail?.thumbnails?.[0]?.url || "" }));
             socket.emit('searchResults', { results });
         } catch (e) { }
     });
@@ -346,8 +347,8 @@ io.on('connection', (socket) => {
             resObj.resterande = biljett.total - pub.consumedTickets[biljett.id];
         }
 
-        // OPTIMERING: Hämta videoId direkt innan den läggs i kön
-        const videoId = data.videoId || await resolveVideoId(data.title);
+        const rawVideoId = data.videoId || await resolveVideoId(data.title);
+        const videoId = flattenId(rawVideoId);
 
         pub.queue.push({
             id: Math.random().toString(36).substr(2, 9),
@@ -395,7 +396,7 @@ io.on('connection', (socket) => {
 
         let songData = { title: data.lat };
         if (data.videoId) {
-            songData = { videoId: data.videoId, title: data.title, thumbnail: data.thumbnail };
+            songData = { videoId: flattenId(data.videoId), title: data.title, thumbnail: data.thumbnail };
         } else {
             songData.videoId = await resolveVideoId(data.lat);
         }
@@ -432,8 +433,8 @@ io.on('connection', (socket) => {
         else {
             const cfg = p.moments[data.type];
             if (!cfg) return;
-            p.activeMoment = { type: data.type, message: data.message || cfg.defaultMessage, videoId: cfg.videoId, time: Date.now() };
-            p.nowPlaying = { id: 'm_'+Date.now(), title: cfg.title, videoId: cfg.videoId, thumbnail: cfg.thumbnail, addedBy: 'Staff', isMoment: true };
+            p.activeMoment = { type: data.type, message: data.message || cfg.defaultMessage, videoId: flattenId(cfg.videoId), time: Date.now() };
+            p.nowPlaying = { id: 'm_'+Date.now(), title: cfg.title, videoId: flattenId(cfg.videoId), thumbnail: cfg.thumbnail, addedBy: 'Staff', isMoment: true };
             p.lastNextTrigger = 0;
         }
         broadcastState(socket.pubId);
@@ -444,7 +445,7 @@ io.on('connection', (socket) => {
         const p = hämtaPubData(socket.pubId);
         if (!p.moments[data.type]) p.moments[data.type] = { category: data.category };
         Object.assign(p.moments[data.type], {
-            videoId: data.videoId,
+            videoId: flattenId(data.videoId),
             title: data.title,
             songTitle: data.songTitle,
             thumbnail: data.thumbnail,
