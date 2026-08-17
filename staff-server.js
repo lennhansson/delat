@@ -44,11 +44,17 @@ function hämtaGemensammaListor() {
         const valv = {};
         Object.values(lib).forEach(song => {
             if (song.playlists && Array.isArray(song.playlists)) {
-                const songString = `${song.artist} - ${song.title}`;
+                // VIKTIGT: Spara objekt med videoId, inte bara sträng
+                const songObj = {
+                    title: `${song.artist} - ${song.title}`,
+                    videoId: song.videoId,
+                    thumbnail: song.thumbnail
+                };
                 song.playlists.forEach(playlistName => {
                     if (!valv[playlistName]) valv[playlistName] = [];
-                    if (!valv[playlistName].includes(songString)) {
-                        valv[playlistName].push(songString);
+                    // Undvik dubbletter baserat på videoId
+                    if (!valv[playlistName].some(s => s.videoId === song.videoId)) {
+                        valv[playlistName].push(songObj);
                     }
                 });
             }
@@ -77,32 +83,21 @@ function getBackgroundSongAt(pub, step) {
     const hasMain = Array.isArray(pub.shuffledMain) && pub.shuffledMain.length > 0;
     const hasTemp = Array.isArray(pub.shuffledTemp) && pub.shuffledTemp.length > 0;
 
+    let selected = null;
     if (hasMain && hasTemp) {
         if (step % 2 === 0) {
-            return {
-                title: pub.shuffledMain[Math.floor(step / 2) % pub.shuffledMain.length],
-                addedBy: 'Bakgrundsvalv (Huvud)',
-                playlist: pub.aktivtValv
-            };
+            selected = pub.shuffledMain[Math.floor(step / 2) % pub.shuffledMain.length];
+            return { ...selected, addedBy: 'Bakgrund (Huvud)', playlist: pub.aktivtValv };
         } else {
-            return {
-                title: pub.shuffledTemp[Math.floor(step / 2) % pub.shuffledTemp.length],
-                addedBy: 'Bakgrundsvalv (Extra)',
-                playlist: pub.aktivTillfalligLista
-            };
+            selected = pub.shuffledTemp[Math.floor(step / 2) % pub.shuffledTemp.length];
+            return { ...selected, addedBy: 'Bakgrund (Extra)', playlist: pub.aktivTillfalligLista };
         }
     } else if (hasMain) {
-        return {
-            title: pub.shuffledMain[step % pub.shuffledMain.length],
-            addedBy: 'Bakgrundsvalv',
-            playlist: pub.aktivtValv
-        };
+        selected = pub.shuffledMain[step % pub.shuffledMain.length];
+        return { ...selected, addedBy: 'Bakgrund', playlist: pub.aktivtValv };
     } else if (hasTemp) {
-        return {
-            title: pub.shuffledTemp[step % pub.shuffledTemp.length],
-            addedBy: 'Bakgrundsvalv',
-            playlist: pub.aktivTillfalligLista
-        };
+        selected = pub.shuffledTemp[step % pub.shuffledTemp.length];
+        return { ...selected, addedBy: 'Bakgrund', playlist: pub.aktivTillfalligLista };
     }
     return null;
 }
@@ -272,25 +267,44 @@ async function korNastaLatLogik(pubId) {
     }
     if (pub.activeMoment && (pub.activeMoment.type === 'pause' || pub.activeMoment.type === 'closing')) return;
     const nu = Date.now();
-    if (pub.nowPlaying && nu - pub.lastNextTrigger < 5000) return;
+
+    // Förhindra dubbel-trigger, men sänk spärren till 1 sekund för snabbare svar
+    if (pub.nowPlaying && nu - pub.lastNextTrigger < 1000) return;
     pub.lastNextTrigger = nu;
     pub.isTransitioning = true;
+
     try {
         if (pub.queue && pub.queue.length > 0) {
             const nastaLat = pub.queue.shift();
+            // Om videoId saknas (mot förmodan), hämta det, men annars går det direkt!
             const videoId = nastaLat.videoId || await resolveVideoId(nastaLat.title);
-            pub.nowPlaying = { id: nastaLat.id, title: nastaLat.title, videoId, thumbnail: nastaLat.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`, addedBy: nastaLat.addedBy || 'Gäst', isListSong: false };
+            pub.nowPlaying = {
+                id: nastaLat.id,
+                title: nastaLat.title,
+                videoId,
+                thumbnail: nastaLat.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+                addedBy: nastaLat.addedBy || 'Gäst',
+                isListSong: false
+            };
             broadcastState(pubId);
         } else {
             const bgSong = getBackgroundSongAt(pub, pub.playlistCursor);
             if (bgSong) {
-                const videoId = await resolveVideoId(bgSong.title);
-                pub.nowPlaying = { id: 'valv_' + pub.playlistCursor + '_' + Date.now(), title: bgSong.title, videoId, thumbnail: `https://img.youtube.com/vi/${videoId}/0.jpg`, addedBy: bgSong.addedBy, isListSong: true };
+                // Här har bgSong redan videoId om den fanns i biblioteket!
+                const videoId = bgSong.videoId || await resolveVideoId(bgSong.title);
+                pub.nowPlaying = {
+                    id: 'valv_' + pub.playlistCursor + '_' + Date.now(),
+                    title: bgSong.title,
+                    videoId,
+                    thumbnail: bgSong.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
+                    addedBy: bgSong.addedBy,
+                    isListSong: true
+                };
                 pub.playlistCursor++;
                 broadcastState(pubId);
             } else { if (pub.nowPlaying) { pub.nowPlaying = null; broadcastState(pubId); } }
         }
-    } catch (e) { } finally { pub.isTransitioning = false; }
+    } catch (e) { console.error("Fel i korNastaLatLogik:", e); } finally { pub.isTransitioning = false; }
 }
 
 // --- ROUTES ---
@@ -332,11 +346,14 @@ io.on('connection', (socket) => {
             resObj.resterande = biljett.total - pub.consumedTickets[biljett.id];
         }
 
+        // OPTIMERING: Hämta videoId direkt innan den läggs i kön
+        const videoId = data.videoId || await resolveVideoId(data.title);
+
         pub.queue.push({
             id: Math.random().toString(36).substr(2, 9),
-            videoId: data.videoId || null,
+            videoId: videoId,
             title: data.title,
-            thumbnail: data.thumbnail || null,
+            thumbnail: data.thumbnail || `https://img.youtube.com/vi/${videoId}/0.jpg`,
             addedBy: 'Gäst'
         });
         pub.statistikTotalt++;

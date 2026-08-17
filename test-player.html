@@ -21,221 +21,223 @@
 </head>
 <body>
 
-    <div class="huvud-vy">
-        <h1 id="pub-namn">Laddar spelare...</h1>
-        
-        <h2>Spelas Nu</h2>
-        <div class="row" style="background:#2c2c2e; font-size:18px; padding:15px; flex-direction: column; align-items: stretch; gap: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="player-now-playing">Ingen låt spelas</span>
-                <button class="btn btn-danger" onclick="skipLåt()">SKIP</button>
-            </div>
-            <div id="yt-player-container" style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 6px; overflow: hidden;">
-                <div id="yt-player"></div>
-            </div>
+<div class="huvud-vy">
+    <h1 id="pub-namn">Laddar spelare...</h1>
+
+    <h2>Spelas Nu</h2>
+    <div class="row" style="background:#2c2c2e; font-size:18px; padding:15px; flex-direction: column; align-items: stretch; gap: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="player-now-playing">Ingen låt spelas</span>
+            <button class="btn btn-danger" onclick="skipLåt()">SKIP</button>
         </div>
-
-        <h2>Kommande låtar (Kön)</h2>
-        <div id="player-queue-lista"></div>
-    </div>
-
-    <div class="kontroll-panel">
-        <h2>Inställningar</h2>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="display:block; margin-bottom:5px; font-weight:bold;">Inmatningsläge:</label>
-            <button id="qr-toggle-btn" class="btn btn-secondary" style="width:100%;" onclick="toggleQrKrav()">Slå på QR-krav</button>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label style="display:block; margin-bottom:5px; font-weight:bold;">Aktivt bakgrundsvalv:</label>
-            <select id="valv-väljare" style="width:100%; padding:8px; border-radius:4px; background:#2c2c2e; color:white; border:none;" onchange="bytBakgrundsValv()">
-            </select>
-        </div>
-
-        <div class="stat-box" style="padding:15px; background:#2c2c2e; border-radius:8px; border:1px solid #444;">
-            <h3 style="margin:0 0 12px 0; font-size:15px; color:#1db954; text-transform:uppercase; letter-spacing:0.5px;">PoC Mätdata</h3>
-            <div class="stat-rad">
-                <span>Använda Kuponger (låtar):</span>
-                <strong id="stat-kuponger" style="color:#007aff;">0</strong>
-            </div>
-            <div class="stat-rad">
-                <span>Totalt önskade låtar:</span>
-                <strong id="stat-totalt" style="color:#fff;">0</strong>
-            </div>
-        </div>
-
-        <div class="stat-box" style="padding:15px; background:#2c2c2e; border-radius:8px; border:1px solid #444; margin-top:20px;">
-            <h3 style="margin:0 0 12px 0; font-size:15px; color:#1db954; text-transform:uppercase; letter-spacing:0.5px;">Filredigering (.json)</h3>
-            <div style="margin-bottom:12px;">
-                <label style="display:block; margin-bottom:5px; font-weight:bold;">Välj fil att redigera:</label>
-                <select id="edit-valv-file" style="width:100%; padding:8px; border-radius:4px; background:#2c2c2e; color:white; border:none;" onchange="valjFilAttRedigera()"></select>
-            </div>
-            <div style="margin-bottom:12px;">
-                <label style="display:block; margin-bottom:5px; font-weight:bold;">Lägg till ny låt:</label>
-                <input id="new-song-input" type="text" placeholder="Artist - Låtens namn" style="width:100%; padding:8px; border-radius:4px; background:#111; color:white; border:1px solid #333; box-sizing:border-box; margin-bottom:8px;">
-                <button class="btn btn-success" style="width:100%;" onclick="laggTillLatenIValv()">SPARA I FIL</button>
-            </div>
-            <div>
-                <div style="margin-bottom:8px; font-weight:bold;">Låtar i denna fil just nu:</div>
-                <div id="valv-song-list" style="max-height:240px; overflow:auto; font-size:13px; line-height:1.4;"></div>
-            </div>
+        <div id="yt-player-container" style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 6px; overflow: hidden;">
+            <div id="yt-player"></div>
         </div>
     </div>
 
-    <script>
-        const socket = io();
-        const stigar = window.location.pathname.split('/');
-        const pubId = stigar[stigar.indexOf('pub') + 1];
+    <h2>Kommande låtar (Kön)</h2>
+    <div id="player-queue-lista"></div>
+</div>
 
-        let nuvarandeQrKrav = false;
-        let ytPlayer = null;
-        let nuvarandeVideoId = null;
+<div class="kontroll-panel">
+    <h2>Inställningar</h2>
 
-        socket.emit("join_pub", pubId);
+    <div style="margin-bottom: 15px;">
+        <label style="display:block; margin-bottom:5px; font-weight:bold;">Inmatningsläge:</label>
+        <button id="qr-toggle-btn" class="btn btn-secondary" style="width:100%;" onclick="toggleQrKrav()">Slå på QR-krav</button>
+    </div>
 
-        function skipLåt() { socket.emit("player:skip"); }
-        function taBortLåt(id) { socket.emit("player:remove_song", { id }); }
-        
-        function toggleQrKrav() {
-            socket.emit("player:toggle_qr", { qrKrav: !nuvarandeQrKrav });
-        }
+    <div style="margin-bottom: 20px;">
+        <label style="display:block; margin-bottom:5px; font-weight:bold;">Aktivt bakgrundsvalv:</label>
+        <select id="valv-väljare" style="width:100%; padding:8px; border-radius:4px; background:#2c2c2e; color:white; border:none;" onchange="bytBakgrundsValv()">
+        </select>
+    </div>
 
-        function bytBakgrundsValv() {
-            const val = document.getElementById("valv-väljare").value;
-            socket.emit("player:byt_valv", { valvNamn: val });
-        }
+    <div class="stat-box" style="padding:15px; background:#2c2c2e; border-radius:8px; border:1px solid #444;">
+        <h3 style="margin:0 0 12px 0; font-size:15px; color:#1db954; text-transform:uppercase; letter-spacing:0.5px;">PoC Mätdata</h3>
+        <div class="stat-rad">
+            <span>Använda Kuponger (låtar):</span>
+            <strong id="stat-kuponger" style="color:#007aff;">0</strong>
+        </div>
+        <div class="stat-rad">
+            <span>Totalt önskade låtar:</span>
+            <strong id="stat-totalt" style="color:#fff;">0</strong>
+        </div>
+    </div>
 
-        // Initierar YouTubes spelare när API:et har laddats klart
-        function onYouTubeIframeAPIReady() {
-            ytPlayer = new YT.Player('yt-player', {
-                width: '100%',
-                height: '100%',
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 1,
-                    'rel': 0
-                },
-                events: {
-                    'onStateChange': onPlayerStateChange,
-                    'onError': (e) => {
-                        console.error("Spelarfel:", e);
-                        socket.emit("player:ready_for_next");
-                    }
-                }
-            });
-        }
+    <div class="stat-box" style="padding:15px; background:#2c2c2e; border-radius:8px; border:1px solid #444; margin-top:20px;">
+        <h3 style="margin:0 0 12px 0; font-size:15px; color:#1db954; text-transform:uppercase; letter-spacing:0.5px;">Filredigering (.json)</h3>
+        <div style="margin-bottom:12px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Välj fil att redigera:</label>
+            <select id="edit-valv-file" style="width:100%; padding:8px; border-radius:4px; background:#2c2c2e; color:white; border:none;" onchange="valjFilAttRedigera()"></select>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">Lägg till ny låt:</label>
+            <input id="new-song-input" type="text" placeholder="Artist - Låtens namn" style="width:100%; padding:8px; border-radius:4px; background:#111; color:white; border:1px solid #333; box-sizing:border-box; margin-bottom:8px;">
+            <button class="btn btn-success" style="width:100%;" onclick="laggTillLatenIValv()">SPARA I FIL</button>
+        </div>
+        <div>
+            <div style="margin-bottom:8px; font-weight:bold;">Låtar i denna fil just nu:</div>
+            <div id="valv-song-list" style="max-height:240px; overflow:auto; font-size:13px; line-height:1.4;"></div>
+        </div>
+    </div>
+</div>
 
-        // När en låt tar slut skickas signalen till servern att ladda nästa direkt
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.ENDED) {
-                socket.emit("player:ready_for_next");
-            }
-        }
+<script>
+    const socket = io();
+    const stigar = window.location.pathname.split('/');
+    const pubId = stigar[stigar.indexOf('pub') + 1];
 
-        socket.on("state", (data) => {
-            document.getElementById("pub-namn").innerText = data.pubNamn + " - Spelarskärm";
-            
-            nuvarandeQrKrav = data.qrKrav;
-            const qrBtn = document.getElementById("qr-toggle-btn");
-            if(data.qrKrav) {
-                qrBtn.className = "btn btn-success";
-                qrBtn.innerText = "QR-KRAV AKTIVT (Kuponger krävs)";
-            } else {
-                qrBtn.className = "btn btn-secondary";
-                qrBtn.innerText = "FRI JUKEBOX (Inga kuponger krävs)";
-            }
+    let nuvarandeQrKrav = false;
+    let ytPlayer = null;
+    let nuvarandeVideoId = null;
 
-            document.getElementById("stat-kuponger").innerText = data.statistikKuponger || 0;
-            document.getElementById("stat-totalt").innerText = data.statistikTotalt || 0;
+    socket.emit("join_pub", pubId);
 
-            document.getElementById("player-now-playing").innerText = data.nowPlaying ? data.nowPlaying.title : "Ingen låt i kön...";
+    function skipLåt() { socket.emit("player:skip"); }
+    function taBortLåt(id) { socket.emit("player:remove_song", { id }); }
 
-            // Kontrollera om videon ska bytas eller startas
-            if (data.nowPlaying && data.nowPlaying.videoId) {
-                if (nuvarandeVideoId !== data.nowPlaying.videoId) {
-                    nuvarandeVideoId = data.nowPlaying.videoId;
-                    if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                        ytPlayer.loadVideoById(nuvarandeVideoId);
-                    }
-                }
-            } else {
-                nuvarandeVideoId = null;
-                if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
-                    ytPlayer.stopVideo();
-                }
-            }
+    function toggleQrKrav() {
+        socket.emit("player:toggle_qr", { qrKrav: !nuvarandeQrKrav });
+    }
 
-            document.getElementById("player-queue-lista").innerHTML = data.fullQueue.length === 0 
-                ? "<span style='opacity:0.4;'>Kön är helt tom...</span>" 
-                : data.fullQueue.map((l, i) => `
-                    <div class="row">
-                        <span><strong>${i+1}.</strong> ${l.title} <small style='opacity:0.5; margin-left:10px;'>(${l.addedBy})</small></span>
-                        <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="taBortLåt('${l.id}')">TA BORT</button>
-                    </div>
-                `).join("");
+    function bytBakgrundsValv() {
+        const val = document.getElementById("valv-väljare").value;
+        socket.emit("player:byt_valv", { valvNamn: val });
+    }
 
-                const väljare = document.getElementById("valv-väljare");
-            if(data.valv && väljare.children.length === 0) {
-                väljare.innerHTML = Object.keys(data.valv).map(v => `
-                    <option value="${v}" ${data.aktivtValv === v ? 'selected' : ''}>${v.toUpperCase()}</option>
-                `).join("");
-            }
-
-            // Adminfilredigering
-            const editFileSelect = document.getElementById("edit-valv-file");
-            if (data.valv && editFileSelect.children.length === 0) {
-                editFileSelect.innerHTML = Object.keys(data.valv).map(v => `
-                    <option value="${v}">${v.toUpperCase()}</option>
-                `).join("");
-                if (Object.keys(data.valv).length > 0) {
-                    loadValvSongList(editFileSelect.value, data.valv[editFileSelect.value]);
+    // Initierar YouTubes spelare när API:et har laddats klart
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('yt-player', {
+            width: '100%',
+            height: '100%',
+            playerVars: {
+                'autoplay': 1,
+                'controls': 1,
+                'rel': 0
+            },
+            events: {
+                'onStateChange': onPlayerStateChange,
+                'onError': (e) => {
+                    console.error("Spelarfel:", e);
+                    socket.emit("player:ready_for_next");
                 }
             }
         });
+    }
 
-        function valjFilAttRedigera() {
-            const fil = document.getElementById("edit-valv-file").value;
-            socket.emit("admin:request_valv_data", { valvNamn: fil });
+    // När en låt tar slut skickas signalen till servern att ladda nästa direkt
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+            socket.emit("player:ready_for_next");
+        }
+    }
+
+    socket.on("state", (data) => {
+        document.getElementById("pub-namn").innerText = data.pubNamn + " - Spelarskärm";
+
+        nuvarandeQrKrav = data.qrKrav;
+        const qrBtn = document.getElementById("qr-toggle-btn");
+        if(data.qrKrav) {
+            qrBtn.className = "btn btn-success";
+            qrBtn.innerText = "QR-KRAV AKTIVT (Kuponger krävs)";
+        } else {
+            qrBtn.className = "btn btn-secondary";
+            qrBtn.innerText = "FRI JUKEBOX (Inga kuponger krävs)";
         }
 
-        function loadValvSongList(valvNamn, songs) {
-            const list = document.getElementById("valv-song-list");
-            if (!songs || songs.length === 0) {
-                list.innerHTML = "<div style='opacity:0.6;'>Ingen låt i filen.</div>";
-                return;
+        document.getElementById("stat-kuponger").innerText = data.statistikKuponger || 0;
+        document.getElementById("stat-totalt").innerText = data.statistikTotalt || 0;
+
+        document.getElementById("player-now-playing").innerText = data.nowPlaying ? data.nowPlaying.title : "Ingen låt i kön...";
+
+        // Kontrollera om videon ska bytas eller startas
+        if (data.nowPlaying && data.nowPlaying.videoId) {
+            if (nuvarandeVideoId !== data.nowPlaying.videoId) {
+                nuvarandeVideoId = data.nowPlaying.videoId;
+                if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                    ytPlayer.loadVideoById(nuvarandeVideoId);
+                }
             }
-            list.innerHTML = songs.map((song, idx) => `
-                <div class="row" style="justify-content:space-between; font-size:13px;">
-                    <span style="flex:1;">${song}</span>
-                    <button class="btn btn-danger" style="padding:4px 8px; font-size:12px; margin-left:10px;" onclick="taBortLatFranFil('${valvNamn}', ${idx})">TA BORT ❌</button>
+        } else {
+            nuvarandeVideoId = null;
+            if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+                ytPlayer.stopVideo();
+            }
+        }
+
+        document.getElementById("player-queue-lista").innerHTML = data.fullQueue.length === 0
+            ? "<span style='opacity:0.4;'>Kön är helt tom...</span>"
+            : data.fullQueue.map((l, i) => `
+                <div class="row">
+                    <span><strong>${i+1}.</strong> ${l.title} <small style='opacity:0.5; margin-left:10px;'>(${l.addedBy})</small></span>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="taBortLåt('${l.id}')">TA BORT</button>
                 </div>
+            `).join("");
+
+            const väljare = document.getElementById("valv-väljare");
+        if(data.valv && väljare.children.length === 0) {
+            väljare.innerHTML = Object.keys(data.valv).map(v => `
+                <option value="${v}" ${data.aktivtValv === v ? 'selected' : ''}>${v.toUpperCase()}</option>
             `).join("");
         }
 
-        function laggTillLatenIValv() {
-            const valvNamn = document.getElementById("edit-valv-file").value;
-            const song = document.getElementById("new-song-input").value.trim();
-            if (!song) return alert("Skriv in en låt först.");
-            socket.emit("admin:add_to_valv", { valvNamn, lat: song });
-        }
-
-        function taBortLatFranFil(valvNamn, index) {
-            socket.emit("admin:remove_from_valv", { valvNamn, index });
-        }
-
-        socket.on("admin:valv_data", (data) => {
-            if (data.valvNamn === document.getElementById("edit-valv-file").value) {
-                loadValvSongList(data.valvNamn, data.songs);
+        // Adminfilredigering
+        const editFileSelect = document.getElementById("edit-valv-file");
+        if (data.valv && editFileSelect.children.length === 0) {
+            editFileSelect.innerHTML = Object.keys(data.valv).map(v => `
+                <option value="${v}">${v.toUpperCase()}</option>
+            `).join("");
+            if (Object.keys(data.valv).length > 0) {
+                loadValvSongList(editFileSelect.value, data.valv[editFileSelect.value]);
             }
-        });
+        }
+    });
 
-        // Fallback-trigg ifall kön blir helt tom och bakgrundsvalv ska kicka igång
-        setInterval(() => {
-            if (document.getElementById("player-now-playing").innerText === "Ingen låt i kön...") {
-                socket.emit("player:ready_for_next");
-            }
-        }, 5000);
-    </script>
+    function valjFilAttRedigera() {
+        const fil = document.getElementById("edit-valv-file").value;
+        socket.emit("admin:request_valv_data", { valvNamn: fil });
+    }
+
+    function loadValvSongList(valvNamn, songs) {
+        const list = document.getElementById("valv-song-list");
+        if (!songs || songs.length === 0) {
+            list.innerHTML = "<div style='opacity:0.6;'>Ingen låt i filen.</div>";
+            return;
+        }
+        list.innerHTML = songs.map((song, idx) => {
+            const title = typeof song === 'object' ? song.title : song;
+            return `
+            <div class="row" style="justify-content:space-between; font-size:13px;">
+                <span style="flex:1;">${title}</span>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:12px; margin-left:10px;" onclick="taBortLatFranFil('${valvNamn}', '${title}')">TA BORT ❌</button>
+            </div>
+        `}).join("");
+    }
+
+    function laggTillLatenIValv() {
+        const valvNamn = document.getElementById("edit-valv-file").value;
+        const song = document.getElementById("new-song-input").value.trim();
+        if (!song) return alert("Skriv in en låt först.");
+        socket.emit("admin:add_to_valv", { valvNamn, lat: song });
+    }
+
+    function taBortLatFranFil(valvNamn, latNamn) {
+        socket.emit("admin:remove_from_valv", { valvNamn, latNamn });
+    }
+
+    socket.on("admin:valv_data", (data) => {
+        if (data.valvNamn === document.getElementById("edit-valv-file").value) {
+            loadValvSongList(data.valvNamn, data.songs);
+        }
+    });
+
+    // Fallback-trigg om spelaren stannat av någon anledning
+    setInterval(() => {
+        if (document.getElementById("player-now-playing").innerText === "Ingen låt i kön...") {
+            socket.emit("player:ready_for_next");
+        }
+    }, 1000); // Sänkt till 1s
+</script>
 </body>
 </html>
