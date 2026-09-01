@@ -6,6 +6,8 @@ const pubId = (pubIndex !== -1 && urlDelar[pubIndex + 1]) ? urlDelar[pubIndex + 
 let nuvarandeState = null;
 let staffYtPlayer = null;
 let aktivUniqueId = null;
+let currentStopPos = 0;
+let timeWatcher = null;
 let editingMomentType = null;
 let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
@@ -28,7 +30,11 @@ window.onYouTubeIframeAPIReady = function () {
         playerVars: { autoplay: 1, controls: 1, origin: window.location.origin, enablejsapi: 1, rel: 0, mute: 0 },
         events: {
             onReady: () => { if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState); },
-            onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) triggaSpelareReady(); }
+            onStateChange: (e) => {
+                if (e.data === YT.PlayerState.ENDED) triggaSpelareReady();
+                if (e.data === YT.PlayerState.PLAYING) startWatcher();
+            },
+            onError: () => triggaSpelareReady()
         }
     });
 };
@@ -44,21 +50,62 @@ document.addEventListener('click', () => {
     if (staffYtPlayer?.unMute) { staffYtPlayer.unMute(); staffYtPlayer.setVolume(100); }
 }, { once: true });
 
+function startWatcher() {
+    if (timeWatcher) clearInterval(timeWatcher);
+    timeWatcher = setInterval(() => {
+        if (staffYtPlayer?.getCurrentTime) {
+            const now = staffYtPlayer.getCurrentTime();
+            // Klipp låten om vi nått stopposition (men vänta minst 2 sek så vi inte klipper direkt)
+            if (currentStopPos > 0 && now >= currentStopPos && now > 2) {
+                console.log("Klipper vid stopptid:", currentStopPos);
+                triggaSpelareReady();
+            }
+        }
+    }, 500);
+}
+
 function startaSpelaren() {
     hasInteracted = true;
-    if (staffYtPlayer) { if (staffYtPlayer.unMute) staffYtPlayer.unMute(); staffYtPlayer.playVideo(); }
-    socket.emit("player:ready_for_next");
+    if (staffYtPlayer) {
+        if (staffYtPlayer.unMute) staffYtPlayer.unMute();
+        staffYtPlayer.playVideo();
+        if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState);
+    }
 }
 
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
-    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; return; }
-    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; } return; }
+
+    // Hantera paus
+    if (state.activeMoment?.type === 'pause') {
+        if (timeWatcher) clearInterval(timeWatcher);
+        staffYtPlayer.stopVideo();
+        aktivUniqueId = null;
+        return;
+    }
+
+    // Hantera tystnad
+    if (!state.nowPlaying) {
+        if (aktivUniqueId !== null) {
+            if (timeWatcher) clearInterval(timeWatcher);
+            staffYtPlayer.stopVideo();
+            aktivUniqueId = null;
+        }
+        return;
+    }
 
     const vidIdStr = String(state.nowPlaying.videoId);
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
-        staffYtPlayer.loadVideoById(vidIdStr);
+        currentStopPos = state.nowPlaying.stopPosition || 0;
+
+        console.log("Spelar ny låt:", state.nowPlaying.title, "Start:", state.nowPlaying.startPosition, "Stopp:", currentStopPos);
+
+        staffYtPlayer.loadVideoById({
+            videoId: vidIdStr,
+            startSeconds: state.nowPlaying.startPosition || 0,
+            endSeconds: state.nowPlaying.stopPosition || 0
+        });
     }
 }
 
@@ -188,17 +235,31 @@ function uppdateraEditVyMobil(valvNamn) {
 }
 
 function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
-function triggaSpelareReady() { aktivUniqueId = null; socket.emit("player:ready_for_next"); }
-function skipLat() { socket.emit("player:skip"); }
+
+function triggaSpelareReady() {
+    if (timeWatcher) clearInterval(timeWatcher);
+    currentStopPos = 0;
+    aktivUniqueId = null;
+    socket.emit("player:ready_for_next");
+}
+
+function skipLat() { triggaSpelareReady(); }
+
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 
 socket.on('connect', () => socket.emit("join_pub", pubId));
 socket.on("staff_state", (state) => {
     nuvarandeState = state;
     document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
-    document.getElementById("chk-qr-krav").checked = !!state.qrKrav;
-    document.getElementById("stat-kuponger").innerText = state.statistikKuponger || 0;
-    document.getElementById("stat-totalt").innerText = state.statistikTotalt || 0;
+    const qrKravEl = document.getElementById("chk-qr-krav");
+    if (qrKravEl) qrKravEl.checked = !!state.qrKrav;
+
+    const statKup = document.getElementById("stat-kuponger");
+    if (statKup) statKup.innerText = state.statistikKuponger || 0;
+
+    const statTot = document.getElementById("stat-totalt");
+    if (statTot) statTot.innerText = state.statistikTotalt || 0;
+
     renderaBibliotek(state);
     if (document.getElementById("select-edit-playlist")) {
         fillMobileDropdowns(state);

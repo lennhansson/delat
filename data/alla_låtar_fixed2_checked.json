@@ -865,7 +865,7 @@
     ],
     "duration": 167,
     "future": [
-      22.25,
+      2.25,
       159.9,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -13898,7 +13898,19 @@
       "F4"
     ]
   },
-
+  "1939": {
+    "videoId": "dsZks2ZxqTs",
+    "artist": "Okänd Artist",
+    "title": "The Clash live San Bernardino 1983",
+    "thumbnail": "https://i.ytimg.com/vi/dsZks2ZxqTs/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4EgALgA4oCDAgAEAEYciBOKDowDw==&rs=AOn4CLBzDoWW50TV6NS6fP7BoYfhbgbT0g",
+    "playlists": [],
+    "duration": 4523,
+    "future": [
+      "F2",
+      "F4",
+      "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*4511-4523', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_okkba27y\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=dsZks2ZxqTs']' timed out after 180 seconds)"
+    ]
+  },
   "1940": {
     "videoId": "LQ82BX0hGBM",
     "artist": "The Clash",

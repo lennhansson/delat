@@ -1,0 +1,24 @@
+﻿check-songs.info
+Syfte
+Detta dokument beskriver underhållsverktyget check_songs för hantering av YouTube-låtlistor i JSON-format. Systemet är byggt för att snabbt identifiera trasiga länkar, saknade videoID:n och uppdatera låtlängder (duration) med hjälp av yt-dlp.
+Nuvarande Funktionalitet (Version 1)
+* Hälsokoll: Verifierar att YouTube-länkar är aktiva och nåbara via yt-dlp.
+* Automatiserad Duration: Hämtar och uppdaterar duration i JSON-filen.
+* Felhantering: Flaggor (blocked, F1) sätts automatiskt vid fel eller saknade ID:n.
+* Säker redigering: Ändringar sparas till en ny fil (_checked.json) för att undvika oavsiktlig korruption av den skarpa listan.
+* Kontrollrum (check_songs.html): Isolerat gränssnitt för att manuellt korrigera felaktiga videoId och trigger-kontroller.
+Planerade Funktioner (Version 2 - "Audio Intelligence")
+För att optimera lyssningsupplevelsen och undvika långa tysta partier i början/slutet av spår planeras följande funktionalitet:
+Audio-analys & trimning
+Systemet ska automatiskt analysera ljudspåret för att identifiera när musiken faktiskt börjar och slutar.
+* Mekanik: Analysera de första 5 och sista 5 sekunderna av ljudspåret.
+* Logik: Identifiera tystnad eller "nästan tystnad" för att bestämma faktiska start- och stoppunkter.
+* Data-lagring: Lagra tidsstämplar i future-fältet under taggen F3 i formatet MM.SS, MM.SS (t.ex. 01.45, 03.40).
+Spelarlogik (Framtida implementation)
+Den integrerade spelaren kommer vid uppspelning att använda dessa tidsstämplar för att:
+1. Hoppa fram till den faktiska startpunkten direkt vid låtstart.
+2. Hoppa över tystnad i mitten av spåret om sådant identifieras (optional).
+3. Avsluta spåret vid den korrekta slutpunkten.
+Tekniska krav för Version 2
+* Audio-processering: Kräver integration med bibliotek som ffmpeg (via yt-dlp eller lokalt skript) för att extrahera ljuddata och analysera volymnivåer.
+* JSON-schema: Utökning av future-fältet för att hantera de lagrade trimningsvärdena på ett strukturerat sätt.
