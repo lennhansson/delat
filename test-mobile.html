@@ -3,133 +3,81 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1db954">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
     <title>Jukebox</title>
-    <link rel="stylesheet" href="/test-mobile.css">
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        #moment-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 30px;
-            color: #fff;
-        }
-        #moment-overlay .icon { font-size: 60px; margin-bottom: 20px; }
-        #moment-overlay h2 { font-size: 28px; margin-bottom: 15px; color: var(--accent); }
-        #moment-overlay p { font-size: 18px; line-height: 1.4; }
-        .close-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        #qr-reader { width: 100%; max-width: 400px; margin: 0 auto; border: none !important; }
-        #qr-reader__scan_region { background: #000; }
-        #qr-reader video { border-radius: 8px; }
-        .scanner-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; }
-        .scanner-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-    </style>
+    <script src="/test-mobile.js" defer></script>
+    <script src="/jukebox-pwa.js" defer></script>
+    <link rel="stylesheet" href="/test-mobile.css">
 </head>
 <body>
 
-<div id="moment-overlay" onclick="döljMomentOverlay()">
-    <button class="close-overlay">✕</button>
-    <div class="icon">📢</div>
-    <h2 id="moment-title">Viktigt meddelande</h2>
-    <p id="moment-msg"></p>
-</div>
+<header class="mobile-header">
+    <h1 id="pub-titel">Jukebox</h1>
+    <div id="knapp-saldo" class="saldo-badge" onclick="bytFlik('qr')" style="display:none;">0</div>
+</header>
 
-<div id="toast">Låten tillagd! 🎵</div>
-
-<div id="scanner-layer" class="scanner-container">
-    <div class="scanner-header">
-        <h2 style="margin:0; font-size:18px;">Skanna biljett</h2>
-        <button onclick="stoppaScanner()" style="background:#333; color:white; border:none; padding:10px 15px; border-radius:5px;">AVBRYT</button>
-    </div>
-    <div id="qr-reader"></div>
-    <div style="padding:40px; text-align:center; color:#888;">Håll QR-koden inom ramen</div>
-</div>
-
-<div class="app-container">
-    <header>
-        <h1 id="pub-titel">Jukebox</h1>
-        <button class="refresh-btn" onclick="window.location.reload()">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        </button>
-    </header>
-
-    <main id="tab-sok" class="tab-content active">
-        <div class="card now-playing">
-            <div class="section-title"><span class="live-dot"></span>Nu spelas</div>
-            <div id="now-playing-info" style="display:flex; flex-direction:column; align-items:center;">
-                <div id="now-playing-img-container"></div>
-                <div id="now-playing-text" style="font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 8px;">Hämtar...</div>
-                <div id="now-playing-meta" style="font-size: 13px; color: var(--text-dim); margin-top: 4px;"></div>
-            </div>
+<main class="content">
+    <section id="tab-sok" class="tab-content active">
+        <div class="search-box">
+            <input type="text" id="query" placeholder="Sök artist eller låt..." onkeyup="if(event.key==='Enter') sök()">
+            <button onclick="sök()">SÖK</button>
         </div>
+        <div style="font-size:10px; color:#666; margin: 10px 15px;">Max 8 minuter visas.</div>
+        <div id="results" class="results-list"></div>
+    </section>
 
-        <div class="search-pill">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <input type="text" id="query" placeholder="Sök låt eller artist..." onfocus="kontrolleraKrav()">
-            <button class="search-btn" onclick="sök()">
-                SÖK
-                <span id="knapp-saldo" class="badge-count" style="display: none;">0</span>
-            </button>
-        </div>
-
-        <div id="results"></div>
-
-        <div class="card">
-            <div class="section-title">Nästa låtar</div>
-            <div id="queue-lista"></div>
-        </div>
-    </main>
+    <section id="tab-queue" class="tab-content">
+        <h2 class="section-title">Kön</h2>
+        <div id="queue-lista"></div>
+    </section>
 
     <section id="tab-qr" class="tab-content">
-        <div class="card" style="text-align: center; padding: 40px 20px;">
-            <div class="section-title">Ditt Saldo</div>
-            <div id="saldo-info-text" class="saldo-display">0</div>
-            <button class="big-btn btn-primary" onclick="startaScanner()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                SKANNA BILJETT
-            </button>
-            <p style="font-size: 13px; color: var(--text-dim); margin-top: 24px; line-height: 1.5;">Skanna din QR-kod för att fylla på din pott med låtar.</p>
-            <input type="hidden" id="kupong-input">
+        <div class="qr-container">
+            <div id="saldo-info" class="card">
+                <h3>Saldo</h3>
+                <div id="saldo-info-text" class="large-saldo">0</div>
+            </div>
+            <button class="scan-btn" onclick="startaScanner()">SCANNA KUPONG</button>
+            <input type="text" id="kupong-input" placeholder="Skriv kod här..." style="margin-top:15px; width:100%; padding:10px; border-radius:8px;">
         </div>
     </section>
 
-    <section id="tab-settings" class="tab-content"></section>
-</div>
+    <section id="tab-dela" class="tab-content">
+        <div class="qr-container" style="text-align:center;">
+            <h2 class="section-title">Dela Jukeboxen</h2>
+            <p style="color:#888; font-size:13px; margin-bottom:20px;">Visa denna kod för en polare!</p>
+            <div id="share-qr-target" style="background:white; padding:15px; border-radius:10px; display:inline-block;"></div>
+        </div>
+    </section>
+</main>
 
-<nav class="bottom-nav">
-    <button id="btn-tab-sok" class="nav-item active" onclick="bytFlik('sok')">
-        <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-        Jukebox
-    </button>
-    <button id="btn-tab-qr" class="nav-item" onclick="bytFlik('qr')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-        Mitt Saldo
-    </button>
-    <button id="btn-tab-settings" class="nav-item" onclick="bytFlik('settings')">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36-2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-        Inställningar
-    </button>
+<nav class="mobile-nav">
+    <div id="btn-tab-sok" class="nav-item active" onclick="bytFlik('sok')"><span>🔍</span><span>Sök</span></div>
+    <div id="btn-tab-queue" class="nav-item" onclick="bytFlik('queue')"><span>📜</span><span>Kön</span></div>
+    <div id="btn-tab-qr" class="nav-item" onclick="bytFlik('qr')"><span>🎟️</span><span>Kupong</span></div>
+    <div id="btn-tab-dela" class="nav-item" onclick="bytFlik('dela')"><span>🤝</span><span>Dela</span></div>
 </nav>
 
-<script src="/test-mobile.js"></script>
+<div id="scanner-layer" class="fullscreen-overlay" style="display:none;">
+    <div id="qr-reader"></div>
+    <button class="close-overlay" onclick="stoppaScanner()">AVBRYT</button>
+</div>
 
+<div id="moment-overlay" class="moment-overlay" style="display:none;">
+    <div class="moment-content">
+        <div class="icon">📢</div>
+        <h2 id="moment-title">INFO</h2>
+        <p id="moment-msg"></p>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
 </body>
 </html>
