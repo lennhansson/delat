@@ -302,6 +302,19 @@ async function korNastaLatLogik(pubId) {
     } catch (e) { console.error("Fel i korNastaLatLogik:", e); } finally { pub.isTransitioning = false; }
 }
 
+// --- ROUTES ---
+app.get('/pub/:pubId', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-mobile.html'));
+});
+
+app.get('/pub/:pubId/staff', (req, res) => {
+    res.sendFile(path.join(__dirname, 'staff-app.html'));
+});
+
+app.get('/pub/:pubId/player', (req, res) => {
+    res.sendFile(path.join(__dirname, 'test-player.html'));
+});
+
 io.on('connection', (socket) => {
     socket.on('join_pub', (pubId) => { if (!pubId) return; socket.join(pubId); socket.pubId = pubId; hämtaPubData(pubId); broadcastState(pubId, socket); });
 
@@ -346,6 +359,25 @@ io.on('connection', (socket) => {
         if (!pub.nowPlaying && !pub.activeMoment) await korNastaLatLogik(socket.pubId || data.pubId); else broadcastState(socket.pubId || data.pubId);
     });
 
+    // Hantering av bibliotek och valv
+    socket.on('admin:add_to_valv', (data) => {
+        if (!socket.pubId) return;
+        libraryManager.addOrUpdateSong(data, data.valvNamn);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('admin:remove_from_valv', (data) => {
+        if (!socket.pubId) return;
+        libraryManager.removeSongFromPlaylist(data.latNamn, data.valvNamn);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('admin:request_valv_data', (data) => {
+        if (!socket.pubId) return;
+        const valv = hämtaGemensammaListor();
+        socket.emit('admin:valv_data', { valvNamn: data.valvNamn, songs: valv[data.valvNamn] || [] });
+    });
+
     socket.on('player:byt_valv', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivtValv = data.valvNamn; p.playlistCursor = 0; refreshShuffled(p, 'main'); sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
     socket.on('ADD_TEMP_PLAYLIST', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivTillfalligLista = data.playlist; refreshShuffled(p, 'temp'); sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
     socket.on('REMOVE_TEMP_PLAYLIST', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivTillfalligLista = ''; p.shuffledTemp = []; sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
@@ -353,6 +385,23 @@ io.on('connection', (socket) => {
     socket.on('player:skip', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; p.interruptedSong = null; korNastaLatLogik(socket.pubId); } });
     socket.on('player:ready_for_next', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); if (p.activeMoment && !['pause','closing'].includes(p.activeMoment.type)) p.activeMoment = null; p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
     socket.on('player:remove_song', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.queue = p.queue.filter(s => s.id !== data.id); sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
+
+    // Hantering av moments
+    socket.on('moment:save_settings', (data) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.moments[data.type] = {
+            videoId: data.videoId,
+            title: data.title,
+            songTitle: data.songTitle,
+            thumbnail: data.thumbnail,
+            defaultMessage: data.defaultMessage,
+            category: data.category
+        };
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
     socket.on('moment:activate', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);

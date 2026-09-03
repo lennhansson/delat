@@ -5,71 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar_checked (1).json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar_checked.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar_fixed2.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar_fixed2_checked.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar_fixed_checked.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/songlist/gubbrock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/songlist/lattlyssnat.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/songlist/radio.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/library-manager.js" beforeDir="false" afterPath="$PROJECT_DIR$/library-manager.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/50-60-tals_Blues.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/80s_Synthpop_och_Dansgolv.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/90s_och_00s_Nostalgia.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/ABBA.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/AcDc only.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Ac_Dc.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/After Work.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Amy_Winehouse.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Anatolisk_Rock_och_Psyk-Pop.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Aretha_Franklin.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Barmys_och_Smarratter.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Barnkalas_och_Familjemiddag.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Before I Leave.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Bob Marley &amp; The Wailers.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Cornelis_Vreeswijk.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Creedence_Clearwater_Revival.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/David_Bowie.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Desert_Blues_och_Tuareg_Rock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Dinner.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Eftermiddag_och_Sondagsbrunch.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Eldkvarn.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Electric_Light_Orchestra.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Favoriter.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Fleetwood_Mac.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Fredags-AW_och_Cocktail.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Goteborgs_Morker_och_Tungt_Stal.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Gyllene_Tider.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Harda_Covers.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Hardrock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Hardrocksballader.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Highway Man.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Imperiet_och_Thastrom.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Kent.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/La Muzika.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Lounge.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Lugna_Covers.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Magnus_Uggla.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Modern_Hits_och_Chart_Toppers.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Modern_Retro-Soul_och_Funk.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Queen.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Reggae.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Rock Classics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Rolling Stones.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Santana.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Saras lista.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Sen_Barkvall.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Snowstorm.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Sofistikerad_Indie-Pop_och_Yacht_Rock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Tidig_Middag.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/Tomas_Ledin.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/celiks lista.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/låtlista/happy birthday to you.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-server.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.js" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -103,23 +41,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "fungerande-live",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/lennh/Desktop/AItestjb"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;fungerande-live&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/lennh/Desktop/AItestjb&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\lennh\AItestjb\data" />
