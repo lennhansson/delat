@@ -185,7 +185,7 @@
     ],
     "duration": 146,
     "future": [
-      0.0,
+      0,
       146,
       "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*134-146', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_q86rt4pa\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=VAPDJheC0Jk']' returned non-zero exit status 1.)",
       "F1: ljudanalys misslyckades"
@@ -236,7 +236,7 @@
     ],
     "duration": 155,
     "future": [
-      0.0,
+      0,
       145.25,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -577,7 +577,7 @@
     ],
     "duration": 267,
     "future": [
-      7.0,
+      7,
       265.19,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -662,7 +662,7 @@
     ],
     "duration": 245,
     "future": [
-      3.0,
+      3,
       242.34,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -679,7 +679,7 @@
     ],
     "duration": 237,
     "future": [
-      0.0,
+      0,
       233.39,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -730,7 +730,7 @@
     ],
     "duration": 291,
     "future": [
-      1.0,
+      1,
       288.99,
       "F4",
       "F1: ljudanalys misslyckades"
@@ -951,7 +951,7 @@
     ],
     "duration": 191,
     "future": [
-      0.0,
+      0,
       184.39,
       "F4"
     ],
@@ -1068,7 +1068,7 @@
     ],
     "duration": 333,
     "future": [
-      0.0,
+      0,
       333,
       "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*321-333', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_ag6chi9o\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=xRQnJyP77tY']' timed out after 180 seconds)"
     ],
@@ -1132,7 +1132,7 @@
     ],
     "duration": 284,
     "future": [
-      0.0,
+      0,
       284,
       "F4"
     ],
@@ -1164,7 +1164,7 @@
     ],
     "duration": 268,
     "future": [
-      0.0,
+      0,
       253.1,
       "F4"
     ],
@@ -1390,7 +1390,7 @@
     ],
     "duration": 310,
     "future": [
-      2.0,
+      2,
       302.94,
       "F4"
     ]
@@ -1541,7 +1541,7 @@
     ],
     "duration": 244,
     "future": [
-      0.0,
+      0,
       240.55,
       "F4"
     ]
@@ -1601,7 +1601,7 @@
     ],
     "duration": 152,
     "future": [
-      0.0,
+      0,
       152,
       "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*140-152', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_vujwiqjl\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=8kvb-pJEeEI']' returned non-zero exit status 1.)"
     ]
@@ -1691,7 +1691,7 @@
     ],
     "duration": 183,
     "future": [
-      0.0,
+      0,
       183,
       "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*171-183', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_z6khyzoa\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=yOaDYyXl2Xc']' returned non-zero exit status 1.)"
     ]
@@ -1766,7 +1766,7 @@
     ],
     "duration": 242,
     "future": [
-      0.0,
+      0,
       242,
       "F4: kunde inte hämta slutljud (yt-dlp misslyckades: Command '['yt-dlp', '--no-playlist', '-f', 'bestaudio/best', '--extract-audio', '--audio-format', 'mp3', '--extractor-args', 'youtube:player_client=default,web_embedded', '--download-sections', '*230-242', '--no-check-certificates', '--ffmpeg-location', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-N-124716-g054dffd133-win64-gpl\\\\bin', '-o', 'C:\\\\Users\\\\lennh\\\\AppData\\\\Local\\\\Temp\\\\yt_audio_wq9o11d3\\\\audio.%(ext)s', 'https://www.youtube.com/watch?v=4sFCr_k4Ji0']' returned non-zero exit status 1.)"
     ]
@@ -1963,7 +1963,7 @@
     ],
     "duration": 201,
     "future": [
-      0.0,
+      0,
       198.19,
       "F4"
     ]
@@ -1978,7 +1978,7 @@
     ],
     "duration": 287,
     "future": [
-      0.0,
+      0,
       276.2,
       "F4"
     ]
@@ -2069,7 +2069,7 @@
     ],
     "duration": 139,
     "future": [
-      2.0,
+      2,
       130.95,
       "F4"
     ]
@@ -2309,7 +2309,7 @@
     ],
     "duration": 296,
     "future": [
-      0.0,
+      0,
       295.99,
       "F4"
     ]
@@ -2324,7 +2324,7 @@
     ],
     "duration": 359,
     "future": [
-      0.0,
+      0,
       358.99,
       "F4"
     ]
@@ -2339,7 +2339,7 @@
     ],
     "duration": 301,
     "future": [
-      0.0,
+      0,
       300.99,
       "F4"
     ]
@@ -2384,7 +2384,7 @@
     ],
     "duration": 227,
     "future": [
-      0.0,
+      0,
       222.14,
       "F4"
     ]
@@ -2399,7 +2399,7 @@
     ],
     "duration": 299,
     "future": [
-      0.0,
+      0,
       291.1,
       "F4"
     ]
@@ -2459,7 +2459,7 @@
     ],
     "duration": 263,
     "future": [
-      0.0,
+      0,
       261.2,
       "F4"
     ]
@@ -2763,7 +2763,7 @@
     "duration": 235,
     "future": [
       2.5,
-      225.0,
+      225,
       "F4"
     ]
   },
@@ -2777,7 +2777,7 @@
     ],
     "duration": 234,
     "future": [
-      0.0,
+      0,
       230.65,
       "F4"
     ]
@@ -2822,7 +2822,7 @@
     ],
     "duration": 266,
     "future": [
-      0.0,
+      0,
       260.05,
       "F4"
     ]
@@ -3019,7 +3019,7 @@
     "duration": 195,
     "future": [
       2.6,
-      186.0,
+      186,
       "F4"
     ]
   },
@@ -3311,7 +3311,7 @@
     ],
     "duration": 206,
     "future": [
-      4.0,
+      4,
       200.95,
       "F4"
     ]
@@ -3541,7 +3541,7 @@
     ],
     "duration": 277,
     "future": [
-      0.0,
+      0,
       275.74,
       "F4"
     ]
@@ -3571,7 +3571,7 @@
     ],
     "duration": 192,
     "future": [
-      0.0,
+      0,
       186.74,
       "F4"
     ]
@@ -3587,7 +3587,7 @@
     "duration": 245,
     "future": [
       0.65,
-      240.0,
+      240,
       "F4"
     ]
   },
@@ -3722,7 +3722,7 @@
     "duration": 185,
     "future": [
       9.4,
-      180.0,
+      180,
       "F4"
     ]
   },
@@ -3816,7 +3816,7 @@
     "duration": 296,
     "future": [
       0.55,
-      289.0,
+      289,
       "F4"
     ]
   },
@@ -3830,7 +3830,7 @@
     ],
     "duration": 184,
     "future": [
-      0.0,
+      0,
       184,
       "F4"
     ]
@@ -3982,7 +3982,7 @@
     ],
     "duration": 257,
     "future": [
-      0.0,
+      0,
       242.15,
       "F4"
     ]
@@ -3997,7 +3997,7 @@
     ],
     "duration": 305,
     "future": [
-      0.0,
+      0,
       303.99,
       "F4"
     ]
@@ -4072,7 +4072,7 @@
     ],
     "duration": 220,
     "future": [
-      0.0,
+      0,
       205.35,
       "F4"
     ]
@@ -4237,7 +4237,7 @@
     ],
     "duration": 249,
     "future": [
-      3.0,
+      3,
       242.84,
       "F4"
     ]
@@ -4252,7 +4252,7 @@
     ],
     "duration": 259,
     "future": [
-      0.0,
+      0,
       256.74,
       "F4"
     ]
@@ -4470,7 +4470,7 @@
     ],
     "duration": 244,
     "future": [
-      0.0,
+      0,
       243.74,
       "F4"
     ]
@@ -4545,7 +4545,7 @@
     ],
     "duration": 234,
     "future": [
-      0.0,
+      0,
       234,
       "F4"
     ]
@@ -4575,8 +4575,8 @@
     ],
     "duration": 193,
     "future": [
-      0.0,
-      192.0,
+      0,
+      192,
       "F4"
     ]
   },
@@ -4680,7 +4680,7 @@
     ],
     "duration": 201,
     "future": [
-      0.0,
+      0,
       201,
       "F4"
     ]
@@ -4785,7 +4785,7 @@
     ],
     "duration": 284,
     "future": [
-      0.0,
+      0,
       284,
       "F4"
     ]
@@ -4800,7 +4800,7 @@
     ],
     "duration": 216,
     "future": [
-      0.0,
+      0,
       202.3,
       "F4"
     ]
@@ -4936,7 +4936,7 @@
     "duration": 212,
     "future": [
       0.25,
-      197.0,
+      197,
       "F4"
     ]
   },
@@ -4982,7 +4982,7 @@
     ],
     "duration": 229,
     "future": [
-      0.0,
+      0,
       214.8,
       "F4"
     ]
@@ -5057,7 +5057,7 @@
     ],
     "duration": 281,
     "future": [
-      0.0,
+      0,
       271.84,
       "F4"
     ]
@@ -5222,7 +5222,7 @@
     ],
     "duration": 334,
     "future": [
-      0.0,
+      0,
       329.2,
       "F4"
     ]
@@ -5282,7 +5282,7 @@
     ],
     "duration": 275,
     "future": [
-      0.0,
+      0,
       275,
       "F4"
     ]
@@ -5297,7 +5297,7 @@
     ],
     "duration": 219,
     "future": [
-      0.0,
+      0,
       208.15,
       "F4"
     ]
@@ -5342,7 +5342,7 @@
     ],
     "duration": 266,
     "future": [
-      0.0,
+      0,
       266,
       "F4"
     ]
@@ -5388,7 +5388,7 @@
     ],
     "duration": 196,
     "future": [
-      0.0,
+      0,
       193.94,
       "F4"
     ]
@@ -5494,7 +5494,7 @@
     ],
     "duration": 253,
     "future": [
-      1.0,
+      1,
       253,
       "F4"
     ]
@@ -5569,7 +5569,7 @@
     ],
     "duration": 215,
     "future": [
-      0.0,
+      0,
       207.25,
       "F4"
     ]
@@ -5584,7 +5584,7 @@
     ],
     "duration": 240,
     "future": [
-      0.0,
+      0,
       235.19,
       "F4"
     ]
@@ -5614,7 +5614,7 @@
     ],
     "duration": 196,
     "future": [
-      7.0,
+      7,
       190.25,
       "F4"
     ]
@@ -5871,7 +5871,7 @@
     ],
     "duration": 252,
     "future": [
-      0.0,
+      0,
       234.95,
       "F4"
     ]
@@ -5947,7 +5947,7 @@
     ],
     "duration": 237,
     "future": [
-      0.0,
+      0,
       226.9,
       "F4"
     ]
@@ -6143,7 +6143,7 @@
     "duration": 286,
     "future": [
       7.4,
-      279.0,
+      279,
       "F4"
     ]
   },
@@ -6187,7 +6187,7 @@
     ],
     "duration": 242,
     "future": [
-      2.0,
+      2,
       238.59,
       "F4"
     ]
@@ -6202,7 +6202,7 @@
     ],
     "duration": 232,
     "future": [
-      5.0,
+      5,
       227.69,
       "F4"
     ]
@@ -6232,7 +6232,7 @@
     ],
     "duration": 309,
     "future": [
-      0.0,
+      0,
       307.74,
       "F4"
     ]
@@ -6308,7 +6308,7 @@
     ],
     "duration": 295,
     "future": [
-      0.0,
+      0,
       294.29,
       "F4"
     ]
@@ -6353,7 +6353,7 @@
     ],
     "duration": 187,
     "future": [
-      0.0,
+      0,
       183.49,
       "F4"
     ]
@@ -6640,7 +6640,7 @@
     ],
     "duration": 158,
     "future": [
-      0.0,
+      0,
       156.84,
       "F4"
     ]
@@ -6700,7 +6700,7 @@
     ],
     "duration": 49,
     "future": [
-      0.0,
+      0,
       46.39,
       "F4"
     ]
@@ -6760,7 +6760,7 @@
     ],
     "duration": 262,
     "future": [
-      0.0,
+      0,
       256.94,
       "F4"
     ]
@@ -6820,7 +6820,7 @@
     ],
     "duration": 298,
     "future": [
-      0.0,
+      0,
       298,
       "F4"
     ]
@@ -7122,7 +7122,7 @@
     ],
     "duration": 272,
     "future": [
-      0.0,
+      0,
       263.44,
       "F4"
     ]
@@ -7152,7 +7152,7 @@
     ],
     "duration": 279,
     "future": [
-      0.0,
+      0,
       279,
       "F4"
     ]
@@ -7353,7 +7353,7 @@
     ],
     "duration": 285,
     "future": [
-      0.0,
+      0,
       279.45,
       "F4"
     ]
@@ -7383,7 +7383,7 @@
     ],
     "duration": 197,
     "future": [
-      2.0,
+      2,
       189.1,
       "F4"
     ]
@@ -7519,7 +7519,7 @@
     ],
     "duration": 308,
     "future": [
-      0.0,
+      0,
       303.39,
       "F4"
     ]
@@ -7564,7 +7564,7 @@
     ],
     "duration": 186,
     "future": [
-      0.0,
+      0,
       181.55,
       "F4"
     ]
@@ -7610,7 +7610,7 @@
     ],
     "duration": 237,
     "future": [
-      0.0,
+      0,
       230.15,
       "F4"
     ]
@@ -7655,7 +7655,7 @@
     ],
     "duration": 221,
     "future": [
-      1.0,
+      1,
       213.09,
       "F4"
     ]
@@ -7925,7 +7925,7 @@
     ],
     "duration": 277,
     "future": [
-      0.0,
+      0,
       266.15,
       "F4"
     ]
@@ -7940,7 +7940,7 @@
     ],
     "duration": 252,
     "future": [
-      0.0,
+      0,
       251.79,
       "F4"
     ]
@@ -7970,7 +7970,7 @@
     ],
     "duration": 265,
     "future": [
-      0.0,
+      0,
       257.6,
       "F4"
     ]
@@ -8047,7 +8047,7 @@
     ],
     "duration": 236,
     "future": [
-      0.0,
+      0,
       228.05,
       "F4"
     ]
@@ -8137,7 +8137,7 @@
     ],
     "duration": 229,
     "future": [
-      0.0,
+      0,
       224.09,
       "F4"
     ]
@@ -8167,7 +8167,7 @@
     ],
     "duration": 206,
     "future": [
-      4.0,
+      4,
       191.3,
       "F4"
     ]
@@ -8182,7 +8182,7 @@
     ],
     "duration": 163,
     "future": [
-      1.0,
+      1,
       156.65,
       "F4"
     ]
@@ -8227,7 +8227,7 @@
     ],
     "duration": 177,
     "future": [
-      0.0,
+      0,
       175.54,
       "F4"
     ]
@@ -8483,7 +8483,7 @@
     "duration": 277,
     "future": [
       6.7,
-      268.0,
+      268,
       "F4"
     ]
   },
@@ -8572,7 +8572,7 @@
     ],
     "duration": 190,
     "future": [
-      0.0,
+      0,
       181.7,
       "F4"
     ]
@@ -8648,7 +8648,7 @@
     ],
     "duration": 235,
     "future": [
-      0.0,
+      0,
       231.94,
       "F4"
     ]
@@ -8753,7 +8753,7 @@
     ],
     "duration": 312,
     "future": [
-      0.0,
+      0,
       297.55,
       "F4"
     ]
@@ -8829,7 +8829,7 @@
     ],
     "duration": 242,
     "future": [
-      0.0,
+      0,
       222.55,
       "F4"
     ]
@@ -8964,7 +8964,7 @@
     ],
     "duration": 265,
     "future": [
-      0.0,
+      0,
       255.6,
       "F4"
     ]
@@ -9100,7 +9100,7 @@
     "duration": 319,
     "future": [
       0.2,
-      306.0,
+      306,
       "F4"
     ]
   },
@@ -9189,7 +9189,7 @@
     ],
     "duration": 264,
     "future": [
-      0.0,
+      0,
       256.1,
       "F4"
     ]
@@ -9205,7 +9205,7 @@
     "duration": 183,
     "future": [
       10.94,
-      176.0,
+      176,
       "F4"
     ]
   },
@@ -9235,7 +9235,7 @@
     "duration": 240,
     "future": [
       2.1,
-      228.0,
+      228,
       "F4"
     ]
   },
@@ -9249,7 +9249,7 @@
     ],
     "duration": 248,
     "future": [
-      0.0,
+      0,
       248,
       "F4"
     ]
@@ -9281,7 +9281,7 @@
     ],
     "duration": 206,
     "future": [
-      0.0,
+      0,
       206,
       "F4"
     ]
@@ -9387,7 +9387,7 @@
     ],
     "duration": 353,
     "future": [
-      0.0,
+      0,
       344.1,
       "F4"
     ]
@@ -9417,7 +9417,7 @@
     ],
     "duration": 271,
     "future": [
-      0.0,
+      0,
       253.65,
       "F4"
     ]
@@ -9432,7 +9432,7 @@
     ],
     "duration": 192,
     "future": [
-      0.0,
+      0,
       183.69,
       "F4"
     ]
@@ -9673,7 +9673,7 @@
     "duration": 207,
     "future": [
       0.95,
-      195.0,
+      195,
       "F4"
     ]
   },
@@ -9717,7 +9717,7 @@
     ],
     "duration": 203,
     "future": [
-      0.0,
+      0,
       194.65,
       "F4"
     ]
@@ -9747,7 +9747,7 @@
     ],
     "duration": 216,
     "future": [
-      0.0,
+      0,
       211.3,
       "F4"
     ]
@@ -9855,7 +9855,7 @@
     ],
     "duration": 279,
     "future": [
-      0.0,
+      0,
       272.34,
       "F4"
     ]
@@ -10021,7 +10021,7 @@
     "duration": 304,
     "future": [
       0.55,
-      293.0,
+      293,
       "F4"
     ]
   },
@@ -10050,7 +10050,7 @@
     ],
     "duration": 223,
     "future": [
-      0.0,
+      0,
       222.24,
       "F4"
     ]
@@ -10080,7 +10080,7 @@
     ],
     "duration": 235,
     "future": [
-      10.0,
+      10,
       227.15,
       "F4"
     ]
@@ -10380,7 +10380,7 @@
     ],
     "duration": 278,
     "future": [
-      0.0,
+      0,
       269.5,
       "F4"
     ]
@@ -10410,7 +10410,7 @@
     ],
     "duration": 249,
     "future": [
-      0.0,
+      0,
       240.9,
       "F4"
     ]
@@ -10455,7 +10455,7 @@
     ],
     "duration": 240,
     "future": [
-      0.0,
+      0,
       237.04,
       "F4"
     ]
@@ -10545,7 +10545,7 @@
     ],
     "duration": 207,
     "future": [
-      0.0,
+      0,
       206.89,
       "F4"
     ]
@@ -10800,7 +10800,7 @@
     ],
     "duration": 190,
     "future": [
-      0.0,
+      0,
       188.99,
       "F4"
     ]
@@ -10890,7 +10890,7 @@
     ],
     "duration": 225,
     "future": [
-      0.0,
+      0,
       219.5,
       "F4"
     ]
@@ -10935,7 +10935,7 @@
     ],
     "duration": 284,
     "future": [
-      0.0,
+      0,
       284,
       "F4"
     ]
@@ -10950,7 +10950,7 @@
     ],
     "duration": 296,
     "future": [
-      0.0,
+      0,
       287.5,
       "F4"
     ]
@@ -11311,7 +11311,7 @@
     "duration": 247,
     "future": [
       5.4,
-      241.0,
+      241,
       "F4"
     ]
   },
@@ -11355,7 +11355,7 @@
     ],
     "duration": 183,
     "future": [
-      5.0,
+      5,
       173.35,
       "F4"
     ]
@@ -11370,7 +11370,7 @@
     ],
     "duration": 284,
     "future": [
-      0.0,
+      0,
       284,
       "F4"
     ]
@@ -11566,7 +11566,7 @@
     "duration": 235,
     "future": [
       0.95,
-      222.0,
+      222,
       "F4"
     ]
   },
@@ -11938,7 +11938,7 @@
     "playlists": [],
     "duration": 347,
     "future": [
-      0.0,
+      0,
       333.2,
       "F4"
     ]
@@ -12068,7 +12068,7 @@
     "playlists": [],
     "duration": 187,
     "future": [
-      0.0,
+      0,
       185.04,
       "F4"
     ]
@@ -12198,7 +12198,7 @@
     "playlists": [],
     "duration": 212,
     "future": [
-      0.0,
+      0,
       200.45,
       "F4"
     ]
@@ -12250,7 +12250,7 @@
     "playlists": [],
     "duration": 204,
     "future": [
-      0.0,
+      0,
       199.25,
       "F4"
     ]
@@ -12341,7 +12341,7 @@
     "playlists": [],
     "duration": 60,
     "future": [
-      0.0,
+      0,
       50.4,
       "F4"
     ]
@@ -12393,7 +12393,7 @@
     "playlists": [],
     "duration": 224,
     "future": [
-      0.0,
+      0,
       220.35,
       "F4"
     ]
@@ -12419,7 +12419,7 @@
     "playlists": [],
     "duration": 73,
     "future": [
-      0.0,
+      0,
       73,
       "F4"
     ]
@@ -12529,7 +12529,7 @@
     "playlists": [],
     "duration": 162,
     "future": [
-      0.0,
+      0,
       156.44,
       "F4"
     ]
@@ -12596,7 +12596,7 @@
     "playlists": [],
     "duration": 179,
     "future": [
-      0.0,
+      0,
       178.54,
       "F4"
     ]
@@ -12783,7 +12783,7 @@
     ],
     "duration": 155,
     "future": [
-      0.0,
+      0,
       145.25,
       "F4"
     ]
@@ -12993,7 +12993,7 @@
     ],
     "duration": 350,
     "future": [
-      0.0,
+      0,
       338.05,
       "F4"
     ]
@@ -13380,7 +13380,7 @@
     "playlists": [],
     "duration": 254,
     "future": [
-      10.0,
+      10,
       245.65,
       "F4"
     ]
@@ -13393,7 +13393,7 @@
     "playlists": [],
     "duration": 229,
     "future": [
-      0.0,
+      0,
       221.85,
       "F4"
     ]
@@ -13484,7 +13484,7 @@
     "playlists": [],
     "duration": 406,
     "future": [
-      0.0,
+      0,
       403.59,
       "F4"
     ]
@@ -13813,7 +13813,7 @@
     "playlists": [],
     "duration": 258,
     "future": [
-      0.0,
+      0,
       241.5,
       "F4"
     ]
@@ -13841,7 +13841,7 @@
     "playlists": [],
     "duration": 223,
     "future": [
-      0.0,
+      0,
       223,
       "F4"
     ]
@@ -13898,7 +13898,6 @@
       "F4"
     ]
   },
-
   "1940": {
     "videoId": "LQ82BX0hGBM",
     "artist": "The Clash",
@@ -13907,7 +13906,7 @@
     "playlists": [],
     "duration": 270,
     "future": [
-      0.0,
+      0,
       268.64,
       "F4"
     ]
@@ -14000,8 +13999,22 @@
     ],
     "duration": 125,
     "future": [
-      0.0,
+      0,
       119.8,
+      "F4"
+    ]
+  },
+  "1948": {
+    "videoId": "n0UNjmNHkTE",
+    "artist": "Okänd Artist",
+    "title": "Alice har fått nog av Estelle! #klassensvt #svtklassen #klassen #svt #bff #kompis #vänner",
+    "thumbnail": "https://i.ytimg.com/vi/n0UNjmNHkTE/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4AbYIgAKAD4oCDAgAEAEYZSBZKFYwDw==&rs=AOn4CLCRfbRGMV2WArtplFvkDZE1xOUEUg",
+    "playlists": [],
+    "duration": 0,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
       "F4"
     ]
   }

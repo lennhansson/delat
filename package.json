@@ -1,16 +1,11 @@
 {
   "name": "spotifystaff",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.3",
+  "description": "Jukebox system with staff and mobile interface",
   "main": "staff-server.js",
   "scripts": {
-    "start": "node staff-server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node staff-server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1",
     "socket.io": "^4.8.3",

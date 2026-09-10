@@ -5,58 +5,61 @@ let deferredPrompt;
 window.addEventListener('DOMContentLoaded', () => {
     const installBtn = document.getElementById('pwa-install-btn');
     const pwaInstruktion = document.getElementById('pwa-ios-instruktion');
-    
+    const statusInstalled = document.getElementById('pwa-status-installed');
+
     if (!installBtn) return;
 
-    // 1. KOLLA OM DET ÄR IPHONE (iOS)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Hämta pub-namnet från URL:en (t.ex. 7-an)
+    const pathParts = window.location.pathname.split('/');
+    const pubId = pathParts[2] || "Jukebox";
+    const appName = pubId.charAt(0).toUpperCase() + pubId.slice(1);
+
+    // 1. KOLLA OM DEN REDAN ÄR INSTALLERAD
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     if (isStandalone) {
-        // Appen är redan installerad och öppnad som en app!
         installBtn.style.display = 'none';
-        if(pwaInstruktion) pwaInstruktion.innerHTML = "🟢 Öppnad via Jukebox-appen";
+        if(pwaInstruktion) pwaInstruktion.style.display = 'none';
+        if(statusInstalled) statusInstalled.style.display = 'block';
         return;
     }
+
+    // 2. KOLLA PLATTFORM
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
-        // Om det är en iPhone, ändra knappens text och visa instruktionen under när de trycker
-        installBtn.innerText = "Installera 7-an Jukebox (iPhone)";
-        installBtn.style.background = "#007aff"; // Apple-blå
-        installBtn.style.color = "white";
-        
-        installBtn.addEventListener('click', () => {
-            if(pwaInstruktion) {
-                pwaInstruktion.style.display = 'block';
-                pwaInstruktion.innerHTML = "ℹ️ <strong>För iPhone:</strong> Tryck på <strong>Dela-knappen</strong> i botten av Safari (fyrkanten med pilen uppåt) och välj sedan <strong>'Lägg till på startskärmen'</strong>. Kika efter Jukebox-ikonen!";
-            }
-        });
+        if(pwaInstruktion) {
+            pwaInstruktion.style.display = 'block';
+            pwaInstruktion.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <span style="font-size:24px;">🎵</span>
+                    <strong>Spara ${appName} på hemskärmen</strong>
+                </div>
+                <ol style="margin:0; padding-left:20px; line-height:1.6;">
+                    <li>Tryck på <strong>Dela-knappen</strong> i Safari (fyrkanten med pil upp <span style="font-size:18px;">⎋</span>)</li>
+                    <li>Välj <strong>"Lägg till på hemskärmen"</strong></li>
+                </ol>
+            `;
+        }
         return;
     }
 
-    // 2. FÖR ANDROID (Fånga Chromes inbyggda installationsfönster)
+    // 3. ANDROID / DESKTOP
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Hindra Chrome från att visa sitt eget fönster direkt
         e.preventDefault();
         deferredPrompt = e;
-        
-        // Visa vår snygga knapp för gästen
         installBtn.style.display = 'block';
-        installBtn.innerText = "Installera Jukebox-appen 📱";
+        installBtn.innerText = `Installera ${appName}-appen 📱`;
     });
 
     installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) {
-            alert("Appen kan tyvärr inte installeras direkt från den här webbläsaren. Prova att öppna länken i Google Chrome eller Safari!");
-            return;
-        }
-        // Visa Androids installationsfönster
+        if (!deferredPrompt) return;
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
-            console.log('Gästen installerade appen!');
+            installBtn.style.display = 'none';
+            if(statusInstalled) statusInstalled.style.display = 'block';
         }
         deferredPrompt = null;
-        installBtn.style.display = 'none';
     });
 });

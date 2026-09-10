@@ -1,10 +1,10 @@
 {
   "namn": "7-AN Jukebox",
   "aktivtValv": "Hardrock",
-  "aktivTillfalligLista": "",
-  "qrKrav": true,
+  "aktivTillfalligLista": "Creedence_Clearwater_Revival",
+  "qrKrav": false,
   "statistikKuponger": 0,
-  "statistikTotalt": 6,
+  "statistikTotalt": 7,
   "moments": {
     "pause": {
       "title": "TYST / PAUS",

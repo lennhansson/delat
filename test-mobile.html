@@ -2,82 +2,45 @@
 <html lang="sv">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1db954">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Jukebox</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="/test-mobile.js" defer></script>
-    <script src="/jukebox-pwa.js" defer></script>
     <link rel="stylesheet" href="/test-mobile.css">
 </head>
 <body>
-
-<header class="mobile-header">
-    <h1 id="pub-titel">Jukebox</h1>
-    <div id="knapp-saldo" class="saldo-badge" onclick="bytFlik('qr')" style="display:none;">0</div>
-</header>
-
-<main class="content">
-    <section id="tab-sok" class="tab-content active">
-        <div class="search-box">
-            <input type="text" id="query" placeholder="Sök artist eller låt..." onkeyup="if(event.key==='Enter') sök()">
-            <button onclick="sök()">SÖK</button>
+<div class="app-container">
+    <header><h1 id="pub-titel">Jukebox</h1></header>
+    <main>
+        <div id="now-playing-container" class="card now-playing" style="display:none;">
+            <div class="section-title"><span class="live-dot"></span> Just nu</div>
+            <img id="np-thumb" src="" class="now-playing-thumb">
+            <div id="np-title" class="song-title">-</div>
+            <div id="np-meta" class="song-meta">-</div>
         </div>
-        <div style="font-size:10px; color:#666; margin: 10px 15px;">Max 8 minuter visas.</div>
-        <div id="results" class="results-list"></div>
-    </section>
-
-    <section id="tab-queue" class="tab-content">
-        <h2 class="section-title">Kön</h2>
-        <div id="queue-lista"></div>
-    </section>
-
-    <section id="tab-qr" class="tab-content">
-        <div class="qr-container">
-            <div id="saldo-info" class="card">
-                <h3>Saldo</h3>
-                <div id="saldo-info-text" class="large-saldo">0</div>
+        <section id="tab-queue" class="tab-content active">
+            <div class="search-pill">
+                <input type="text" id="query" placeholder="Sök låt..." onkeyup="if(event.key==='Enter') sök()">
+                <button class="search-btn" onclick="sök()">SÖK</button>
             </div>
-            <button class="scan-btn" onclick="startaScanner()">SCANNA KUPONG</button>
-            <input type="text" id="kupong-input" placeholder="Skriv kod här..." style="margin-top:15px; width:100%; padding:10px; border-radius:8px;">
-        </div>
-    </section>
-
-    <section id="tab-dela" class="tab-content">
-        <div class="qr-container" style="text-align:center;">
-            <h2 class="section-title">Dela Jukeboxen</h2>
-            <p style="color:#888; font-size:13px; margin-bottom:20px;">Visa denna kod för en polare!</p>
-            <div id="share-qr-target" style="background:white; padding:15px; border-radius:10px; display:inline-block;"></div>
-        </div>
-    </section>
-</main>
-
-<nav class="mobile-nav">
-    <div id="btn-tab-sok" class="nav-item active" onclick="bytFlik('sok')"><span>🔍</span><span>Sök</span></div>
-    <div id="btn-tab-queue" class="nav-item" onclick="bytFlik('queue')"><span>📜</span><span>Kön</span></div>
-    <div id="btn-tab-qr" class="nav-item" onclick="bytFlik('qr')"><span>🎟️</span><span>Kupong</span></div>
-    <div id="btn-tab-dela" class="nav-item" onclick="bytFlik('dela')"><span>🤝</span><span>Dela</span></div>
-</nav>
-
-<div id="scanner-layer" class="fullscreen-overlay" style="display:none;">
-    <div id="qr-reader"></div>
-    <button class="close-overlay" onclick="stoppaScanner()">AVBRYT</button>
+            <div id="results"></div>
+            <h2 class="section-title">Kommande låtar</h2>
+            <div id="queue-lista"></div>
+        </section>
+        <section id="tab-dela" class="tab-content">
+            <div class="card" style="text-align:center;">
+                <h2 class="section-title">Dela</h2>
+                <div id="share-qr-target" style="display:flex; justify-content:center; padding:10px;"></div>
+                <button class="big-btn btn-outline" onclick="delaLank()" style="margin-top:20px; width:100%;">📤 SKICKA LÄNK</button>
+            </div>
+        </section>
+    </main>
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="bytFlik('queue')"><span>📜</span><span>Jukebox</span></button>
+        <button class="nav-item" onclick="bytFlik('dela')"><span>🤝</span><span>Dela</span></button>
+    </nav>
 </div>
-
-<div id="moment-overlay" class="moment-overlay" style="display:none;">
-    <div class="moment-content">
-        <div class="icon">📢</div>
-        <h2 id="moment-title">INFO</h2>
-        <p id="moment-msg"></p>
-    </div>
-</div>
-<div id="toast" class="toast"></div>
+<div id="toast"></div>
 </body>
 </html>

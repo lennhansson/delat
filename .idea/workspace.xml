@@ -5,9 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sw.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/7-an.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/7-an.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/alla_låtar.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/alla_låtar.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/jukebox-pwa.js" beforeDir="false" afterPath="$PROJECT_DIR$/jukebox-pwa.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/manifest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/staff-app.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-server.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test-mobile.js" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

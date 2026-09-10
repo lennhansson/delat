@@ -55,7 +55,6 @@ function startWatcher() {
     timeWatcher = setInterval(() => {
         if (staffYtPlayer?.getCurrentTime) {
             const now = staffYtPlayer.getCurrentTime();
-            // Klipp låten om vi nått stopposition (men vänta minst 2 sek så vi inte klipper direkt)
             if (currentStopPos > 0 && now >= currentStopPos && now > 2) {
                 console.log("Klipper vid stopptid:", currentStopPos);
                 triggaSpelareReady();
@@ -76,7 +75,6 @@ function startaSpelaren() {
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
 
-    // Hantera paus
     if (state.activeMoment?.type === 'pause') {
         if (timeWatcher) clearInterval(timeWatcher);
         staffYtPlayer.stopVideo();
@@ -84,7 +82,6 @@ function uppdateraStaffPlayer(state) {
         return;
     }
 
-    // Hantera tystnad
     if (!state.nowPlaying) {
         if (aktivUniqueId !== null) {
             if (timeWatcher) clearInterval(timeWatcher);
@@ -99,13 +96,16 @@ function uppdateraStaffPlayer(state) {
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
 
-        console.log("Spelar ny låt:", state.nowPlaying.title, "Start:", state.nowPlaying.startPosition, "Stopp:", currentStopPos);
-
-        staffYtPlayer.loadVideoById({
+        const loadOptions = {
             videoId: vidIdStr,
-            startSeconds: state.nowPlaying.startPosition || 0,
-            endSeconds: state.nowPlaying.stopPosition || 0
-        });
+            startSeconds: state.nowPlaying.startPosition || 0
+        };
+
+        if (currentStopPos > loadOptions.startSeconds) {
+            loadOptions.endSeconds = currentStopPos;
+        }
+
+        staffYtPlayer.loadVideoById(loadOptions);
     }
 }
 
@@ -248,25 +248,20 @@ function skipLat() { triggaSpelareReady(); }
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 
 socket.on('connect', () => socket.emit("join_pub", pubId));
-socket.on("staff_state", (state) => {
+socket.on("state", (state) => {
     nuvarandeState = state;
     document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
     const qrKravEl = document.getElementById("chk-qr-krav");
     if (qrKravEl) qrKravEl.checked = !!state.qrKrav;
-
     const statKup = document.getElementById("stat-kuponger");
     if (statKup) statKup.innerText = state.statistikKuponger || 0;
-
     const statTot = document.getElementById("stat-totalt");
     if (statTot) statTot.innerText = state.statistikTotalt || 0;
-
     renderaBibliotek(state);
     if (document.getElementById("select-edit-playlist")) {
         fillMobileDropdowns(state);
         uppdateraEditVyMobil(document.getElementById("select-edit-playlist").value);
-    } else {
-        uppdateraEditVy();
-    }
+    } else { uppdateraEditVy(); }
     uppdateraPlayerVy();
     uppdateraStaffPlayer(state);
     updateMomentsUI(state);
@@ -303,9 +298,7 @@ function renderaBibliotek(state) {
     if (state.aktivHuvudlista) sH += byggPlaylistHtml(state.aktivHuvudlista, 'main');
     if (state.aktivTillfalligLista) sH += byggPlaylistHtml(state.aktivTillfalligLista, 'temp');
     const playlists = getSortedPlaylistNames(state.valv);
-    playlists.forEach(n => {
-        if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive');
-    });
+    playlists.forEach(n => { if (n !== state.aktivHuvudlista && n !== state.aktivTillfalligLista) scH += byggPlaylistHtml(n, 'inactive'); });
     s.innerHTML = sH || "Ingen."; sc.innerHTML = scH || "Tomt.";
 }
 
