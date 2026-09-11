@@ -115,7 +115,7 @@ function hämtaPubData(pubId) {
             statistikKuponger: 0, statistikTotalt: 0,
             moments: {
                 "pause": { title: "TYST / PAUS", category: "drift", type: "pause", isLocked: true },
-                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Sista beställningen", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift" },
+                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Last Call", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift" },
                 "birthday": { videoId: "hS7GAnO146U", title: "Födelsedag", songTitle: "Happy Birthday", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂", category: "firande" },
                 "shoutout": { videoId: "dQw4w9WgXcQ", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i huset! 📢", category: "firande" },
                 "closing": { videoId: "xGytDsqkQY8", title: "Stängning", songTitle: "Closing Time", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙", category: "avslut" },
@@ -138,6 +138,7 @@ function hämtaPubData(pubId) {
     return p;
 }
 
+// SMART SOCIAL KONSENSUS LOGIK
 function getFairQueue(pub) {
     const userQueues = {};
     pub.queue.forEach(s => {
@@ -145,6 +146,7 @@ function getFairQueue(pub) {
         if (!userQueues[uid]) userQueues[uid] = [];
         userQueues[uid].push(s);
     });
+
     const userIds = Object.keys(userQueues).filter(uid => userQueues[uid].length > 0);
     const fairList = [];
     let bgCursor = pub.playlistCursor;
@@ -156,11 +158,17 @@ function getFairQueue(pub) {
         hasSongs = false;
         const activeUsers = userIds.filter(uid => tempQueues[uid].length > 0);
         if (activeUsers.length === 0) break;
+
         if (activeUsers.length > 1) {
+            // Fler än en person önskar -> Varva dem direkt
             activeUsers.forEach(uid => {
-                if (tempQueues[uid].length > 0) { fairList.push(tempQueues[uid].shift()); hasSongs = true; }
+                if (tempQueues[uid].length > 0) {
+                    fairList.push(tempQueues[uid].shift());
+                    hasSongs = true;
+                }
             });
         } else {
+            // Bara en person önskar -> Varva med barens listlåtar
             const uid = activeUsers[0];
             while (tempQueues[uid].length > 0) {
                 fairList.push(tempQueues[uid].shift());
@@ -172,6 +180,7 @@ function getFairQueue(pub) {
             hasSongs = false;
         }
     }
+    // Fyll på med barens låtar till totalt 15 synliga
     while (fairList.length < 15) {
         const bg = getBackgroundSongAt(pub, bgCursor++);
         if (bg) fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
@@ -239,7 +248,7 @@ async function korNastaLatLogik(pubId) {
             const vid = flattenId(n.videoId) || await resolveVideoId(n.title);
             const lib = libraryManager.getLibrary();
             const meta = Object.values(lib).find(s => flattenId(s.videoId) === vid);
-            p.nowPlaying = { id: n.id, title: n.title, videoId: vid, thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`, addedBy: n.addedBy || 'Bakgrund', startPosition: meta?.future?.[0] || 0, stopPosition: meta?.future?.[1] || 0 };
+            p.nowPlaying = { id: n.id, title: n.title, videoId: vid, thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`, addedBy: n.addedBy || 'Gäst', startPosition: meta?.future?.[0] || 0, stopPosition: meta?.future?.[1] || 0 };
         } else { p.nowPlaying = null; }
         broadcastState(pubId);
     } finally { p.isTransitioning = false; }
@@ -281,6 +290,10 @@ io.on('connection', (socket) => {
     socket.on('player:ready_for_next', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
     socket.on('player:skip', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
     socket.on('player:remove_song', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.queue = p.queue.filter(s => s.id !== data.id); broadcastState(socket.pubId); } });
+    socket.on('admin:add_to_valv', (data) => { if (socket.pubId) { libraryManager.addOrUpdateSong(data, data.valvNamn); broadcastState(socket.pubId); } });
+    socket.on('admin:remove_from_valv', (data) => { if (socket.pubId) { libraryManager.removeSongFromPlaylist(data.latNamn, data.valvNamn); broadcastState(socket.pubId); } });
+    socket.on('admin:request_valv_data', (data) => { if (socket.pubId) { const valv = hämtaGemensammaListor(); socket.emit('admin:valv_data', { valvNamn: data.valvNamn, songs: valv[data.valvNamn] || [] }); } });
+
     socket.on('moment:activate', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);

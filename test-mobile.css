@@ -1,16 +1,22 @@
 :root {
-    --bg-black: #000000;
+    --bg-black: #050505;
     --surface: #121212;
-    --surface-light: #1e1e1e;
+    --surface-light: #1c1c1e;
     --accent: #1db954;
     --text-main: #ffffff;
-    --text-dim: #b3b3b3;
+    --text-dim: #929292;
     --error: #e91429;
     --blue: #007aff;
 }
 
 body {
     background-color: var(--bg-black);
+    /* FoxBox förberedelse - aktiveras så fort filen finns */
+    background-image: linear-gradient(rgba(5, 5, 5, 0.85), rgba(5, 5, 5, 0.92)), url('/foxbox.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+
     color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
@@ -19,7 +25,9 @@ body {
 }
 
 .app-container {
-    padding: 20px 16px 100px 16px;
+    padding: 20px 16px 120px 16px;
+    max-width: 600px; /* Ser till att det ser bra ut även på tablets */
+    margin: 0 auto;
 }
 
 header {
@@ -27,56 +35,32 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+    padding: 10px 0;
 }
 
-h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
-
-.refresh-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-dim);
-    padding: 8px;
+h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0,0,0,0.95);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: space-around;
-    padding: 12px 0 env(safe-area-inset-bottom);
-    border-top: 0.5px solid #282828;
-    z-index: 1000;
-}
-
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-size: 10px;
-    font-weight: 500;
-    gap: 4px;
-    width: 33.33%;
-}
-
-.nav-item svg { width: 22px; height: 22px; fill: currentColor; }
-.nav-item.active { color: var(--text-main); }
-.nav-item.active svg { color: var(--accent); }
-
+/* SÖKRADEN - STRAM OCH SOLID HÅRDVARUKÄNSLA */
 .search-pill {
-    background: var(--surface-light);
-    border-radius: 500px;
+    background: rgba(28, 28, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid #2c2c2e;
+    border-radius: 12px;
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    position: relative;
+    height: 54px;
+    padding: 0 4px 0 16px;
+    margin-bottom: 24px;
+    box-sizing: border-box;
 }
 
 .search-pill input {
@@ -85,36 +69,45 @@ h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
     color: white;
     flex: 1;
     font-size: 16px;
-    margin-left: 10px;
     outline: none;
+    height: 100%;
 }
 
 .search-btn {
     background: var(--accent);
     color: black;
     border: none;
-    border-radius: 500px;
-    padding: 6px 16px;
+    border-radius: 8px;
+    height: 44px;
+    padding: 0 20px;
     font-weight: 700;
-    font-size: 13px;
-    margin-left: 8px;
-    position: relative;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.1s ease;
 }
 
+.search-btn:active {
+    opacity: 0.8;
+}
+
+/* KORT OCH RADER */
 .card {
-    background: var(--surface);
+    background: rgba(18, 18, 18, 0.75);
+    backdrop-filter: blur(10px);
+    border: 1px solid #222;
     border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
 .section-title {
     color: var(--text-dim);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 12px;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
 }
 
 .now-playing {
@@ -126,16 +119,13 @@ h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
 }
 
 .now-playing-thumb {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 12px;
     object-fit: cover;
     margin-bottom: 16px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    animation: imgFade 0.3s ease-out;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.7);
 }
-
-@keyframes imgFade { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
 .live-dot {
     width: 8px;
@@ -148,60 +138,59 @@ h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(29, 185, 84, 0); }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.5); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(29, 185, 84, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(29, 185, 84, 0); }
 }
 
 .song-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 0.5px solid #282828;
+    gap: 16px;
+    padding: 14px 4px;
+    border-bottom: 1px solid #1c1c1e;
 }
 
 .song-row:last-child { border-bottom: none; }
 
 .song-thumb {
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
-    animation: imgFade 0.2s ease-out;
-}
-
-.queue-row {
-    padding: 8px 0;
-    gap: 10px;
 }
 
 .song-info { flex: 1; min-width: 0; text-align: left; }
-.song-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.song-meta { font-size: 12px; color: var(--text-dim); }
+.song-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.song-meta { font-size: 13px; color: var(--text-dim); }
 
 .song-index {
     color: var(--text-dim);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
-    width: 18px;
+    width: 24px;
     text-align: center;
 }
 
 .add-btn {
-    background: var(--surface-light);
+    background: #1c1c1e;
     color: var(--text-main);
-    border: 1px solid #333;
-    border-radius: 500px;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 600;
+    border: 1px solid #3a3a3c;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.add-btn:active {
+    background: #2c2c2e;
 }
 
 .big-btn {
     width: 100%;
-    padding: 18px;
+    padding: 16px;
     border-radius: 12px;
     font-weight: 700;
     font-size: 16px;
@@ -211,62 +200,81 @@ h1 { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; }
     align-items: center;
     justify-content: center;
     gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-primary { background: var(--accent); color: black; }
-.btn-outline { background: transparent; border: 1px solid #333; color: white; margin-top: 16px; }
+.btn-outline { background: transparent; border: 1px solid #3a3a3c; color: white; margin-top: 16px; }
 
-.saldo-display {
-    font-size: 48px;
-    font-weight: 800;
-    margin: 16px 0;
-    color: var(--accent);
+/* BOTTENMENYN - PROFFSIG OCH BALANSERAD */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 10, 10, 0.92);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-around;
+    padding: 14px 0 calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid #1c1c1e;
+    z-index: 1000;
 }
 
-.badge-count {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: var(--blue);
-    color: white;
-    font-size: 11px;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 50%;
+.nav-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    border: 2px solid var(--bg-black);
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+    gap: 6px;
+    width: 50%; /* Justerad eftersom vi har 2 flikar nu */
+    transition: color 0.1s ease;
+}
+
+/* Emoji/Ikon-justering */
+.nav-item span:first-child {
+    font-size: 22px; /* Går att byta till SVG senare om så önskas */
+    line-height: 1;
+}
+
+.nav-item.active {
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
 }
 
 #toast {
     position: fixed;
-    bottom: 100px;
+    bottom: 110px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--accent);
     color: black;
-    padding: 12px 24px;
-    border-radius: 500px;
+    padding: 14px 28px;
+    border-radius: 12px;
     font-weight: 700;
     font-size: 14px;
     z-index: 2000;
     display: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
 .qr-card-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 24px;
     background: white;
     border-radius: 12px;
-    margin-top: 12px;
+    margin-top: 16px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
 }
 
-.tab-content { display: none; animation: fadeIn 0.2s ease-out; }
+.tab-content { display: none; animation: fadeIn 0.15s ease-out; }
 .tab-content.active { display: block; }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
