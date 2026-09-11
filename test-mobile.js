@@ -5,7 +5,7 @@ let html5QrCode = null;
 
 socket.emit("join_pub", pubId);
 
-// --- NAVIGATION & SWIPE ---
+// SWIPE
 let touchstartX = 0;
 let touchendX = 0;
 function handleGesture() {
@@ -22,28 +22,26 @@ function bytFlik(tab) {
     if(target) target.classList.add('active');
     const btn = document.getElementById('btn-tab-' + (tab === 'jukebox' ? 'jukebox' : 'dela'));
     if(btn) btn.classList.add('active');
+
+    // Hantera synlighet för "Nu spelas" stabilt via en container-klass
+    const container = document.querySelector('.app-container');
+    if (container) {
+        if (tab === 'dela') {
+            container.classList.add('dela-active');
+        } else {
+            container.classList.remove('dela-active');
+        }
+    }
+
     if(tab === 'dela') genereraDelaQR();
 }
 
-// --- DELA ---
 function genereraDelaQR() {
     const target = document.getElementById("share-qr-target");
     if (!target || target.innerHTML !== "") return;
     new QRCode(target, { text: window.location.href, width: 180, height: 180 });
 }
 
-async function delaLank() {
-    try {
-        if (navigator.share) {
-            await navigator.share({ title: 'Jukebox', text: 'Häng med och önska låtar!', url: window.location.href });
-        } else {
-            await navigator.clipboard.writeText(window.location.href);
-            showToast("Länk kopierad! 📋");
-        }
-    } catch (e) { console.log("Dela avbröts"); }
-}
-
-// --- SÖK & KÖ ---
 function sök() {
     const q = document.getElementById("query").value.trim();
     if (q) socket.emit("search", { query: q });
@@ -66,8 +64,6 @@ function önskaLåt(videoId, title, thumbnail) {
 
 socket.on("state", (data) => {
     document.getElementById("pub-titel").innerText = data.pubNamn;
-
-    // Now Playing
     const np = data.nowPlaying;
     const npContainer = document.getElementById("now-playing-container");
     if (np) {
@@ -77,54 +73,46 @@ socket.on("state", (data) => {
         document.getElementById("np-meta").innerText = np.addedBy;
     } else { npContainer.style.display = "none"; }
 
-    // Saldo
-    const knappSaldo = document.getElementById("knapp-saldo");
-    if (knappSaldo) {
-        knappSaldo.style.display = data.qrKrav ? "flex" : "none";
-        knappSaldo.innerText = mittSaldo;
-    }
-    const saldoText = document.getElementById("saldo-info-text");
-    if (saldoText) saldoText.innerText = mittSaldo;
-
-    // Kö (Top 3)
     const qList = document.getElementById("queue-lista");
     const displayQueue = (data.queue || []).slice(0, 3);
-    if (displayQueue.length === 0) {
-        qList.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom - önska nåt!</div>";
-    } else {
-        qList.innerHTML = displayQueue.map((l, i) => `
-            <div class="song-row ${l.socketId === socket.id ? 'my-song' : ''}">
-                <div class="song-index">${i + 1}</div>
-                <div class="song-info">
-                    <div class="song-title">${l.title}</div>
-                    <div class="song-meta">${l.isListSong ? 'Bakgrund' : 'Gäst'} • ${l.addedBy}</div>
-                </div>
+    qList.innerHTML = displayQueue.length === 0 ? "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom</div>" : displayQueue.map((l, i) => `
+        <div class="song-row ${l.socketId === socket.id ? 'my-song' : ''}">
+            <div class="song-index">${i + 1}</div>
+            <div class="song-info">
+                <div class="song-title">${l.title}</div>
+                <div class="song-meta">${l.isListSong ? 'Bakgrund' : 'Gäst'} • ${l.addedBy}</div>
             </div>
-        `).join("");
-    }
+        </div>
+    `).join("");
+
+    const saldoText = document.getElementById("saldo-info-text");
+    if (saldoText) saldoText.innerText = mittSaldo;
 });
 
 socket.on("kupong_success", () => {
     if (mittSaldo > 0) mittSaldo--;
     document.getElementById("results").innerHTML = "";
     document.getElementById("query").value = "";
-    showToast("Låten tillagd! 🎵");
+    showToast("Låt tillagd! 🎵");
 });
 
-socket.on("kupong_error", (data) => showToast(data.msg, true));
+socket.on("kupong_error", (d) => showToast(d.msg, true));
 
-// --- TICKET SCANNER ---
+async function delaLank() {
+    try {
+        if (navigator.share) await navigator.share({ title: 'Jukebox', url: window.location.href });
+        else { await navigator.clipboard.writeText(window.location.href); showToast("Länk kopierad!"); }
+    } catch (e) {}
+}
+
 function startaScanner() {
     document.getElementById("scanner-layer").style.display = "block";
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+        document.getElementById("kupong-input").value = text;
         const parts = text.split('-');
-        if (parts.length === 3) {
-            document.getElementById("kupong-input").value = text;
-            mittSaldo = parseInt(parts[1]);
-            showToast("Kupong laddad: " + mittSaldo + " låtar");
-            stoppaScanner();
-        }
+        if (parts.length === 3) { mittSaldo = parseInt(parts[1]); showToast("Kupong laddad!"); }
+        stoppaScanner();
     }).catch(() => stoppaScanner());
 }
 
@@ -141,3 +129,38 @@ function showToast(msg, isError) {
     t.style.display = "block";
     setTimeout(() => t.style.display = "none", 3000);
 }
+
+// BAKGRUNDS-INSTÄLLNINGAR
+function initBgSettings() {
+    const zoomSlider = document.getElementById('bg-zoom');
+    const brightSlider = document.getElementById('bg-brightness');
+    const zoomVal = document.getElementById('zoom-val');
+    const brightVal = document.getElementById('bright-val');
+
+    if (!zoomSlider || !brightSlider) return;
+
+    const savedZoom = localStorage.getItem('bg_zoom') || '100';
+    const savedBright = localStorage.getItem('bg_bright') || '85';
+
+    const apply = () => {
+        const z = zoomSlider.value;
+        const b = brightSlider.value;
+        document.body.style.setProperty('--bg-zoom', z + '%');
+        document.body.style.setProperty('--bg-overlay', (b / 100));
+        if (zoomVal) zoomVal.innerText = z + '%';
+        if (brightVal) brightVal.innerText = b + '%';
+        localStorage.setItem('bg_zoom', z);
+        localStorage.setItem('bg_bright', b);
+    };
+
+    zoomSlider.value = savedZoom;
+    brightSlider.value = savedBright;
+
+    zoomSlider.oninput = apply;
+    brightSlider.oninput = apply;
+
+    apply();
+}
+
+// Kör init när filen laddas
+initBgSettings();

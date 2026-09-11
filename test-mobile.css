@@ -5,60 +5,60 @@
     --accent: #1db954;
     --text-main: #ffffff;
     --text-dim: #929292;
-    --error: #e91429;
     --blue: #007aff;
+    /* Variabler för bakgrunden */
+    --bg-zoom: 100%;
+    --bg-overlay: 0.85;
 }
 
 body {
     background-color: var(--bg-black);
-    /* FoxBox förberedelse - aktiveras så fort filen finns */
-    background-image: linear-gradient(rgba(5, 5, 5, 0.85), rgba(5, 5, 5, 0.92)), url('/foxbox.webp');
-    background-size: cover;
+    /* FoxBox bakgrund med variabler för toning och storlek */
+    background-image: linear-gradient(rgba(5, 5, 5, var(--bg-overlay)), rgba(5, 5, 5, var(--bg-overlay))), url('/data/sounds/foxbox3.webp');
+    background-size: var(--bg-zoom);
     background-position: center;
     background-attachment: fixed;
-
     color: var(--text-main);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, system-ui, sans-serif;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
+    /* Global textskugga för bättre läsbarhet mot bildbakgrund */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .app-container {
     padding: 20px 16px 120px 16px;
-    max-width: 600px; /* Ser till att det ser bra ut även på tablets */
+    max-width: 600px;
     margin: 0 auto;
 }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding: 10px 0;
+/* Dölj nu spelas endast när vi är inne på dela-fliken */
+.app-container.dela-active #now-playing-container {
+    display: none !important;
 }
 
+header { padding: 10px 0 20px 0; }
 h1 {
     font-size: 26px;
     font-weight: 800;
-    margin: 0;
-    letter-spacing: -0.5px;
     text-transform: uppercase;
-    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 0%, #888 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
-/* SÖKRADEN - STRAM OCH SOLID HÅRDVARUKÄNSLA */
 .search-pill {
-    background: rgba(28, 28, 30, 0.8);
+    background: rgba(28, 28, 30, 0.9);
     backdrop-filter: blur(10px);
     border: 1px solid #2c2c2e;
     border-radius: 12px;
     display: flex;
-    align-items: center;
-    height: 54px;
-    padding: 0 4px 0 16px;
+    height: 56px;
+    padding: 5px;
     margin-bottom: 24px;
     box-sizing: border-box;
 }
@@ -67,10 +67,10 @@ h1 {
     background: none;
     border: none;
     color: white;
-    flex: 1;
+    flex: 8;
     font-size: 16px;
     outline: none;
-    height: 100%;
+    padding-left: 12px;
 }
 
 .search-btn {
@@ -78,27 +78,30 @@ h1 {
     color: black;
     border: none;
     border-radius: 8px;
-    height: 44px;
-    padding: 0 20px;
-    font-weight: 700;
-    font-size: 14px;
+    flex: 2;
+    height: 100%;
+    font-weight: 800;
     text-transform: uppercase;
+    font-size: 13px;
     letter-spacing: 0.5px;
-    transition: opacity 0.1s ease;
 }
 
-.search-btn:active {
-    opacity: 0.8;
-}
-
-/* KORT OCH RADER */
+/* KORT OCH CONTAINERS */
 .card {
-    background: rgba(18, 18, 18, 0.75);
-    backdrop-filter: blur(10px);
+    background: rgba(18, 18, 18, 0.8);
+    backdrop-filter: blur(15px);
     border: 1px solid #222;
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
+}
+
+/* Ta bort kort-bakgrunden specifikt i dela-fliken */
+#tab-dela .card {
+    background: none !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: none !important;
 }
 
 .section-title {
@@ -107,24 +110,44 @@ h1 {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
+/* NU SPELAS - Helt ren stil utan bakgrundsruta */
 .now-playing {
+    background: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    padding: 10px 0 30px 0 !important;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 24px 16px;
+    box-shadow: none !important;
 }
 
 .now-playing-thumb {
-    width: 140px;
-    height: 140px;
-    border-radius: 12px;
+    width: 160px;
+    height: 160px;
+    border-radius: 20px;
     object-fit: cover;
     margin-bottom: 16px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.7);
+    /* Gradient genomskinliga kanter (mask) */
+    -webkit-mask-image: radial-gradient(circle, black 65%, transparent 100%);
+    mask-image: radial-gradient(circle, black 65%, transparent 100%);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+
+.now-playing .song-title {
+    font-size: 20px;
+    text-shadow: 0 2px 10px rgba(0,0,0,1);
+    font-weight: 700;
+}
+
+.now-playing .song-meta {
+    text-shadow: 0 2px 5px rgba(0,0,0,1);
+    opacity: 0.9;
 }
 
 .live-dot {
@@ -158,42 +181,36 @@ h1 {
     height: 52px;
     border-radius: 8px;
     object-fit: cover;
-    flex-shrink: 0;
 }
 
 .song-info { flex: 1; min-width: 0; text-align: left; }
-.song-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.song-meta { font-size: 13px; color: var(--text-dim); }
-
-.song-index {
-    color: var(--text-dim);
-    font-size: 14px;
-    font-weight: 700;
-    width: 24px;
-    text-align: center;
+.song-title {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
 }
+.song-meta { font-size: 13px; color: var(--text-dim); }
+.song-index { color: var(--text-dim); font-size: 14px; font-weight: 700; width: 20px; }
 
 .add-btn {
     background: #1c1c1e;
-    color: var(--text-main);
-    border: 1px solid #3a3a3c;
+    color: white;
+    border: 1px solid #333;
     border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
     font-weight: 700;
-    text-transform: uppercase;
-}
-
-.add-btn:active {
-    background: #2c2c2e;
 }
 
 .big-btn {
     width: 100%;
     padding: 16px;
     border-radius: 12px;
-    font-weight: 700;
-    font-size: 16px;
+    font-weight: 800;
+    font-size: 15px;
     border: none;
     margin-top: 8px;
     display: flex;
@@ -201,23 +218,21 @@ h1 {
     justify-content: center;
     gap: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .btn-primary { background: var(--accent); color: black; }
-.btn-outline { background: transparent; border: 1px solid #3a3a3c; color: white; margin-top: 16px; }
+.btn-outline { background: transparent; border: 1px solid #333; color: white; margin-top: 16px; }
 
-/* BOTTENMENYN - PROFFSIG OCH BALANSERAD */
 .bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(10, 10, 10, 0.92);
+    background: rgba(10, 10, 10, 0.98);
     backdrop-filter: blur(20px);
     display: flex;
     justify-content: space-around;
-    padding: 14px 0 calc(12px + env(safe-area-inset-bottom));
+    padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid #1c1c1e;
     z-index: 1000;
 }
@@ -232,49 +247,28 @@ h1 {
     font-size: 11px;
     font-weight: 600;
     gap: 6px;
-    width: 50%; /* Justerad eftersom vi har 2 flikar nu */
-    transition: color 0.1s ease;
+    width: 50%;
 }
 
-/* Emoji/Ikon-justering */
-.nav-item span:first-child {
-    font-size: 22px; /* Går att byta till SVG senare om så önskas */
-    line-height: 1;
-}
-
-.nav-item.active {
-    color: var(--accent);
-    text-shadow: 0 0 10px rgba(29, 185, 84, 0.3);
-}
+.nav-item span:first-child { font-size: 26px; }
+.nav-item.active { color: var(--accent); }
 
 #toast {
     position: fixed;
-    bottom: 110px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--accent);
     color: black;
-    padding: 14px 28px;
+    padding: 12px 24px;
     border-radius: 12px;
     font-weight: 700;
-    font-size: 14px;
     z-index: 2000;
     display: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
-.qr-card-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
-    background: white;
-    border-radius: 12px;
-    margin-top: 16px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-}
-
-.tab-content { display: none; animation: fadeIn 0.15s ease-out; }
-.tab-content.active { display: block; }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

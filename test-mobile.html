@@ -3,113 +3,105 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-    <!-- PWA / App-inställningar -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Jukebox">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1db954">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
-
     <title>Jukebox</title>
 
-    <!-- Externa skript för Funktioner -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-
-    <!-- Dina egna skript -->
     <script src="/test-mobile.js" defer></script>
     <script src="/jukebox-pwa.js" defer></script>
     <link rel="stylesheet" href="/test-mobile.css">
 
     <script>
-        // Registrera Service Worker för PWA
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW-fel:', err));
-            });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js'); });
         }
     </script>
 </head>
 <body>
 
-<!-- HÄR KAN DU SENARE KLISTRA IN DIN FOXBOX-HTML -->
 <div id="foxbox-background" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></div>
 
 <div class="app-container">
-    <header>
-        <h1 id="pub-titel">Jukebox</h1>
-        <!-- Saldo-mätaren flyttas till Dela/Kupong-fliken för renhet, men ID behålls för JS -->
-        <div id="knapp-saldo" class="badge-count" style="display:none;">0</div>
-    </header>
+    <header><h1 id="pub-titel">Jukebox</h1></header>
+
+    <!-- NU SPELAS (Alltid synlig överst) -->
+    <div id="now-playing-container" class="card now-playing" style="display:none;">
+        <div class="section-title"><span class="live-dot"></span> Just nu</div>
+        <img id="np-thumb" src="" class="now-playing-thumb">
+        <div id="np-title" class="song-title">-</div>
+        <div id="np-meta" class="song-meta">-</div>
+    </div>
 
     <main id="swipe-area">
-        <!-- FLIK 1: JUKEBOX (SÖK + KÖ) -->
+        <!-- FLIK 1: JUKEBOX -->
         <section id="tab-jukebox" class="tab-content active">
-            <!-- NU SPELAS -->
-            <div id="now-playing-container" class="card now-playing" style="display:none;">
-                <div class="section-title"><span class="live-dot"></span> Just nu</div>
-                <img id="np-thumb" src="" class="now-playing-thumb">
-                <div id="np-title" class="song-title">-</div>
-                <div id="np-meta" class="song-meta">-</div>
-            </div>
-
-            <!-- SÖKRADEN (I KÖN) -->
             <div class="search-pill">
                 <input type="text" id="query" placeholder="Vilken låt vill du höra?" onkeyup="if(event.key==='Enter') sök()">
                 <button class="search-btn" onclick="sök()">SÖK</button>
             </div>
-
             <div id="results"></div>
 
             <h2 class="section-title">Kommande (Top 3)</h2>
             <div id="queue-lista"></div>
         </section>
 
-        <!-- FLIK 2: DELA & KUPONG -->
+        <!-- FLIK 2: DELA & MER -->
         <section id="tab-dela" class="tab-content">
-            <!-- KUPONG / SALDO -->
             <div class="card" style="text-align:center;">
-                <h2 class="section-title">Dina Önskningar</h2>
-                <div id="saldo-info-text" style="font-size:32px; font-weight:800; color:var(--accent); margin:10px 0;">0</div>
+                <h2 class="section-title">Ditt Saldo</h2>
+                <div id="saldo-info-text" style="font-size:36px; font-weight:800; color:var(--accent); margin:10px 0;">0</div>
                 <button class="big-btn btn-primary" onclick="startaScanner()">➕ LADDA KUPONG</button>
-                <input type="text" id="kupong-input" placeholder="Eller skriv kod här..." style="margin-top:10px; width:100%; padding:12px; background:#1c1c1e; border:1px solid #333; color:white; border-radius:8px; text-align:center;">
+                <input type="text" id="kupong-input" placeholder="Skriv kod här..." style="margin-top:10px; width:100%; padding:12px; background:#1c1c1e; border:1px solid #333; color:white; border-radius:8px; text-align:center;">
             </div>
 
-            <!-- DELA -->
+            <!-- Bakgrundsinställningar -->
+            <div class="card" style="text-align:left;">
+                <h2 class="section-title">Bakgrundsbild</h2>
+                <div style="margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#888; margin-bottom:5px;">
+                        <label>Storlek (Zoom)</label>
+                        <span id="zoom-val">100%</span>
+                    </div>
+                    <input type="range" id="bg-zoom" min="50" max="300" value="100" style="width:100%; accent-color:var(--accent);">
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:#888; margin-bottom:5px;">
+                        <label>Synlighet (Matthet)</label>
+                        <span id="bright-val">85%</span>
+                    </div>
+                    <input type="range" id="bg-brightness" min="0" max="100" value="85" style="width:100%; accent-color:var(--accent);">
+                </div>
+            </div>
+
             <div class="card" style="text-align:center;">
-                <h2 class="section-title">Dela till bordet</h2>
+                <h2 class="section-title">Dela till vänner</h2>
                 <div id="share-qr-target" style="display:flex; justify-content:center; padding:10px;"></div>
                 <button class="big-btn btn-outline" onclick="delaLank()">📤 SKICKA LÄNK</button>
             </div>
 
-            <!-- SPARA SOM APP -->
             <div id="pwa-install-container" class="card">
-                <h2 class="section-title">Spara på hemskärmen</h2>
-                <div id="pwa-status-installed" style="display:none; text-align:center; color:#1db954;">✅ Redan sparad</div>
+                <h2 class="section-title">Spara som app</h2>
+                <div id="pwa-status-installed" style="display:none; text-align:center; color:#1db954;">✅ Sparad på hemskärmen</div>
                 <button id="pwa-install-btn" class="big-btn btn-outline" style="display:none;"></button>
-                <div id="pwa-ios-instruktion" style="display:none; font-size:13px; text-align:left; color:#ccc; line-height:1.4;"></div>
+                <div id="pwa-ios-instruktion" style="display:none; font-size:13px; text-align:left; color:#ccc;"></div>
             </div>
         </section>
     </main>
 
-    <!-- NYA BOTTENMENYN (2 KNAPPAR) -->
     <nav class="bottom-nav">
         <button id="btn-tab-jukebox" class="nav-item active" onclick="bytFlik('jukebox')"><span>🎵</span><span>Jukebox</span></button>
-        <button id="btn-tab-dela" class="nav-item" onclick="bytFlik('dela')"><span>🤝</span><span>Dela & Mer</span></button>
+        <button id="btn-tab-dela" class="nav-item" onclick="bytFlik('dela')"><span>🤝</span><span>Dela</span></button>
     </nav>
 </div>
 
-<!-- LAGER FÖR SCANNER (Viktigt!) -->
+<div id="toast" style="display:none;"></div>
 <div id="scanner-layer" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000;">
     <div id="qr-reader" style="width:100%;"></div>
     <button class="big-btn btn-outline" onclick="stoppaScanner()">AVBRYT</button>
 </div>
-
-<div id="toast"></div>
-
 </body>
 </html>
