@@ -5,9 +5,42 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/data/sounds/foxbox3.webp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/favicon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-128x128.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-144x144.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-152x152.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-16x16.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-180x180.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-192x192-maskable.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-192x192.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-32x32.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-384x384.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-48x48.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-512x512-maskable.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-512x512.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-64x64.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-96x96.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/manifest.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/meta-tags.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1179x2556.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1290x2796.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1334x750.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1536x2048.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1640x2360.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1668x2388.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2048x1536.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2048x2732.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2360x1640.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2388x1668.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2556x1179.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2732x2048.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2796x1290.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-750x1334.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.css" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/manifest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/staff-app.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/staff-app.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test-mobile.js" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.js" afterDir="false" />
     </list>
@@ -57,11 +90,12 @@
     "git-widget-placeholder": "fungerande-live",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/lennh/Desktop/AItestjb/data/sounds"
+    "last_opened_file_path": "C:/Users/lennh/Desktop/AItestjb/data"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\lennh\Desktop\AItestjb\data" />
       <recent name="C:\Users\lennh\Desktop\AItestjb\data\sounds" />
     </key>
     <key name="MoveFile.RECENT_KEYS">

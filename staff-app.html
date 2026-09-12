@@ -2,10 +2,28 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
     <title>Jukebox - Staff App</title>
+
+    <!-- PWA iOS Support -->
+    <link rel="apple-touch-icon" href="/data/pwa-assets%20(1)/icons/icon-180x180.png">
+
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-1290x2796.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-1179x2556.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-750x1334.png">
+
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link rel="stylesheet" href="/staff-app.css">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js'); });
+        }
+    </script>
 </head>
 <body>
 
@@ -59,7 +77,6 @@
                     <input type="text" id="txt-edit-search" placeholder="Artist eller låt..." onkeypress="if(event.key==='Enter') sokLatTillEdit()">
                     <button onclick="sokLatTillEdit()" style="background:#1ed760; color:#000;">SÖK</button>
                 </div>
-                <!-- Här hamnar sökresultaten (Mobil-stil) -->
                 <div id="edit-search-results" style="margin-bottom: 20px; max-height: 280px; overflow-y: auto; background: #111; border-radius: 6px;"></div>
 
                 <div class="title" style="font-size: 16px; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px;">Låtar i spellistan</div>
@@ -70,6 +87,23 @@
         <!-- Settings View -->
         <div id="view-settings" class="tab-view" style="display: none;">
             <div class="title">Inställningar</div>
+
+            <!-- PWA INSTALL CARD -->
+            <div class="settings-card" id="pwa-settings-card">
+                <h3 style="margin: 0 0 10px 0; color: #fff;">Spara som app</h3>
+                <div id="pwa-status-installed" style="display:none; color:#1db954; padding: 10px 0;">✅ Installerad</div>
+                <button id="pwa-install-btn" class="btn-action" style="display:none; width: 100%; background: #1db954; color: #000;">INSTALLERA APP 📱</button>
+                <div id="pwa-ios-instruktion" style="display:none; font-size:13px; color:#ccc; line-height: 1.5; background: #111; padding: 15px; border-radius: 8px;">
+                    <strong>För iPhone/iPad:</strong><br>
+                    1. Tryck på dela-ikonen (fyrkant med pil upp)<br>
+                    2. Välj "Lägg till på hemskärmen"
+                </div>
+                <!-- Fallback om webbläsaren inte stöder prompten (t.ex. vanlig Desktop Chrome) -->
+                <div id="pwa-unavailable" style="font-size: 13px; color: #666; padding-top: 5px;">
+                    Installationsknappen visas endast på mobila enheter eller i webbläsare som stöder PWA.
+                </div>
+            </div>
+
             <div class="settings-card">
                 <div class="settings-row">
                     <div>

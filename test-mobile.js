@@ -2,6 +2,7 @@ const socket = io();
 const pubId = window.location.pathname.split('/')[2] || "default_pub";
 let mittSaldo = 0;
 let html5QrCode = null;
+let nuvarandeKupongKod = ""; // Sparar koden internt
 
 socket.emit("join_pub", pubId);
 
@@ -23,7 +24,6 @@ function bytFlik(tab) {
     const btn = document.getElementById('btn-tab-' + (tab === 'jukebox' ? 'jukebox' : 'dela'));
     if(btn) btn.classList.add('active');
 
-    // Hantera synlighet för "Nu spelas" stabilt via en container-klass
     const container = document.querySelector('.app-container');
     if (container) {
         if (tab === 'dela') {
@@ -58,8 +58,8 @@ socket.on("searchResults", (data) => {
 });
 
 function önskaLåt(videoId, title, thumbnail) {
-    const kupongKod = document.getElementById("kupong-input").value;
-    socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod });
+    // Använder den lagrade variabeln istället för ett input-fält
+    socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod });
 }
 
 socket.on("state", (data) => {
@@ -109,9 +109,12 @@ function startaScanner() {
     document.getElementById("scanner-layer").style.display = "block";
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        document.getElementById("kupong-input").value = text;
+        nuvarandeKupongKod = text; // Sparar den skannade koden i variabeln
         const parts = text.split('-');
-        if (parts.length === 3) { mittSaldo = parseInt(parts[1]); showToast("Kupong laddad!"); }
+        if (parts.length === 3) {
+            mittSaldo = parseInt(parts[1]);
+            showToast("Kupong laddad!");
+        }
         stoppaScanner();
     }).catch(() => stoppaScanner());
 }
@@ -130,7 +133,6 @@ function showToast(msg, isError) {
     setTimeout(() => t.style.display = "none", 3000);
 }
 
-// BAKGRUNDS-INSTÄLLNINGAR
 function initBgSettings() {
     const zoomSlider = document.getElementById('bg-zoom');
     const brightSlider = document.getElementById('bg-brightness');
@@ -155,12 +157,9 @@ function initBgSettings() {
 
     zoomSlider.value = savedZoom;
     brightSlider.value = savedBright;
-
     zoomSlider.oninput = apply;
     brightSlider.oninput = apply;
-
     apply();
 }
 
-// Kör init när filen laddas
 initBgSettings();

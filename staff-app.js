@@ -12,6 +12,19 @@ let editingMomentType = null;
 let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
+let deferredPrompt;
+
+// 1. FÅNGA INSTALLATIONSEVENTET OMEDELBART PÅ TOPPNIVÅ
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('pwa-install-btn');
+    const fallbackText = document.getElementById('pwa-unavailable');
+    if (installBtn) {
+        installBtn.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+    }
+});
 
 const ORDERED_PLAYLISTS = [
     "happy birthday to you",
@@ -322,3 +335,46 @@ function uppdateraPlayerVy() {
             <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
         </div>`).join("");
 }
+
+// 2. HANTERA PWA-LOGIK I DOM
+window.addEventListener('DOMContentLoaded', () => {
+    const installBtn = document.getElementById('pwa-install-btn');
+    const pwaInstruktion = document.getElementById('pwa-ios-instruktion');
+    const statusInstalled = document.getElementById('pwa-status-installed');
+    const fallbackText = document.getElementById('pwa-unavailable');
+
+    if (!installBtn) return;
+
+    // Kolla om vi redan körs som app
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+        statusInstalled.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+        return;
+    }
+
+    // iOS hantering
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+        pwaInstruktion.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+        return;
+    }
+
+    // Om eventet redan fångades på toppnivå innan DOM laddades
+    if (deferredPrompt) {
+        installBtn.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+    }
+
+    installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            installBtn.style.display = 'none';
+            statusInstalled.style.display = 'block';
+        }
+        deferredPrompt = null;
+    });
+});

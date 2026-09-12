@@ -8,6 +8,14 @@
     <link rel="manifest" href="/manifest.json">
     <title>Jukebox</title>
 
+    <!-- PWA iOS Support -->
+    <link rel="apple-touch-icon" href="/data/pwa-assets%20(1)/icons/icon-180x180.png">
+
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-1290x2796.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-1179x2556.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/data/pwa-assets%20(1)/splash/splash-750x1334.png">
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -55,7 +63,7 @@
                 <h2 class="section-title">Ditt Saldo</h2>
                 <div id="saldo-info-text" style="font-size:36px; font-weight:800; color:var(--accent); margin:10px 0;">0</div>
                 <button class="big-btn btn-primary" onclick="startaScanner()">➕ LADDA KUPONG</button>
-                <input type="text" id="kupong-input" placeholder="Skriv kod här..." style="margin-top:10px; width:100%; padding:12px; background:#1c1c1e; border:1px solid #333; color:white; border-radius:8px; text-align:center;">
+                <!-- Manuellt kod-fält borttaget -->
             </div>
 
             <!-- Bakgrundsinställningar -->
