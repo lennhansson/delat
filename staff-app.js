@@ -14,28 +14,15 @@ let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, sele
 let hasInteracted = false;
 let deferredPrompt;
 
-// 1. FÅNGA INSTALLATIONSEVENTET OMEDELBART PÅ TOPPNIVÅ
+// Fånga eventet direkt för PWA
 window.addEventListener('beforeinstallprompt', (e) => {
+    console.log("PWA: beforeinstallprompt fångat!");
     e.preventDefault();
     deferredPrompt = e;
-    const installBtn = document.getElementById('pwa-install-btn');
-    const fallbackText = document.getElementById('pwa-unavailable');
-    if (installBtn) {
-        installBtn.style.display = 'block';
-        if (fallbackText) fallbackText.style.display = 'none';
-    }
+    updatePwaUI();
 });
 
-const ORDERED_PLAYLISTS = [
-    "happy birthday to you",
-    "acdc",
-    "celiks lista",
-    "saras lista",
-    "la muzika",
-    "favoriter",
-    "before i ieave",
-    "highway man"
-];
+const ORDERED_PLAYLISTS = ["happy birthday to you","acdc","celiks lista","saras lista","la muzika","favoriter","before i ieave","highway man"];
 
 window.onYouTubeIframeAPIReady = function () {
     staffYtPlayer = new YT.Player("staff-yt-player", {
@@ -47,7 +34,11 @@ window.onYouTubeIframeAPIReady = function () {
                 if (e.data === YT.PlayerState.ENDED) triggaSpelareReady();
                 if (e.data === YT.PlayerState.PLAYING) startWatcher();
             },
-            onError: () => triggaSpelareReady()
+            onError: (e) => {
+                console.error("YouTube Player Error:", e.data);
+                // Rapportera felet till servern så vi ser det i terminalen!
+                socket.emit("player:error", { code: e.data, song: nuvarandeState?.nowPlaying });
+            }
         }
     });
 };
@@ -57,21 +48,50 @@ if (!window.YT) {
     document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
 }
 
-document.addEventListener('click', () => {
-    if (hasInteracted) return;
-    hasInteracted = true;
-    if (staffYtPlayer?.unMute) { staffYtPlayer.unMute(); staffYtPlayer.setVolume(100); }
-}, { once: true });
+function updatePwaUI() {
+    const installBtn = document.getElementById('pwa-install-btn');
+    const fallbackText = document.getElementById('pwa-unavailable');
+    const statusInstalled = document.getElementById('pwa-status-installed');
+    const pwaInstruktion = document.getElementById('pwa-ios-instruktion');
+
+    if (!installBtn) return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+        if (statusInstalled) statusInstalled.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+        return;
+    }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+        if (pwaInstruktion) pwaInstruktion.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+        return;
+    }
+
+    if (deferredPrompt) {
+        installBtn.style.display = 'block';
+        if (fallbackText) fallbackText.style.display = 'none';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', updatePwaUI);
+
+function switchTab(t) {
+    document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
+    document.getElementById("tab-"+t).classList.add("active");
+    document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
+    document.getElementById("view-"+t).style.display = "block";
+    if (t === 'settings') updatePwaUI();
+}
 
 function startWatcher() {
     if (timeWatcher) clearInterval(timeWatcher);
     timeWatcher = setInterval(() => {
         if (staffYtPlayer?.getCurrentTime) {
             const now = staffYtPlayer.getCurrentTime();
-            if (currentStopPos > 0 && now >= currentStopPos && now > 2) {
-                console.log("Klipper vid stopptid:", currentStopPos);
-                triggaSpelareReady();
-            }
+            if (currentStopPos > 0 && now >= currentStopPos && now > 2) triggaSpelareReady();
         }
     }, 500);
 }
@@ -87,14 +107,12 @@ function startaSpelaren() {
 
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
-
     if (state.activeMoment?.type === 'pause') {
         if (timeWatcher) clearInterval(timeWatcher);
         staffYtPlayer.stopVideo();
         aktivUniqueId = null;
         return;
     }
-
     if (!state.nowPlaying) {
         if (aktivUniqueId !== null) {
             if (timeWatcher) clearInterval(timeWatcher);
@@ -103,21 +121,12 @@ function uppdateraStaffPlayer(state) {
         }
         return;
     }
-
     const vidIdStr = String(state.nowPlaying.videoId);
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
-
-        const loadOptions = {
-            videoId: vidIdStr,
-            startSeconds: state.nowPlaying.startPosition || 0
-        };
-
-        if (currentStopPos > loadOptions.startSeconds) {
-            loadOptions.endSeconds = currentStopPos;
-        }
-
+        const loadOptions = { videoId: vidIdStr, startSeconds: state.nowPlaying.startPosition || 0 };
+        if (currentStopPos > loadOptions.startSeconds) loadOptions.endSeconds = currentStopPos;
         staffYtPlayer.loadVideoById(loadOptions);
     }
 }
@@ -125,9 +134,7 @@ function uppdateraStaffPlayer(state) {
 function getSortedPlaylistNames(valv) {
     const allNames = Object.keys(valv || {});
     const sorted = [];
-    ORDERED_PLAYLISTS.forEach(name => {
-        if (allNames.includes(name)) sorted.push(name);
-    });
+    ORDERED_PLAYLISTS.forEach(name => { if (allNames.includes(name)) sorted.push(name); });
     const remaining = allNames.filter(n => !ORDERED_PLAYLISTS.includes(n)).sort();
     return [...sorted, ...remaining];
 }
@@ -220,12 +227,7 @@ function activateMoment(type) { socket.emit("moment:activate", { type, message: 
 function stopMoment() { socket.emit("moment:stop"); }
 function closeModal() { document.getElementById("moment-modal").style.display = "none"; }
 function searchMomentVideo() { const q = document.getElementById("modal-search-input").value; if (q) socket.emit("search", { query: q }); }
-
-function sokLatTillEdit() {
-    const q = document.getElementById("txt-edit-search").value.trim();
-    if (q) socket.emit("search", { query: q });
-}
-
+function sokLatTillEdit() { const q = document.getElementById("txt-edit-search").value.trim(); if (q) socket.emit("search", { query: q }); }
 function pickVideo(id, title, thumb) { selectedVideoId = id; selectedSongTitle = title; selectedThumbnail = thumb; document.getElementById("modal-results").innerHTML = `<div style="padding:10px; color:#1ed760;">VALD: ${title}</div>`; }
 
 function laggTillLatIPermanentLista(videoId, title, thumbnail) {
@@ -247,8 +249,6 @@ function uppdateraEditVyMobil(valvNamn) {
     }).join("");
 }
 
-function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
-
 function triggaSpelareReady() {
     if (timeWatcher) clearInterval(timeWatcher);
     currentStopPos = 0;
@@ -257,7 +257,6 @@ function triggaSpelareReady() {
 }
 
 function skipLat() { triggaSpelareReady(); }
-
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 
 socket.on('connect', () => socket.emit("join_pub", pubId));
@@ -336,45 +335,13 @@ function uppdateraPlayerVy() {
         </div>`).join("");
 }
 
-// 2. HANTERA PWA-LOGIK I DOM
-window.addEventListener('DOMContentLoaded', () => {
-    const installBtn = document.getElementById('pwa-install-btn');
-    const pwaInstruktion = document.getElementById('pwa-ios-instruktion');
-    const statusInstalled = document.getElementById('pwa-status-installed');
-    const fallbackText = document.getElementById('pwa-unavailable');
-
-    if (!installBtn) return;
-
-    // Kolla om vi redan körs som app
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-        statusInstalled.style.display = 'block';
-        if (fallbackText) fallbackText.style.display = 'none';
-        return;
+document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+        document.getElementById('pwa-install-btn').style.display = 'none';
+        document.getElementById('pwa-status-installed').style.display = 'block';
     }
-
-    // iOS hantering
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-        pwaInstruktion.style.display = 'block';
-        if (fallbackText) fallbackText.style.display = 'none';
-        return;
-    }
-
-    // Om eventet redan fångades på toppnivå innan DOM laddades
-    if (deferredPrompt) {
-        installBtn.style.display = 'block';
-        if (fallbackText) fallbackText.style.display = 'none';
-    }
-
-    installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            installBtn.style.display = 'none';
-            statusInstalled.style.display = 'block';
-        }
-        deferredPrompt = null;
-    });
+    deferredPrompt = null;
 });

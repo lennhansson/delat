@@ -48,17 +48,19 @@ function sök() {
 }
 
 socket.on("searchResults", (data) => {
+    // Gör hela raden klickbar och ta bort den separata knappen
     document.getElementById("results").innerHTML = data.results.map(s => `
-        <div class="song-row">
+        <div class="song-row" onclick="önskaLåt('${s.videoId}','${s.title.replace(/'/g,"\\'")}','${s.thumbnail}')">
             <img src="${s.thumbnail}" class="song-thumb">
-            <div class="song-info"><div class="song-title">${s.title}</div></div>
-            <button class="add-btn" onclick="önskaLåt('${s.videoId}','${s.title.replace(/'/g,"\\'")}','${s.thumbnail}')">ÖNSKA</button>
+            <div class="song-info">
+                <div class="song-title">${s.title}</div>
+                <div class="song-meta">Tryck för att välja</div>
+            </div>
         </div>
     `).join("");
 });
 
 function önskaLåt(videoId, title, thumbnail) {
-    // Använder den lagrade variabeln istället för ett input-fält
     socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod });
 }
 
@@ -91,6 +93,7 @@ socket.on("state", (data) => {
 
 socket.on("kupong_success", () => {
     if (mittSaldo > 0) mittSaldo--;
+    // Rensar sökresultaten och input-fältet - ger användaren bekräftelse genom att gå tillbaka till kön
     document.getElementById("results").innerHTML = "";
     document.getElementById("query").value = "";
     showToast("Låt tillagd! 🎵");
@@ -109,7 +112,7 @@ function startaScanner() {
     document.getElementById("scanner-layer").style.display = "block";
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        nuvarandeKupongKod = text; // Sparar den skannade koden i variabeln
+        nuvarandeKupongKod = text;
         const parts = text.split('-');
         if (parts.length === 3) {
             mittSaldo = parseInt(parts[1]);

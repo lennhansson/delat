@@ -21,7 +21,9 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js'); });
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(() => console.log("SW Registered"));
+            });
         }
     </script>
 </head>
@@ -91,16 +93,15 @@
             <!-- PWA INSTALL CARD -->
             <div class="settings-card" id="pwa-settings-card">
                 <h3 style="margin: 0 0 10px 0; color: #fff;">Spara som app</h3>
-                <div id="pwa-status-installed" style="display:none; color:#1db954; padding: 10px 0;">✅ Installerad</div>
-                <button id="pwa-install-btn" class="btn-action" style="display:none; width: 100%; background: #1db954; color: #000;">INSTALLERA APP 📱</button>
+                <div id="pwa-status-installed" style="display:none; color:#1db954; padding: 10px 0;">✅ Redan installerad</div>
+                <button id="pwa-install-btn" class="btn-action" style="display:none; width: 100%; background: #1db954; color: #000;">INSTALLERA STAFF-APP 📱</button>
                 <div id="pwa-ios-instruktion" style="display:none; font-size:13px; color:#ccc; line-height: 1.5; background: #111; padding: 15px; border-radius: 8px;">
                     <strong>För iPhone/iPad:</strong><br>
                     1. Tryck på dela-ikonen (fyrkant med pil upp)<br>
                     2. Välj "Lägg till på hemskärmen"
                 </div>
-                <!-- Fallback om webbläsaren inte stöder prompten (t.ex. vanlig Desktop Chrome) -->
                 <div id="pwa-unavailable" style="font-size: 13px; color: #666; padding-top: 5px;">
-                    Installationsknappen visas endast på mobila enheter eller i webbläsare som stöder PWA.
+                    Installationsknappen visas på stödda enheter (Android/Chrome).
                 </div>
             </div>
 

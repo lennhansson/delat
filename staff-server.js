@@ -22,27 +22,6 @@ function parseYouTubeDuration(durationStr) {
     return 0;
 }
 
-function getLocalIp() {
-    const interfaces = os.networkInterfaces();
-    for (const devName in interfaces) {
-        const iface = interfaces[devName];
-        for (let i = 0; i < iface.length; i++) {
-            const alias = iface[i];
-            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) return alias.address;
-        }
-    }
-    return 'localhost';
-}
-
-function shuffleArray(array) {
-    const newArr = [...array];
-    for (let i = newArr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-    }
-    return newArr;
-}
-
 function flattenId(id) {
     if (!id) return "";
     if (typeof id === 'object') return id.videoId || id.id || "";
@@ -74,11 +53,22 @@ function hämtaGemensammaListor() {
     } catch (e) { return {}; }
 }
 
+function shuffleArray(array) {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+}
+
 function refreshShuffled(pub, type) {
     const valv = hämtaGemensammaListor();
     if (type === 'main') {
+        console.log(`[PLAYLIST] Laddar om huvudlista: ${pub.aktivtValv}`);
         pub.shuffledMain = pub.aktivtValv ? shuffleArray(valv[pub.aktivtValv] || []) : [];
     } else {
+        console.log(`[PLAYLIST] Laddar om tillfällig lista: ${pub.aktivTillfalligLista}`);
         pub.shuffledTemp = pub.aktivTillfalligLista ? shuffleArray(valv[pub.aktivTillfalligLista] || []) : [];
     }
 }
@@ -129,7 +119,8 @@ function hämtaPubData(pubId) {
                 Object.assign(d, diskData);
             } catch (e) { console.error("Fel vid inläsning av pubfil:", e); }
         }
-        pubar[pubId] = { ...d, queue: [], nowPlaying: null, interruptedSong: null, playlistCursor: 0, shuffledMain: [], shuffledTemp: [], activeMoment: null, isTransitioning: false, lastNextTrigger: 0 };
+        pubar[pubId] = { ...d, queue: [], nowPlaying: null, interruptedSong: null, playlistCursor: 0, shuffledMain: [], shuffledTemp: [], activeMoment: null, isTransitioning: false };
+        console.log(`[SYSTEM] Pub laddad: ${pubId}`);
     }
     const p = pubar[pubId];
     p.valv = hämtaGemensammaListor();
@@ -138,7 +129,6 @@ function hämtaPubData(pubId) {
     return p;
 }
 
-// SMART SOCIAL KONSENSUS LOGIK
 function getFairQueue(pub) {
     const userQueues = {};
     pub.queue.forEach(s => {
@@ -160,7 +150,6 @@ function getFairQueue(pub) {
         if (activeUsers.length === 0) break;
 
         if (activeUsers.length > 1) {
-            // Fler än en person önskar -> Varva dem direkt
             activeUsers.forEach(uid => {
                 if (tempQueues[uid].length > 0) {
                     fairList.push(tempQueues[uid].shift());
@@ -168,7 +157,6 @@ function getFairQueue(pub) {
                 }
             });
         } else {
-            // Bara en person önskar -> Varva med barens listlåtar
             const uid = activeUsers[0];
             while (tempQueues[uid].length > 0) {
                 fairList.push(tempQueues[uid].shift());
@@ -180,7 +168,6 @@ function getFairQueue(pub) {
             hasSongs = false;
         }
     }
-    // Fyll på med barens låtar till totalt 15 synliga
     while (fairList.length < 15) {
         const bg = getBackgroundSongAt(pub, bgCursor++);
         if (bg) fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
@@ -219,39 +206,77 @@ function validateTicket(kod) {
     const parts = kod.split('-');
     if (parts.length !== 3) return null;
     const expected = crypto.createHmac('sha256', MASTER_SECRET).update(`${parts[0]}-${parts[1]}`).digest('hex').substring(0, 6).toUpperCase();
-    return (parts[2] === expected) ? { id: parts[0], total: parseInt(parts[1]) } : null;
+    const isValid = (parts[2] === expected);
+    if (!isValid) console.log(`[TICKET] Validering MISSLYCKADES för kod: ${kod}`);
+    return isValid ? { id: parts[0], total: parseInt(parts[1]) } : null;
 }
 
 async function resolveVideoId(song) {
     const text = typeof song === 'object' ? song.title : String(song);
-    const lib = libraryManager.getLibrary();
-    const entry = Object.values(lib).find(s => (s.artist + " - " + s.title).toLowerCase() === text.toLowerCase());
-    if (entry && entry.videoId) return flattenId(entry.videoId);
     try {
         const res = await youtubeSearchApi.GetListByKeyword(text, false, 1);
-        return flattenId(res?.items?.[0]?.id || 'dQw4w9WgXcQ');
+        const vid = flattenId(res?.items?.[0]?.id || 'dQw4w9WgXcQ');
+        return vid;
     } catch (e) { return 'dQw4w9WgXcQ'; }
 }
 
 async function korNastaLatLogik(pubId) {
     const p = hämtaPubData(pubId);
-    if (!p || p.isTransitioning || p.activeMoment) return;
+    if (!p) return;
+    if (p.isTransitioning) {
+        console.log(`[QUEUE] Övergång pågår redan för ${pubId}, väntar...`);
+        return;
+    }
+    if (p.activeMoment) {
+        console.log(`[QUEUE] Moment aktivt (${p.activeMoment.type}), startar inte nästa låt.`);
+        return;
+    }
+
     p.isTransitioning = true;
+    console.log(`[QUEUE] 🔄 Beräknar nästa låt för ${pubId}...`);
+
     try {
         const fairQ = getFairQueue(p);
         let n = fairQ.length > 0 ? fairQ[0] : null;
+
         if (n) {
+            console.log(`[QUEUE] 🎵 Valt spår: "${n.title}" (Källa: ${n.addedBy})`);
+
             if (!n.isListSong) {
                 const idx = p.queue.findIndex(s => s.id === n.id);
-                if (idx !== -1) p.queue.splice(idx, 1);
-            } else { p.playlistCursor++; }
+                if (idx !== -1) {
+                    p.queue.splice(idx, 1);
+                    console.log(`[QUEUE] Tog bort gästlåt ur kön. Återstående i kö: ${p.queue.length}`);
+                }
+            } else {
+                p.playlistCursor++;
+                console.log(`[QUEUE] Bakgrundslåt vald, cursor nu på: ${p.playlistCursor}`);
+            }
+
             const vid = flattenId(n.videoId) || await resolveVideoId(n.title);
             const lib = libraryManager.getLibrary();
             const meta = Object.values(lib).find(s => flattenId(s.videoId) === vid);
-            p.nowPlaying = { id: n.id, title: n.title, videoId: vid, thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`, addedBy: n.addedBy || 'Gäst', startPosition: meta?.future?.[0] || 0, stopPosition: meta?.future?.[1] || 0 };
-        } else { p.nowPlaying = null; }
+
+            p.nowPlaying = {
+                id: n.id,
+                title: n.title,
+                videoId: vid,
+                thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`,
+                addedBy: n.addedBy || 'Gäst',
+                startPosition: meta?.future?.[0] || 0,
+                stopPosition: meta?.future?.[1] || 0
+            };
+            console.log(`[PLAYER] 🚀 Skickar låt till spelaren: ${p.nowPlaying.title} [${vid}]`);
+        } else {
+            console.log(`[QUEUE] 🔇 Kön och listor är helt tomma.`);
+            p.nowPlaying = null;
+        }
         broadcastState(pubId);
-    } finally { p.isTransitioning = false; }
+    } catch (err) {
+        console.error(`[CRITICAL] Fel i nästa-låt-logik:`, err);
+    } finally {
+        p.isTransitioning = false;
+    }
 }
 
 app.get(['/pub/:pubId', '/pub/:pubId/mobile'], (req, res) => res.sendFile(path.join(__dirname, 'test-mobile.html')));
@@ -259,50 +284,148 @@ app.get('/pub/:pubId/staff', (req, res) => res.sendFile(path.join(__dirname, 'st
 app.get('/pub/:pubId/player', (req, res) => res.sendFile(path.join(__dirname, 'test-player.html')));
 
 io.on('connection', (socket) => {
-    socket.on('join_pub', (id) => { if (!id) return; socket.join(id); socket.pubId = id; hämtaPubData(id); broadcastState(id); });
-    socket.on('search', async (d) => {
-        const res = await youtubeSearchApi.GetListByKeyword(d.query, false, 12);
-        const results = (res.items || []).map(i => ({ videoId: flattenId(i.id), title: i.title, thumbnail: i.thumbnail?.thumbnails?.[0]?.url || "", durationText: i.length?.simpleText || "", durationSeconds: parseYouTubeDuration(i.length?.simpleText) }))
-            .filter(s => s.durationSeconds > 0 && s.durationSeconds <= MAX_SONG_DURATION);
-        results.forEach(s => libraryManager.addOrUpdateSong(s));
-        socket.emit('searchResults', { results });
+    socket.on('join_pub', (id) => {
+        if (!id) return;
+        socket.join(id);
+        socket.pubId = id;
+        console.log(`[CONN] Socket ${socket.id} gick med i pub: ${id}`);
+        hämtaPubData(id);
+        broadcastState(id);
     });
+
+    socket.on('search', async (d) => {
+        console.log(`[SEARCH] Sökning från ${socket.pubId}: "${d.query}"`);
+        try {
+            const res = await youtubeSearchApi.GetListByKeyword(d.query, false, 12);
+            const results = (res.items || []).map(i => ({
+                videoId: flattenId(i.id),
+                title: i.title,
+                thumbnail: i.thumbnail?.thumbnails?.[0]?.url || "",
+                durationSeconds: parseYouTubeDuration(i.length?.simpleText)
+            })).filter(s => s.durationSeconds > 0 && s.durationSeconds <= MAX_SONG_DURATION);
+            socket.emit('searchResults', { results });
+        } catch (e) {
+            console.error(`[SEARCH] YouTube API Fel:`, e);
+        }
+    });
+
     socket.on('addSong', async (d) => {
         const p = hämtaPubData(socket.pubId || d.pubId);
         if (!p) return;
+
+        console.log(`[REQUEST] Försök att lägga till låt: "${d.title}" i ${socket.pubId}`);
+
         if (p.qrKrav) {
             const t = validateTicket(d.kupongKod);
             if (!t) return socket.emit("kupong_error", { msg: "Ogiltig kod!" });
-            if ((p.consumedTickets[t.id] || 0) >= t.total) return socket.emit("kupong_error", { msg: "Förbrukad!" });
+            if ((p.consumedTickets[t.id] || 0) >= t.total) {
+                console.log(`[TICKET] Försök att använda förbrukad biljett: ${t.id}`);
+                return socket.emit("kupong_error", { msg: "Förbrukad!" });
+            }
             p.consumedTickets[t.id] = (p.consumedTickets[t.id] || 0) + 1;
             p.statistikKuponger++;
+            console.log(`[TICKET] Biljett ${t.id} använd (${p.consumedTickets[t.id]}/${t.total})`);
         }
-        p.queue.push({ id: 'u_'+Date.now(), videoId: d.videoId, title: d.title, thumbnail: d.thumbnail, addedBy: 'Gäst', socketId: socket.id, duration: d.durationSeconds || 180 });
-        p.statistikTotalt++; sparaPubData(socket.pubId);
+
+        p.queue.push({
+            id: 'u_' + Date.now(),
+            videoId: d.videoId,
+            title: d.title,
+            thumbnail: d.thumbnail,
+            addedBy: 'Gäst',
+            socketId: socket.id,
+            duration: d.durationSeconds || 180
+        });
+
+        p.statistikTotalt++;
+        console.log(`[QUEUE] ✅ Låt tillagd! Kö-längd: ${p.queue.length}`);
+        sparaPubData(socket.pubId);
         socket.emit("kupong_success");
-        if (!p.nowPlaying && !p.activeMoment) await korNastaLatLogik(socket.pubId); else broadcastState(socket.pubId);
+
+        if (!p.nowPlaying && !p.activeMoment) {
+            console.log(`[PLAYER] Ingen låt spelas, triggar igång direkt...`);
+            await korNastaLatLogik(socket.pubId);
+        } else {
+            broadcastState(socket.pubId);
+        }
     });
 
-    socket.on('admin:toggle_qr', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.qrKrav = !!data.qrKrav; sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
-    socket.on('player:byt_valv', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivtValv = data.valvNamn; p.playlistCursor = 0; refreshShuffled(p, 'main'); sparaPubData(socket.pubId); broadcastState(socket.pubId); } });
-    socket.on('ADD_TEMP_PLAYLIST', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivTillfalligLista = data.playlist; refreshShuffled(p, 'temp'); broadcastState(socket.pubId); } });
-    socket.on('REMOVE_TEMP_PLAYLIST', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.aktivTillfalligLista = ''; broadcastState(socket.pubId); } });
-    socket.on('player:ready_for_next', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
-    socket.on('player:skip', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
-    socket.on('player:remove_song', (data) => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.queue = p.queue.filter(s => s.id !== data.id); broadcastState(socket.pubId); } });
-    socket.on('admin:add_to_valv', (data) => { if (socket.pubId) { libraryManager.addOrUpdateSong(data, data.valvNamn); broadcastState(socket.pubId); } });
-    socket.on('admin:remove_from_valv', (data) => { if (socket.pubId) { libraryManager.removeSongFromPlaylist(data.latNamn, data.valvNamn); broadcastState(socket.pubId); } });
-    socket.on('admin:request_valv_data', (data) => { if (socket.pubId) { const valv = hämtaGemensammaListor(); socket.emit('admin:valv_data', { valvNamn: data.valvNamn, songs: valv[data.valvNamn] || [] }); } });
+    socket.on('player:ready_for_next', () => {
+        if (!socket.pubId) return;
+        console.log(`[PLAYER] 🏁 Spelaren i ${socket.pubId} rapporterar KLAR.`);
+        const p = hämtaPubData(socket.pubId);
+        p.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('player:error', (data) => {
+        console.error(`[PLAYER-ERROR] ⚠️ YouTube-fel i ${socket.pubId}!`);
+        console.error(`[PLAYER-ERROR] Kod: ${data.code}, Låt: "${data.song?.title}" [${data.song?.videoId}]`);
+        if (data.code === 101 || data.code === 150) {
+            console.error(`[PLAYER-ERROR] Orsak: Inbäddning ej tillåten för denna video.`);
+        }
+        // Gå vidare till nästa låt automatiskt vid fel
+        const p = hämtaPubData(socket.pubId);
+        p.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('player:skip', () => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Skip-kommando mottaget för ${socket.pubId}`);
+            const p = hämtaPubData(socket.pubId);
+            p.nowPlaying = null;
+            korNastaLatLogik(socket.pubId);
+        }
+    });
+
+    socket.on('player:byt_valv', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Byter huvudlista till: ${data.valvNamn}`);
+            const p = hämtaPubData(socket.pubId);
+            p.aktivtValv = data.valvNamn;
+            p.playlistCursor = 0;
+            refreshShuffled(p, 'main');
+            sparaPubData(socket.pubId);
+            broadcastState(socket.pubId);
+        }
+    });
 
     socket.on('moment:activate', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
         const cfg = p.moments[data.type];
-        if (data.type === 'pause') { p.activeMoment = { type: 'pause' }; p.nowPlaying = null; }
-        else if (cfg) { p.activeMoment = { type: data.type, videoId: flattenId(cfg.videoId) }; p.nowPlaying = { id: 'm_'+Date.now(), title: cfg.title, videoId: flattenId(cfg.videoId), thumbnail: cfg.thumbnail, addedBy: 'Staff', isMoment: true }; }
+        console.log(`[MOMENT] Aktiverar: ${data.type}`);
+        if (data.type === 'pause') {
+            p.activeMoment = { type: 'pause' };
+            p.nowPlaying = null;
+        } else if (cfg) {
+            p.activeMoment = { type: data.type, videoId: flattenId(cfg.videoId) };
+            p.nowPlaying = {
+                id: 'm_' + Date.now(),
+                title: cfg.title,
+                videoId: flattenId(cfg.videoId),
+                thumbnail: cfg.thumbnail,
+                addedBy: 'Staff',
+                isMoment: true
+            };
+        }
         broadcastState(socket.pubId);
     });
-    socket.on('moment:stop', () => { if (socket.pubId) { const p = hämtaPubData(socket.pubId); p.activeMoment = null; p.nowPlaying = null; korNastaLatLogik(socket.pubId); } });
+
+    socket.on('moment:stop', () => {
+        if (socket.pubId) {
+            console.log(`[MOMENT] Stoppar moment.`);
+            const p = hämtaPubData(socket.pubId);
+            p.activeMoment = null;
+            p.nowPlaying = null;
+            korNastaLatLogik(socket.pubId);
+        }
+    });
 });
 
-http.listen(process.env.PORT || 3001, () => console.log("SERVER KÖRS!"));
+http.listen(process.env.PORT || 3001, () => {
+    console.log("========================================");
+    console.log("   JUKEBOX SERVER STARTAD PÅ PORT 3001  ");
+    console.log("========================================");
+});

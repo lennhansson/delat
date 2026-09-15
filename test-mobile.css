@@ -170,8 +170,14 @@ h1 {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 4px;
+    padding: 14px 12px;
     border-bottom: 1px solid #1c1c1e;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.song-row:active {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .song-row:last-child { border-bottom: none; }
@@ -181,29 +187,30 @@ h1 {
     height: 52px;
     border-radius: 8px;
     object-fit: cover;
+    flex-shrink: 0;
 }
 
 .song-info { flex: 1; min-width: 0; text-align: left; }
+
 .song-title {
     font-size: 16px;
     font-weight: 600;
-    white-space: nowrap;
+    /* Tillåt upp till 3 rader text */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.2;
     text-shadow: 0 1px 4px rgba(0,0,0,0.8);
 }
-.song-meta { font-size: 13px; color: var(--text-dim); }
-.song-index { color: var(--text-dim); font-size: 14px; font-weight: 700; width: 20px; }
 
-.add-btn {
-    background: #1c1c1e;
-    color: white;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 700;
+.song-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
 }
+
+.song-index { color: var(--text-dim); font-size: 14px; font-weight: 700; width: 20px; }
 
 .big-btn {
     width: 100%;
