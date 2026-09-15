@@ -226,7 +226,7 @@ async function korNastaLatLogik(pubId) {
 
     if (p.isTransitioning) {
         console.log(`[QUEUE] Övergång pågår redan för ${pubId}, tvingar ut state-uppdatering.`);
-        broadcastState(pubId); // FIX: Se till att klienterna ser kön även om vi väntar på spelaren
+        broadcastState(pubId);
         return;
     }
 
@@ -346,7 +346,6 @@ io.on('connection', (socket) => {
         sparaPubData(socket.pubId);
         socket.emit("kupong_success");
 
-        // FIX: Alltid sända ut ny kö-status direkt
         broadcastState(socket.pubId);
 
         if (!p.nowPlaying && !p.activeMoment) {
@@ -355,29 +354,14 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('player:ready_for_next', () => {
-        if (!socket.pubId) return;
-        console.log(`[PLAYER] 🏁 Spelaren i ${socket.pubId} rapporterar KLAR.`);
-        const p = hämtaPubData(socket.pubId);
-        p.nowPlaying = null;
-        korNastaLatLogik(socket.pubId);
-    });
-
-    socket.on('player:error', (data) => {
-        console.error(`[PLAYER-ERROR] ⚠️ YouTube-fel i ${socket.pubId}!`);
-        console.error(`[PLAYER-ERROR] Kod: ${data.code}, Låt: "${data.song?.title}" [${data.song?.videoId}]`);
-        // Gå vidare till nästa låt automatiskt vid fel
-        const p = hämtaPubData(socket.pubId);
-        p.nowPlaying = null;
-        korNastaLatLogik(socket.pubId);
-    });
-
-    socket.on('player:skip', () => {
+    // --- STAFF / ADMIN EVENTS ---
+    socket.on('admin:toggle_qr', (data) => {
         if (socket.pubId) {
-            console.log(`[ADMIN] Skip-kommando mottaget för ${socket.pubId}`);
+            console.log(`[ADMIN] Ändrar QR-krav till: ${data.qrKrav}`);
             const p = hämtaPubData(socket.pubId);
-            p.nowPlaying = null;
-            korNastaLatLogik(socket.pubId);
+            p.qrKrav = !!data.qrKrav;
+            sparaPubData(socket.pubId);
+            broadcastState(socket.pubId);
         }
     });
 
@@ -390,6 +374,94 @@ io.on('connection', (socket) => {
             refreshShuffled(p, 'main');
             sparaPubData(socket.pubId);
             broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('ADD_TEMP_PLAYLIST', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Lägger till temp-lista: ${data.playlist}`);
+            const p = hämtaPubData(socket.pubId);
+            p.aktivTillfalligLista = data.playlist;
+            refreshShuffled(p, 'temp');
+            broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('REMOVE_TEMP_PLAYLIST', () => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Tar bort temp-lista`);
+            const p = hämtaPubData(socket.pubId);
+            p.aktivTillfalligLista = '';
+            broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('player:remove_song', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Tar bort låt ur kön: ${data.id}`);
+            const p = hämtaPubData(socket.pubId);
+            p.queue = p.queue.filter(s => s.id !== data.id);
+            broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('admin:add_to_valv', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Lägger till låt "${data.title}" i valv "${data.valvNamn}"`);
+            libraryManager.addOrUpdateSong(data, data.valvNamn);
+            broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('admin:remove_from_valv', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Tar bort låt "${data.latNamn}" från valv "${data.valvNamn}"`);
+            libraryManager.removeSongFromPlaylist(data.latNamn, data.valvNamn);
+            broadcastState(socket.pubId);
+        }
+    });
+
+    socket.on('moment:save_settings', (data) => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Sparar inställningar för moment: ${data.type}`);
+            const p = hämtaPubData(socket.pubId);
+            p.moments[data.type] = {
+                ...p.moments[data.type],
+                videoId: data.videoId,
+                title: data.title,
+                songTitle: data.songTitle,
+                thumbnail: data.thumbnail,
+                defaultMessage: data.defaultMessage,
+                category: data.category
+            };
+            sparaPubData(socket.pubId);
+            broadcastState(socket.pubId);
+        }
+    });
+
+    // --- PLAYER EVENTS ---
+    socket.on('player:ready_for_next', () => {
+        if (!socket.pubId) return;
+        console.log(`[PLAYER] 🏁 Spelaren i ${socket.pubId} rapporterar KLAR.`);
+        const p = hämtaPubData(socket.pubId);
+        p.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('player:error', (data) => {
+        console.error(`[PLAYER-ERROR] ⚠️ YouTube-fel i ${socket.pubId}!`);
+        console.error(`[PLAYER-ERROR] Kod: ${data.code}, Låt: "${data.song?.title}" [${data.song?.videoId}]`);
+        const p = hämtaPubData(socket.pubId);
+        p.nowPlaying = null;
+        korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('player:skip', () => {
+        if (socket.pubId) {
+            console.log(`[ADMIN] Skip-kommando mottaget för ${socket.pubId}`);
+            const p = hämtaPubData(socket.pubId);
+            p.nowPlaying = null;
+            korNastaLatLogik(socket.pubId);
         }
     });
 
