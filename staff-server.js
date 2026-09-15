@@ -223,12 +223,16 @@ async function resolveVideoId(song) {
 async function korNastaLatLogik(pubId) {
     const p = hämtaPubData(pubId);
     if (!p) return;
+
     if (p.isTransitioning) {
-        console.log(`[QUEUE] Övergång pågår redan för ${pubId}, väntar...`);
+        console.log(`[QUEUE] Övergång pågår redan för ${pubId}, tvingar ut state-uppdatering.`);
+        broadcastState(pubId); // FIX: Se till att klienterna ser kön även om vi väntar på spelaren
         return;
     }
+
     if (p.activeMoment) {
         console.log(`[QUEUE] Moment aktivt (${p.activeMoment.type}), startar inte nästa låt.`);
+        broadcastState(pubId);
         return;
     }
 
@@ -342,11 +346,12 @@ io.on('connection', (socket) => {
         sparaPubData(socket.pubId);
         socket.emit("kupong_success");
 
+        // FIX: Alltid sända ut ny kö-status direkt
+        broadcastState(socket.pubId);
+
         if (!p.nowPlaying && !p.activeMoment) {
             console.log(`[PLAYER] Ingen låt spelas, triggar igång direkt...`);
             await korNastaLatLogik(socket.pubId);
-        } else {
-            broadcastState(socket.pubId);
         }
     });
 
@@ -361,9 +366,6 @@ io.on('connection', (socket) => {
     socket.on('player:error', (data) => {
         console.error(`[PLAYER-ERROR] ⚠️ YouTube-fel i ${socket.pubId}!`);
         console.error(`[PLAYER-ERROR] Kod: ${data.code}, Låt: "${data.song?.title}" [${data.song?.videoId}]`);
-        if (data.code === 101 || data.code === 150) {
-            console.error(`[PLAYER-ERROR] Orsak: Inbäddning ej tillåten för denna video.`);
-        }
         // Gå vidare till nästa låt automatiskt vid fel
         const p = hämtaPubData(socket.pubId);
         p.nowPlaying = null;
