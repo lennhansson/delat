@@ -1,10 +1,10 @@
 {
   "namn": "DEFAULT_PUB Jukebox",
   "aktivtValv": "Aretha_Franklin",
-  "aktivTillfalligLista": "",
+  "aktivTillfalligLista": "celiks lista",
   "qrKrav": false,
   "statistikKuponger": 0,
-  "statistikTotalt": 2,
+  "statistikTotalt": 4,
   "moments": {
     "pause": {
       "title": "TYST / PAUS",
