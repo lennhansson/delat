@@ -290,19 +290,20 @@ io.on('connection', (socket) => {
         if (!p.nowPlaying && !p.activeMoment) await korNastaLatLogik(socket.pubId);
     });
 
-    socket.on('player:ready_for_next', (data) => {
+    socket.on('player:ready_for_next', async (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
         if (p.nowPlaying && data && data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) return;
-        p.nowPlaying = null;
-        korNastaLatLogik(socket.pubId);
+
+        // Viktigt: Kör logiken men vänta med att nollställa till vi faktiskt har en ny låt eller vet att det är slut
+        await korNastaLatLogik(socket.pubId);
     });
 
-    socket.on('player:skip', () => {
+    socket.on('player:skip', async () => {
         if (socket.pubId) {
             const p = hämtaPubData(socket.pubId);
-            p.nowPlaying = null;
-            korNastaLatLogik(socket.pubId);
+            p.nowPlaying = null; // Tvinga skip
+            await korNastaLatLogik(socket.pubId);
         }
     });
 
