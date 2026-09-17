@@ -150,13 +150,21 @@ function getFairQueue(pub) {
         if (activeUsers.length === 0) break;
 
         if (activeUsers.length > 1) {
+            // Runda med gästlåtar
             activeUsers.forEach(uid => {
                 if (tempQueues[uid].length > 0) {
                     fairList.push(tempQueues[uid].shift());
                     hasSongs = true;
                 }
             });
+            // Lägg till en bakgrundslåt som spacer efter rundan om det finns mer gästlåtar kvar
+            const hasMoreGuestSongs = Object.keys(tempQueues).some(uid => tempQueues[uid].length > 0);
+            if (hasMoreGuestSongs) {
+                const bg = getBackgroundSongAt(pub, bgCursor++);
+                if (bg) fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
+            }
         } else {
+            // Bara en användare kvar i kön
             const uid = activeUsers[0];
             while (tempQueues[uid].length > 0) {
                 fairList.push(tempQueues[uid].shift());
@@ -168,6 +176,7 @@ function getFairQueue(pub) {
             hasSongs = false;
         }
     }
+    // Fyll ut resten av kön med bakgrundsmusik
     while (fairList.length < 15) {
         const bg = getBackgroundSongAt(pub, bgCursor++);
         if (bg) fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
@@ -251,7 +260,6 @@ async function korNastaLatLogik(pubId) {
 
             const vid = flattenId(n.videoId) || await resolveVideoId(n.title);
 
-            // Om vi fortfarande inte har ett videoId, skippa denna låt och försök igen
             if (!vid) {
                 p.isTransitioning = false;
                 return korNastaLatLogik(pubId);
@@ -328,7 +336,7 @@ io.on('connection', (socket) => {
             thumbnail: d.thumbnail,
             addedBy: 'Gäst',
             socketId: socket.id,
-            uId: d.uId, // Spara fingerprint ID
+            uId: d.uId,
             duration: d.durationSeconds || 180
         });
 
