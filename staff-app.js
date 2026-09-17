@@ -8,11 +8,7 @@ let staffYtPlayer = null;
 let aktivUniqueId = null;
 let currentStopPos = 0;
 let timeWatcher = null;
-let editingMomentType = null;
-let editingMomentCategory = null;
-let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
-let deferredPrompt;
 
 const ORDERED_PLAYLISTS = ["happy birthday to you", "acdc", "celiks lista", "saras lista", "la muzika", "favoriter", "before i ieave", "highway man"];
 
@@ -41,7 +37,10 @@ function startWatcher() {
     timeWatcher = setInterval(() => {
         if (staffYtPlayer?.getCurrentTime) {
             const now = staffYtPlayer.getCurrentTime();
-            if (currentStopPos > 0 && now >= currentStopPos && now > 2) triggaSpelareReady();
+            // Bara trigga om låten faktiskt spelar och passerat stoppgränsen
+            if (currentStopPos > 0 && now >= currentStopPos && now > 2) {
+                triggaSpelareReady();
+            }
         }
     }, 500);
 }
@@ -61,6 +60,7 @@ function uppdateraStaffPlayer(state) {
     if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; } return; }
 
     const vidIdStr = String(state.nowPlaying.videoId);
+    // Viktigt: Uppdatera bara om det faktiskt är en ny låt-instans
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
@@ -68,6 +68,18 @@ function uppdateraStaffPlayer(state) {
         if (currentStopPos > loadOptions.startSeconds) loadOptions.endSeconds = currentStopPos;
         staffYtPlayer.loadVideoById(loadOptions);
     }
+}
+
+function triggaSpelareReady() {
+    // FIX: SPÄRR MOT DUBBEL-TRIGGER
+    if (!aktivUniqueId) return; // Redan rapporterad som klar
+
+    if (timeWatcher) clearInterval(timeWatcher);
+
+    const idToFinish = aktivUniqueId;
+    aktivUniqueId = null; // Nollställ omedelbart så ENDED inte kan trigga igen
+
+    socket.emit("player:ready_for_next", { currentVideoId: idToFinish });
 }
 
 function getSortedPlaylistNames(valv) {
@@ -132,12 +144,6 @@ function uppdateraPlayerVy() {
             <span>${i+1}. ${l.title}</span>
             <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
         </div>`).join("");
-}
-
-function triggaSpelareReady() {
-    if (timeWatcher) clearInterval(timeWatcher);
-    const lastVid = aktivUniqueId;
-    socket.emit("player:ready_for_next", { currentVideoId: lastVid });
 }
 
 function skipLat() { socket.emit("player:skip"); }

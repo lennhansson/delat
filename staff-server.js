@@ -268,7 +268,7 @@ io.on('connection', (socket) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
 
-        // FIX: Jämför nu mot både unika id och videoId för att förhindra tidiga avbrott
+        // Matchar både spår-ID och videoId för att vara helt säker
         if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.id !== data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
             return;
         }
@@ -308,24 +308,6 @@ io.on('connection', (socket) => {
         const p = hämtaPubData(socket.pubId);
         p.qrKrav = !!d.qrKrav;
         sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('admin:add_to_valv', (d) => {
-        if (!socket.pubId) return;
-        libraryManager.addOrUpdateSong({ videoId: d.videoId, title: d.title, thumbnail: d.thumbnail }, d.valvNamn);
-        const p = hämtaPubData(socket.pubId);
-        refreshShuffled(p, 'main');
-        refreshShuffled(p, 'temp');
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('admin:remove_from_valv', (d) => {
-        if (!socket.pubId) return;
-        libraryManager.removeSongFromPlaylist(d.latNamn, d.valvNamn);
-        const p = hämtaPubData(socket.pubId);
-        refreshShuffled(p, 'main');
-        refreshShuffled(p, 'temp');
         broadcastState(socket.pubId);
     });
 
@@ -369,14 +351,6 @@ io.on('connection', (socket) => {
         else broadcastState(socket.pubId);
     });
 
-    socket.on('moment:save_settings', (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.moments[d.type] = { title: d.title, category: d.category, videoId: d.videoId, songTitle: d.songTitle, thumbnail: d.thumbnail, defaultMessage: d.defaultMessage };
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
     socket.on('search', async (d) => {
         if (!socket.pubId) return;
         try {
@@ -386,31 +360,5 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 });
-
-function getFairQueue(pub) {
-    const userQueues = {};
-    pub.queue.forEach(s => {
-        const uid = s.uId || s.socketId || 'anon';
-        if (!userQueues[uid]) userQueues[uid] = [];
-        userQueues[uid].push(s);
-    });
-    const fairList = [];
-    let bgCursor = pub.playlistCursor;
-    const tempQueues = {};
-    Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
-    let hasSongs = true;
-    while (hasSongs) {
-        hasSongs = false;
-        Object.keys(tempQueues).forEach(uid => {
-            if (tempQueues[uid].length > 0) {
-                fairList.push(tempQueues[uid].shift());
-                hasSongs = true;
-            }
-        });
-        const bg = getBackgroundSongAt(pub, bgCursor);
-        if (bg) { fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true }); bgCursor++; }
-    }
-    return fairList;
-}
 
 http.listen(process.env.PORT || 3001, () => { console.log("SERVER STARTAD"); });
