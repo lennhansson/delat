@@ -74,6 +74,19 @@
       <option name="presentableId" value="Default" />
       <updated>1783000658448</updated>
     </task>
+    <task id="LOCAL−00001" summary="mer text i låtönskning4">
+      <option name="closed" value="true" />
+      <created>1789652719850</created>
+      <option name="number" value="LOCAL−00001" />
+      <option name="presentableId" value="LOCAL−00001" />
+      <updated>1789652719850</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="ser ok ut" />
+    <MESSAGE value="mer text i låtönskning4" />
+    <option name="LAST_COMMIT_MESSAGE" value="mer text i låtönskning4" />
   </component>
 </project>
