@@ -5,7 +5,6 @@ app.use(express.static(__dirname));
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 const crypto = require('crypto');
 const youtubeSearchApi = require('youtube-search-api');
 const libraryManager = require('./library-manager');
@@ -145,7 +144,6 @@ function getFairQueue(pub) {
         const activeUsers = Object.keys(tempQueues).filter(uid => tempQueues[uid].length > 0);
         if (activeUsers.length === 0) break;
 
-        // Runda med gästlåtar
         activeUsers.forEach(uid => {
             if (tempQueues[uid].length > 0) {
                 fairList.push(tempQueues[uid].shift());
@@ -153,16 +151,18 @@ function getFairQueue(pub) {
             }
         });
 
-        // Efter varje runda gästlåtar (eller om bara en gäst kvar), skjut in en bakgrundslåt
-        const bg = getBackgroundSongAt(pub, bgCursor++);
+        const bg = getBackgroundSongAt(pub, bgCursor);
         if (bg) {
-            fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
+            fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true, duration: 180 });
+            bgCursor++;
         }
     }
     while (fairList.length < 15) {
-        const bg = getBackgroundSongAt(pub, bgCursor++);
-        if (bg) fairList.push({ ...bg, id: 'bg_' + Date.now() + '_' + bgCursor, isListSong: true, duration: 180 });
-        else break;
+        const bg = getBackgroundSongAt(pub, bgCursor);
+        if (bg) {
+            fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true, duration: 180 });
+            bgCursor++;
+        } else break;
     }
     return fairList;
 }
@@ -292,7 +292,6 @@ io.on('connection', (socket) => {
     socket.on('player:ready_for_next', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        // SÄKERHETSKONTROLL: Gå bara vidare om spelaren pratar om den låt som faktiskt spelas
         if (p.nowPlaying && data && data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
             return;
         }
@@ -308,6 +307,17 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('player:remove_song', (data) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        if (data.id && data.id.startsWith('u_')) {
+            p.queue = p.queue.filter(s => s.id !== data.id);
+        } else if (data.id && data.id.startsWith('bg_')) {
+            p.playlistCursor++;
+        }
+        broadcastState(socket.pubId);
+    });
+
     socket.on('player:byt_valv', (data) => {
         if (socket.pubId) {
             const p = hämtaPubData(socket.pubId);
@@ -319,7 +329,99 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ... resten av admin/moment hanterare oförändrade ...
+    socket.on('admin:toggle_qr', (d) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.qrKrav = !!d.qrKrav;
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('admin:add_to_valv', (d) => {
+        if (!socket.pubId) return;
+        libraryManager.addOrUpdateSong({ videoId: d.videoId, title: d.title, thumbnail: d.thumbnail }, d.valvNamn);
+        const p = hämtaPubData(socket.pubId);
+        refreshShuffled(p, 'main');
+        refreshShuffled(p, 'temp');
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('admin:remove_from_valv', (d) => {
+        if (!socket.pubId) return;
+        libraryManager.removeSongFromPlaylist(d.latNamn, d.valvNamn);
+        const p = hämtaPubData(socket.pubId);
+        refreshShuffled(p, 'main');
+        refreshShuffled(p, 'temp');
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('ADD_TEMP_PLAYLIST', (d) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.aktivTillfalligLista = d.playlist;
+        p.playlistCursor = 0;
+        refreshShuffled(p, 'temp');
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('REMOVE_TEMP_PLAYLIST', () => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.aktivTillfalligLista = '';
+        p.shuffledTemp = [];
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('moment:activate', (d) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        const cfg = p.moments[d.type];
+        if (!cfg) return;
+        if (p.nowPlaying && !p.interruptedSong) p.interruptedSong = p.nowPlaying;
+        p.activeMoment = {
+            type: d.type,
+            title: cfg.title,
+            videoId: cfg.videoId,
+            message: d.message || cfg.defaultMessage,
+            thumbnail: cfg.thumbnail
+        };
+        p.nowPlaying = p.activeMoment.videoId ? {
+            id: 'moment_' + Date.now(),
+            title: cfg.title,
+            videoId: cfg.videoId,
+            thumbnail: cfg.thumbnail,
+            addedBy: 'System'
+        } : null;
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('moment:stop', () => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.activeMoment = null;
+        p.nowPlaying = p.interruptedSong || null;
+        p.interruptedSong = null;
+        if (!p.nowPlaying) korNastaLatLogik(socket.pubId);
+        else broadcastState(socket.pubId);
+    });
+
+    socket.on('moment:save_settings', (d) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.moments[d.type] = {
+            title: d.title,
+            category: d.category,
+            videoId: d.videoId,
+            songTitle: d.songTitle,
+            thumbnail: d.thumbnail,
+            defaultMessage: d.defaultMessage
+        };
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
     socket.on('search', async (d) => {
         if (!socket.pubId) return;
         try {
