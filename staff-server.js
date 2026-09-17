@@ -194,7 +194,6 @@ function buildPayload(pubId) {
 }
 
 function broadcastState(pubId) {
-    if (!pubId) return;
     const payload = buildPayload(pubId);
     if (payload) {
         io.to(pubId).emit('state', payload);
@@ -226,27 +225,36 @@ async function korNastaLatLogik(pubId) {
     if (!p) return;
 
     if (p.isTransitioning) {
-        broadcastState(pubId);
+        console.log(`[QUEUE] Övergång pågår redan för ${pubId}, tvingar ut state-uppdatering.`);
+        broadcastState(pubId); // FIX: Se till att klienterna ser kön även om vi väntar på spelaren
         return;
     }
 
     if (p.activeMoment) {
+        console.log(`[QUEUE] Moment aktivt (${p.activeMoment.type}), startar inte nästa låt.`);
         broadcastState(pubId);
         return;
     }
 
     p.isTransitioning = true;
+    console.log(`[QUEUE] 🔄 Beräknar nästa låt för ${pubId}...`);
 
     try {
         const fairQ = getFairQueue(p);
         let n = fairQ.length > 0 ? fairQ[0] : null;
 
         if (n) {
+            console.log(`[QUEUE] 🎵 Valt spår: "${n.title}" (Källa: ${n.addedBy})`);
+
             if (!n.isListSong) {
                 const idx = p.queue.findIndex(s => s.id === n.id);
-                if (idx !== -1) p.queue.splice(idx, 1);
+                if (idx !== -1) {
+                    p.queue.splice(idx, 1);
+                    console.log(`[QUEUE] Tog bort gästlåt ur kön. Återstående i kö: ${p.queue.length}`);
+                }
             } else {
                 p.playlistCursor++;
+                console.log(`[QUEUE] Bakgrundslåt vald, cursor nu på: ${p.playlistCursor}`);
             }
 
             const vid = flattenId(n.videoId) || await resolveVideoId(n.title);
@@ -259,10 +267,12 @@ async function korNastaLatLogik(pubId) {
                 videoId: vid,
                 thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`,
                 addedBy: n.addedBy || 'Gäst',
-                startPosition: (meta?.future && !isNaN(meta.future[0])) ? parseFloat(meta.future[0]) : 0,
-                stopPosition: (meta?.future && !isNaN(meta.future[1])) ? parseFloat(meta.future[1]) : 0
+                startPosition: meta?.future?.[0] || 0,
+                stopPosition: meta?.future?.[1] || 0
             };
+            console.log(`[PLAYER] 🚀 Skickar låt till spelaren: ${p.nowPlaying.title} [${vid}]`);
         } else {
+            console.log(`[QUEUE] 🔇 Kön och listor är helt tomma.`);
             p.nowPlaying = null;
         }
         broadcastState(pubId);
@@ -282,12 +292,13 @@ io.on('connection', (socket) => {
         if (!id) return;
         socket.join(id);
         socket.pubId = id;
+        console.log(`[CONN] Socket ${socket.id} gick med i pub: ${id}`);
         hämtaPubData(id);
         broadcastState(id);
     });
 
     socket.on('search', async (d) => {
-        if (!socket.pubId) return;
+        console.log(`[SEARCH] Sökning från ${socket.pubId}: "${d.query}"`);
         try {
             const res = await youtubeSearchApi.GetListByKeyword(d.query, false, 12);
             const results = (res.items || []).map(i => ({
@@ -303,15 +314,21 @@ io.on('connection', (socket) => {
     });
 
     socket.on('addSong', async (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
+        const p = hämtaPubData(socket.pubId || d.pubId);
+        if (!p) return;
+
+        console.log(`[REQUEST] Försök att lägga till låt: "${d.title}" i ${socket.pubId}`);
 
         if (p.qrKrav) {
             const t = validateTicket(d.kupongKod);
             if (!t) return socket.emit("kupong_error", { msg: "Ogiltig kod!" });
-            if ((p.consumedTickets[t.id] || 0) >= t.total) return socket.emit("kupong_error", { msg: "Förbrukad!" });
+            if ((p.consumedTickets[t.id] || 0) >= t.total) {
+                console.log(`[TICKET] Försök att använda förbrukad biljett: ${t.id}`);
+                return socket.emit("kupong_error", { msg: "Förbrukad!" });
+            }
             p.consumedTickets[t.id] = (p.consumedTickets[t.id] || 0) + 1;
             p.statistikKuponger++;
+            console.log(`[TICKET] Biljett ${t.id} använd (${p.consumedTickets[t.id]}/${t.total})`);
         }
 
         p.queue.push({
@@ -325,21 +342,31 @@ io.on('connection', (socket) => {
         });
 
         p.statistikTotalt++;
+        console.log(`[QUEUE] ✅ Låt tillagd! Kö-längd: ${p.queue.length}`);
         sparaPubData(socket.pubId);
         socket.emit("kupong_success");
+
+        // FIX: Alltid sända ut ny kö-status direkt
         broadcastState(socket.pubId);
-        if (!p.nowPlaying && !p.activeMoment) await korNastaLatLogik(socket.pubId);
+
+        if (!p.nowPlaying && !p.activeMoment) {
+            console.log(`[PLAYER] Ingen låt spelas, triggar igång direkt...`);
+            await korNastaLatLogik(socket.pubId);
+        }
     });
 
     socket.on('player:ready_for_next', () => {
         if (!socket.pubId) return;
+        console.log(`[PLAYER] 🏁 Spelaren i ${socket.pubId} rapporterar KLAR.`);
         const p = hämtaPubData(socket.pubId);
         p.nowPlaying = null;
         korNastaLatLogik(socket.pubId);
     });
 
-    socket.on('player:error', () => {
-        if (!socket.pubId) return;
+    socket.on('player:error', (data) => {
+        console.error(`[PLAYER-ERROR] ⚠️ YouTube-fel i ${socket.pubId}!`);
+        console.error(`[PLAYER-ERROR] Kod: ${data.code}, Låt: "${data.song?.title}" [${data.song?.videoId}]`);
+        // Gå vidare till nästa låt automatiskt vid fel
         const p = hämtaPubData(socket.pubId);
         p.nowPlaying = null;
         korNastaLatLogik(socket.pubId);
@@ -347,6 +374,7 @@ io.on('connection', (socket) => {
 
     socket.on('player:skip', () => {
         if (socket.pubId) {
+            console.log(`[ADMIN] Skip-kommando mottaget för ${socket.pubId}`);
             const p = hämtaPubData(socket.pubId);
             p.nowPlaying = null;
             korNastaLatLogik(socket.pubId);
@@ -355,6 +383,7 @@ io.on('connection', (socket) => {
 
     socket.on('player:byt_valv', (data) => {
         if (socket.pubId) {
+            console.log(`[ADMIN] Byter huvudlista till: ${data.valvNamn}`);
             const p = hämtaPubData(socket.pubId);
             p.aktivtValv = data.valvNamn;
             p.playlistCursor = 0;
@@ -364,89 +393,11 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('admin:add_to_valv', async (d) => {
-        if (!socket.pubId) return;
-        let item = { ...d };
-        if (!item.videoId && d.lat) {
-            item.title = d.lat;
-            item.videoId = await resolveVideoId(d.lat);
-        }
-        if (item.videoId) {
-            libraryManager.addOrUpdateSong(item, d.valvNamn);
-            broadcastState(socket.pubId);
-            const valv = hämtaGemensammaListor();
-            socket.emit('admin:valv_data', { valvNamn: d.valvNamn, songs: valv[d.valvNamn] || [] });
-        }
-    });
-
-    socket.on('admin:remove_from_valv', (d) => {
-        if (!socket.pubId) return;
-        libraryManager.removeSongFromPlaylist(d.latNamn, d.valvNamn);
-        broadcastState(socket.pubId);
-        const valv = hämtaGemensammaListor();
-        socket.emit('admin:valv_data', { valvNamn: d.valvNamn, songs: valv[d.valvNamn] || [] });
-    });
-
-    socket.on('admin:request_valv_data', (d) => {
-        if (!socket.pubId) return;
-        const valv = hämtaGemensammaListor();
-        socket.emit('admin:valv_data', { valvNamn: d.valvNamn, songs: valv[d.valvNamn] || [] });
-    });
-
-    socket.on('admin:toggle_qr', (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.qrKrav = !!d.qrKrav;
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('player:remove_song', (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.queue = p.queue.filter(s => s.id !== d.id);
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('ADD_TEMP_PLAYLIST', (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.aktivTillfalligLista = d.playlist;
-        p.playlistCursor = 0;
-        refreshShuffled(p, 'temp');
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('REMOVE_TEMP_PLAYLIST', () => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.aktivTillfalligLista = "";
-        p.shuffledTemp = [];
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
-    socket.on('moment:save_settings', (d) => {
-        if (!socket.pubId) return;
-        const p = hämtaPubData(socket.pubId);
-        p.moments[d.type] = {
-            ...p.moments[d.type],
-            category: d.category,
-            videoId: flattenId(d.videoId),
-            title: d.title,
-            songTitle: d.songTitle,
-            thumbnail: d.thumbnail,
-            defaultMessage: d.defaultMessage
-        };
-        sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
-    });
-
     socket.on('moment:activate', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
         const cfg = p.moments[data.type];
+        console.log(`[MOMENT] Aktiverar: ${data.type}`);
         if (data.type === 'pause') {
             p.activeMoment = { type: 'pause' };
             p.nowPlaying = null;
@@ -466,6 +417,7 @@ io.on('connection', (socket) => {
 
     socket.on('moment:stop', () => {
         if (socket.pubId) {
+            console.log(`[MOMENT] Stoppar moment.`);
             const p = hämtaPubData(socket.pubId);
             p.activeMoment = null;
             p.nowPlaying = null;
@@ -475,5 +427,7 @@ io.on('connection', (socket) => {
 });
 
 http.listen(process.env.PORT || 3001, () => {
-    console.log("JUKEBOX SERVER STARTAD PÅ PORT 3001");
+    console.log("========================================");
+    console.log("   JUKEBOX SERVER STARTAD PÅ PORT 3001  ");
+    console.log("========================================");
 });
