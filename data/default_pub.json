@@ -1,10 +1,10 @@
 {
   "namn": "DEFAULT_PUB Jukebox",
-  "aktivtValv": "Aretha_Franklin",
-  "aktivTillfalligLista": "celiks lista",
+  "aktivtValv": "David_Bowie",
+  "aktivTillfalligLista": "Creedence_Clearwater_Revival",
   "qrKrav": false,
   "statistikKuponger": 0,
-  "statistikTotalt": 4,
+  "statistikTotalt": 7,
   "moments": {
     "pause": {
       "title": "TYST / PAUS",

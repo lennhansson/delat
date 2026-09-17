@@ -38,10 +38,8 @@
 
     <!-- NU SPELAS (Alltid synlig överst) -->
     <div id="now-playing-container" class="card now-playing" style="display:none;">
-        <div class="section-title"><span class="live-dot"></span> Just nu</div>
         <img id="np-thumb" src="" class="now-playing-thumb">
         <div id="np-title" class="song-title">-</div>
-        <div id="np-meta" class="song-meta">-</div>
     </div>
 
     <main id="swipe-area">
@@ -63,7 +61,6 @@
                 <h2 class="section-title">Ditt Saldo</h2>
                 <div id="saldo-info-text" style="font-size:36px; font-weight:800; color:var(--accent); margin:10px 0;">0</div>
                 <button class="big-btn btn-primary" onclick="startaScanner()">➕ LADDA KUPONG</button>
-                <!-- Manuellt kod-fält borttaget -->
             </div>
 
             <!-- Bakgrundsinställningar -->
@@ -79,9 +76,9 @@
                 <div>
                     <div style="display:flex; justify-content:space-between; font-size:12px; color:#888; margin-bottom:5px;">
                         <label>Synlighet (Matthet)</label>
-                        <span id="bright-val">85%</span>
+                        <span id="bright-val">30%</span>
                     </div>
-                    <input type="range" id="bg-brightness" min="0" max="100" value="85" style="width:100%; accent-color:var(--accent);">
+                    <input type="range" id="bg-brightness" min="0" max="100" value="30" style="width:100%; accent-color:var(--accent);">
                 </div>
             </div>
 

@@ -61,14 +61,12 @@ socket.on("searchResults", (data) => {
             <img src="${s.thumbnail}" class="song-thumb">
             <div class="song-info">
                 <div class="song-title">${s.title}</div>
-                <div class="song-meta">Tryck för att välja</div>
             </div>
         </div>
     `).join("");
 });
 
 function önskaLåt(videoId, title, thumbnail) {
-    // Skicka med uId här
     socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod, uId: uId });
 }
 
@@ -80,18 +78,18 @@ socket.on("state", (data) => {
         npContainer.style.display = "flex";
         document.getElementById("np-thumb").src = np.thumbnail;
         document.getElementById("np-title").innerText = np.title;
-        document.getElementById("np-meta").innerText = np.addedBy;
     } else { npContainer.style.display = "none"; }
 
     const qList = document.getElementById("queue-lista");
-    // Använd uId för att markera "mina" låtar
     const displayQueue = (data.queue || []).slice(0, 3);
     qList.innerHTML = displayQueue.length === 0 ? "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom</div>" : displayQueue.map((l, i) => `
         <div class="song-row ${l.uId === uId ? 'my-song' : ''}">
             <div class="song-index">${i + 1}</div>
+            <div class="song-thumb-container" style="display:flex; align-items:center;">
+                <img src="${l.thumbnail || 'https://img.youtube.com/vi/'+l.videoId+'/0.jpg'}" class="song-thumb">
+            </div>
             <div class="song-info">
                 <div class="song-title">${l.title}</div>
-                <div class="song-meta">${l.isListSong ? 'Bakgrund' : 'Gäst'} • ${l.addedBy}</div>
             </div>
         </div>
     `).join("");
@@ -153,7 +151,7 @@ function initBgSettings() {
     if (!zoomSlider || !brightSlider) return;
 
     const savedZoom = localStorage.getItem('bg_zoom') || '100';
-    const savedBright = localStorage.getItem('bg_bright') || '85';
+    const savedBright = localStorage.getItem('bg_bright') || '30';
 
     const apply = () => {
         const z = zoomSlider.value;
