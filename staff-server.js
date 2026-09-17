@@ -132,21 +132,20 @@ function hämtaPubData(pubId) {
 function getFairQueue(pub) {
     const userQueues = {};
     pub.queue.forEach(s => {
-        const uid = s.socketId || 'anon';
+        // Använd uId om det finns, annars socketId, annars 'anon'
+        const uid = s.uId || s.socketId || 'anon';
         if (!userQueues[uid]) userQueues[uid] = [];
         userQueues[uid].push(s);
     });
 
-    const userIds = Object.keys(userQueues).filter(uid => userQueues[uid].length > 0);
     const fairList = [];
     let bgCursor = pub.playlistCursor;
     const tempQueues = {};
-    userIds.forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
+    Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
 
     let hasSongs = true;
     while (hasSongs) {
         hasSongs = false;
-        // FIX: Hämta de användare som faktiskt har låtar kvar JUST NU i denna iteration
         const activeUsers = Object.keys(tempQueues).filter(uid => tempQueues[uid].length > 0);
         if (activeUsers.length === 0) break;
 
@@ -217,9 +216,9 @@ async function resolveVideoId(song) {
     const text = typeof song === 'object' ? song.title : String(song);
     try {
         const res = await youtubeSearchApi.GetListByKeyword(text, false, 1);
-        const vid = flattenId(res?.items?.[0]?.id || 'dQw4w9WgXcQ');
+        const vid = flattenId(res?.items?.[0]?.id || null);
         return vid;
-    } catch (e) { return 'dQw4w9WgXcQ'; }
+    } catch (e) { return null; }
 }
 
 async function korNastaLatLogik(pubId) {
@@ -251,6 +250,13 @@ async function korNastaLatLogik(pubId) {
             }
 
             const vid = flattenId(n.videoId) || await resolveVideoId(n.title);
+
+            // Om vi fortfarande inte har ett videoId, skippa denna låt och försök igen
+            if (!vid) {
+                p.isTransitioning = false;
+                return korNastaLatLogik(pubId);
+            }
+
             const lib = libraryManager.getLibrary();
             const meta = Object.values(lib).find(s => flattenId(s.videoId) === vid);
 
@@ -322,6 +328,7 @@ io.on('connection', (socket) => {
             thumbnail: d.thumbnail,
             addedBy: 'Gäst',
             socketId: socket.id,
+            uId: d.uId, // Spara fingerprint ID
             duration: d.durationSeconds || 180
         });
 

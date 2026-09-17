@@ -1,8 +1,16 @@
 const socket = io();
 const pubId = window.location.pathname.split('/')[2] || "default_pub";
+
+// Skapa eller hämta ett unikt ID för denna enhet
+let uId = localStorage.getItem('jukebox_uid');
+if (!uId) {
+    uId = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    localStorage.setItem('jukebox_uid', uId);
+}
+
 let mittSaldo = 0;
 let html5QrCode = null;
-let nuvarandeKupongKod = ""; // Sparar koden internt
+let nuvarandeKupongKod = "";
 
 socket.emit("join_pub", pubId);
 
@@ -48,7 +56,6 @@ function sök() {
 }
 
 socket.on("searchResults", (data) => {
-    // Gör hela raden klickbar och ta bort den separata knappen
     document.getElementById("results").innerHTML = data.results.map(s => `
         <div class="song-row" onclick="önskaLåt('${s.videoId}','${s.title.replace(/'/g,"\\'")}','${s.thumbnail}')">
             <img src="${s.thumbnail}" class="song-thumb">
@@ -61,7 +68,8 @@ socket.on("searchResults", (data) => {
 });
 
 function önskaLåt(videoId, title, thumbnail) {
-    socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod });
+    // Skicka med uId här
+    socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod, uId: uId });
 }
 
 socket.on("state", (data) => {
@@ -76,9 +84,10 @@ socket.on("state", (data) => {
     } else { npContainer.style.display = "none"; }
 
     const qList = document.getElementById("queue-lista");
+    // Använd uId för att markera "mina" låtar
     const displayQueue = (data.queue || []).slice(0, 3);
     qList.innerHTML = displayQueue.length === 0 ? "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom</div>" : displayQueue.map((l, i) => `
-        <div class="song-row ${l.socketId === socket.id ? 'my-song' : ''}">
+        <div class="song-row ${l.uId === uId ? 'my-song' : ''}">
             <div class="song-index">${i + 1}</div>
             <div class="song-info">
                 <div class="song-title">${l.title}</div>
@@ -93,7 +102,6 @@ socket.on("state", (data) => {
 
 socket.on("kupong_success", () => {
     if (mittSaldo > 0) mittSaldo--;
-    // Rensar sökresultaten och input-fältet - ger användaren bekräftelse genom att gå tillbaka till kön
     document.getElementById("results").innerHTML = "";
     document.getElementById("query").value = "";
     showToast("Låt tillagd! 🎵");
