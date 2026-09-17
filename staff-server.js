@@ -125,7 +125,6 @@ function hämtaPubData(pubId) {
     return p;
 }
 
-// STABIL LINJÄR KÖ-LOGIK
 function getLinearQueue(pub) {
     let list = [...pub.queue];
     let bgStep = pub.playlistCursor;
@@ -191,7 +190,6 @@ async function korNastaLatLogik(pubId) {
         let n = q.length > 0 ? q[0] : null;
 
         if (n) {
-            // FIX: Ta bort från p.queue oavsett om det är gäst eller injicerad bg
             const realIdx = p.queue.findIndex(s => s.id === n.id);
             if (realIdx !== -1) {
                 p.queue.splice(realIdx, 1);
@@ -248,7 +246,6 @@ io.on('connection', (socket) => {
             p.statistikKuponger++;
         }
 
-        // ANTI-SPAM: Skjut in bakgrundslåt om monopol
         const newSong = { id: 'u_' + Date.now(), videoId: d.videoId, title: d.title, thumbnail: d.thumbnail, addedBy: 'Gäst', socketId: socket.id, uId: d.uId, duration: d.durationSeconds || 180 };
 
         if (p.queue.length > 0 && p.queue[p.queue.length - 1].uId === d.uId) {
@@ -270,7 +267,11 @@ io.on('connection', (socket) => {
     socket.on('player:ready_for_next', async (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) return;
+
+        // FIX: Jämför nu mot både unika id och videoId för att förhindra tidiga avbrott
+        if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.id !== data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
+            return;
+        }
         await korNastaLatLogik(socket.pubId);
     });
 
@@ -331,7 +332,7 @@ io.on('connection', (socket) => {
     socket.on('ADD_TEMP_PLAYLIST', (d) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (!d.playlist) return;
+        if (!d || !d.playlist) return;
         p.aktivTillfalligLista = d.playlist;
         refreshShuffled(p, 'temp');
         sparaPubData(socket.pubId);
@@ -386,7 +387,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// RESERV: ROUND-ROBIN LOGIK (AKTIVERAS GENOM ATT ANROPA DENNA ISTÄLLET FÖR getLinearQueue)
 function getFairQueue(pub) {
     const userQueues = {};
     pub.queue.forEach(s => {

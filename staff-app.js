@@ -78,7 +78,6 @@ function getSortedPlaylistNames(valv) {
     return [...sorted, ...remaining];
 }
 
-// FIX: Funktioner för dropdown-menyer
 function bytHuvudLista() {
     const val = document.getElementById("select-main-playlist")?.value;
     if (val) socket.emit('player:byt_valv', { valvNamn: val });
