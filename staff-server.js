@@ -73,15 +73,12 @@ function refreshShuffled(pub, type) {
 function getBackgroundSongAt(pub, step) {
     const mainList = pub.shuffledMain || [];
     const tempList = pub.shuffledTemp || [];
-    const hasMain = mainList.length > 0;
-    const hasTemp = tempList.length > 0;
-
-    if (hasMain && hasTemp) {
+    if (mainList.length > 0 && tempList.length > 0) {
         if (step % 2 === 0) return { ...mainList[Math.floor(step / 2) % mainList.length], addedBy: 'Bakgrund' };
         return { ...tempList[Math.floor(step / 2) % tempList.length], addedBy: 'Extra' };
     }
-    if (hasMain) return { ...mainList[step % mainList.length], addedBy: 'Bakgrund' };
-    if (hasTemp) return { ...tempList[step % tempList.length], addedBy: 'Bakgrund' };
+    if (mainList.length > 0) return { ...mainList[step % mainList.length], addedBy: 'Bakgrund' };
+    if (tempList.length > 0) return { ...tempList[step % tempList.length], addedBy: 'Extra' };
     return null;
 }
 
@@ -128,53 +125,27 @@ function hämtaPubData(pubId) {
     return p;
 }
 
-function getFairQueue(pub) {
-    const userQueues = {};
-    pub.queue.forEach(s => {
-        const uid = s.uId || s.socketId || 'anon';
-        if (!userQueues[uid]) userQueues[uid] = [];
-        userQueues[uid].push(s);
-    });
+// STABIL LINJÄR KÖ-LOGIK
+function getLinearQueue(pub) {
+    let list = [...pub.queue];
+    let bgStep = pub.playlistCursor;
 
-    const fairList = [];
-    let bgCursor = pub.playlistCursor;
-    const tempQueues = {};
-    Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
-
-    let hasSongs = true;
-    while (hasSongs) {
-        hasSongs = false;
-        const activeUsers = Object.keys(tempQueues).filter(uid => tempQueues[uid].length > 0);
-
-        activeUsers.forEach(uid => {
-            if (tempQueues[uid].length > 0) {
-                fairList.push(tempQueues[uid].shift());
-                hasSongs = true;
-            }
-        });
-
-        const bg = getBackgroundSongAt(pub, bgCursor);
+    while (list.length < 15) {
+        const bg = getBackgroundSongAt(pub, bgStep);
         if (bg) {
-            fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true, duration: 180 });
-            bgCursor++;
-        }
-    }
-    while (fairList.length < 15) {
-        const bg = getBackgroundSongAt(pub, bgCursor);
-        if (bg) {
-            fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true, duration: 180 });
-            bgCursor++;
+            list.push({ ...bg, id: 'bg_' + bgStep, isListSong: true });
+            bgStep++;
         } else break;
     }
-    return fairList;
+    return list;
 }
 
 function buildPayload(pubId) {
     const p = hämtaPubData(pubId);
     if (!p) return null;
-    const fairQ = getFairQueue(p);
+    const q = getLinearQueue(p);
     let acc = 0;
-    const q = fairQ.map(s => {
+    const mappedQ = q.map(s => {
         const wait = Math.floor(acc / 60);
         acc += (s.duration || 180);
         return { ...s, waitMinutes: wait };
@@ -182,16 +153,14 @@ function buildPayload(pubId) {
     return {
         pubNamn: p.namn, qrKrav: !!p.qrKrav, statistikKuponger: p.statistikKuponger, statistikTotalt: p.statistikTotalt,
         aktivHuvudlista: p.aktivtValv, aktivTillfalligLista: p.aktivTillfalligLista,
-        nowPlaying: p.nowPlaying, queue: q, fullQueue: q, valv: p.valv, activeMoment: p.activeMoment, momentsConfig: p.moments
+        nowPlaying: p.nowPlaying, queue: mappedQ, fullQueue: mappedQ, valv: p.valv, activeMoment: p.activeMoment, momentsConfig: p.moments
     };
 }
 
 function broadcastState(pubId) {
     if (!pubId) return;
     const payload = buildPayload(pubId);
-    if (payload) {
-        io.to(pubId).emit('state', payload);
-    }
+    if (payload) io.to(pubId).emit('state', payload);
 }
 
 function validateTicket(kod) {
@@ -216,16 +185,16 @@ async function korNastaLatLogik(pubId) {
         if (p) broadcastState(pubId);
         return;
     }
-
     p.isTransitioning = true;
     try {
-        const fairQ = getFairQueue(p);
-        let n = fairQ.length > 0 ? fairQ[0] : null;
+        const q = getLinearQueue(p);
+        let n = q.length > 0 ? q[0] : null;
 
         if (n) {
-            if (!n.isListSong) {
-                const idx = p.queue.findIndex(s => s.id === n.id);
-                if (idx !== -1) p.queue.splice(idx, 1);
+            // FIX: Ta bort från p.queue oavsett om det är gäst eller injicerad bg
+            const realIdx = p.queue.findIndex(s => s.id === n.id);
+            if (realIdx !== -1) {
+                p.queue.splice(realIdx, 1);
             } else {
                 p.playlistCursor++;
             }
@@ -240,9 +209,7 @@ async function korNastaLatLogik(pubId) {
             const meta = Object.values(lib).find(s => flattenId(s.videoId) === vid);
 
             p.nowPlaying = {
-                id: n.id,
-                title: n.title,
-                videoId: vid,
+                id: n.id, title: n.title, videoId: vid,
                 thumbnail: n.thumbnail || `https://img.youtube.com/vi/${vid}/0.jpg`,
                 addedBy: n.addedBy || 'Gäst',
                 startPosition: (meta?.future && !isNaN(meta.future[0])) ? parseFloat(meta.future[0]) : 0,
@@ -252,8 +219,6 @@ async function korNastaLatLogik(pubId) {
             p.nowPlaying = null;
         }
         broadcastState(pubId);
-    } catch (err) {
-        console.error(`[CRITICAL] Error in next song logic:`, err);
     } finally {
         p.isTransitioning = false;
     }
@@ -282,7 +247,19 @@ io.on('connection', (socket) => {
             p.consumedTickets[t.id] = (p.consumedTickets[t.id] || 0) + 1;
             p.statistikKuponger++;
         }
-        p.queue.push({ id: 'u_' + Date.now(), videoId: d.videoId, title: d.title, thumbnail: d.thumbnail, addedBy: 'Gäst', socketId: socket.id, uId: d.uId, duration: d.durationSeconds || 180 });
+
+        // ANTI-SPAM: Skjut in bakgrundslåt om monopol
+        const newSong = { id: 'u_' + Date.now(), videoId: d.videoId, title: d.title, thumbnail: d.thumbnail, addedBy: 'Gäst', socketId: socket.id, uId: d.uId, duration: d.durationSeconds || 180 };
+
+        if (p.queue.length > 0 && p.queue[p.queue.length - 1].uId === d.uId) {
+            const bg = getBackgroundSongAt(p, p.playlistCursor);
+            if (bg) {
+                p.queue.push({ ...bg, id: 'bg_inject_' + p.playlistCursor, isListSong: true });
+                p.playlistCursor++;
+            }
+        }
+
+        p.queue.push(newSong);
         p.statistikTotalt++;
         sparaPubData(socket.pubId);
         socket.emit("kupong_success");
@@ -293,40 +270,36 @@ io.on('connection', (socket) => {
     socket.on('player:ready_for_next', async (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (p.nowPlaying && data && data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) return;
-
-        // Viktigt: Kör logiken men vänta med att nollställa till vi faktiskt har en ny låt eller vet att det är slut
+        if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) return;
         await korNastaLatLogik(socket.pubId);
     });
 
     socket.on('player:skip', async () => {
-        if (socket.pubId) {
-            const p = hämtaPubData(socket.pubId);
-            p.nowPlaying = null; // Tvinga skip
-            await korNastaLatLogik(socket.pubId);
-        }
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.nowPlaying = null;
+        await korNastaLatLogik(socket.pubId);
     });
 
     socket.on('player:remove_song', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (data.id && String(data.id).startsWith('u_')) {
+        if (data.id.startsWith('u_') || data.id.startsWith('bg_inject')) {
             p.queue = p.queue.filter(s => s.id !== data.id);
-        } else if (data.id && String(data.id).startsWith('bg_')) {
+        } else if (data.id.startsWith('bg_')) {
             p.playlistCursor++;
         }
         broadcastState(socket.pubId);
     });
 
     socket.on('player:byt_valv', (data) => {
-        if (socket.pubId) {
-            const p = hämtaPubData(socket.pubId);
-            p.aktivtValv = data.valvNamn;
-            p.playlistCursor = 0;
-            refreshShuffled(p, 'main');
-            sparaPubData(socket.pubId);
-            broadcastState(socket.pubId);
-        }
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.aktivtValv = data.valvNamn;
+        p.playlistCursor = 0;
+        refreshShuffled(p, 'main');
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
     });
 
     socket.on('admin:toggle_qr', (d) => {
@@ -358,8 +331,8 @@ io.on('connection', (socket) => {
     socket.on('ADD_TEMP_PLAYLIST', (d) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
+        if (!d.playlist) return;
         p.aktivTillfalligLista = d.playlist;
-        p.playlistCursor = 0;
         refreshShuffled(p, 'temp');
         sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
@@ -412,5 +385,32 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 });
+
+// RESERV: ROUND-ROBIN LOGIK (AKTIVERAS GENOM ATT ANROPA DENNA ISTÄLLET FÖR getLinearQueue)
+function getFairQueue(pub) {
+    const userQueues = {};
+    pub.queue.forEach(s => {
+        const uid = s.uId || s.socketId || 'anon';
+        if (!userQueues[uid]) userQueues[uid] = [];
+        userQueues[uid].push(s);
+    });
+    const fairList = [];
+    let bgCursor = pub.playlistCursor;
+    const tempQueues = {};
+    Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
+    let hasSongs = true;
+    while (hasSongs) {
+        hasSongs = false;
+        Object.keys(tempQueues).forEach(uid => {
+            if (tempQueues[uid].length > 0) {
+                fairList.push(tempQueues[uid].shift());
+                hasSongs = true;
+            }
+        });
+        const bg = getBackgroundSongAt(pub, bgCursor);
+        if (bg) { fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true }); bgCursor++; }
+    }
+    return fairList;
+}
 
 http.listen(process.env.PORT || 3001, () => { console.log("SERVER STARTAD"); });
