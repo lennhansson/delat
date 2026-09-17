@@ -6,9 +6,12 @@ const pubId = (pubIndex !== -1 && urlDelar[pubIndex + 1]) ? urlDelar[pubIndex + 
 let nuvarandeState = null;
 let staffYtPlayer = null;
 let aktivUniqueId = null;
-let lanseradUniqueId = null; // CommandDone-handskakning: Håller koll på vilken låt som FAKTISKT har startat
+let lanseradUniqueId = null; // commandDone-handskakning
 let currentStopPos = 0;
 let timeWatcher = null;
+let editingMomentType = null;
+let editingMomentCategory = null;
+let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
 
 const ORDERED_PLAYLISTS = ["happy birthday to you", "acdc", "celiks lista", "saras lista", "la muzika", "favoriter", "before i ieave", "highway man"];
@@ -23,14 +26,12 @@ window.onYouTubeIframeAPIReady = function () {
                 if (e.data === YT.PlayerState.ENDED) triggaSpelareReady();
                 if (e.data === YT.PlayerState.PLAYING) {
                     startWatcher();
-                    // HANDSHAKE KVITTENS: Låten har officiellt börjat spela (commandDone)
                     if (nuvarandeState?.nowPlaying) {
                         lanseradUniqueId = nuvarandeState.nowPlaying.id;
                     }
                 }
             },
             onError: () => {
-                // Säkring: Om en video inte kan spelas, nollställ handskakningen och begär en skip direkt
                 lanseradUniqueId = null;
                 aktivUniqueId = null;
                 socket.emit("player:skip");
@@ -81,13 +82,11 @@ function uppdateraStaffPlayer(state) {
 }
 
 function triggaSpelareReady() {
-    // COMMAND_DONE VERIFIERING
-    if (!lanseradUniqueId) return; // Avbryt om det är en falsk/eftersläpande signal innan låten lanserats
-
+    if (!lanseradUniqueId) return;
     if (timeWatcher) clearInterval(timeWatcher);
 
     const idToFinish = lanseradUniqueId;
-    lanseradUniqueId = null; // Nollställ handskakningen omedelbart
+    lanseradUniqueId = null;
     aktivUniqueId = null;
 
     socket.emit("player:ready_for_next", { currentVideoId: idToFinish });
@@ -124,6 +123,85 @@ function fillMobileDropdowns(state) {
     mainSel.value = state.aktivHuvudlista || "";
     tempSel.value = state.aktivTillfalligLista || "";
 }
+
+// ÅTERSTÄLLDA MOMENT-FUNKTIONER
+function updateMomentsUI(state) {
+    if (!state.momentsConfig) return;
+    const launchpad = document.getElementById('custom-drift');
+    if (!launchpad) {
+        const stopBtnMobile = document.getElementById("btn-stop-moment");
+        if (stopBtnMobile) stopBtnMobile.style.display = state.activeMoment ? "block" : "none";
+        return;
+    }
+    ['drift', 'firande', 'avslut'].forEach(c => {
+        const el = document.getElementById('custom-' + c);
+        if (el) el.innerHTML = '';
+    });
+    Object.keys(state.momentsConfig).forEach(key => {
+        const cfg = state.momentsConfig[key];
+        const descEl = document.getElementById(`txt-${key}-desc`);
+        const card = document.getElementById(`m-${key}`);
+        const displaySong = cfg.songTitle || cfg.title || "-";
+        if (card) {
+            card.classList.toggle('active', state.activeMoment?.type === key);
+            if (descEl) descEl.innerHTML = `<strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${displaySong}</small>`;
+        } else if (key !== 'pause') {
+            const container = document.getElementById('custom-' + (cfg.category || 'drift'));
+            if (container) {
+                const customCard = document.createElement('div');
+                customCard.className = `moment-card moment-${cfg.category === 'drift' ? 'blue' : cfg.category === 'firande' ? 'gold' : 'red'}`;
+                if (state.activeMoment?.type === key) customCard.classList.add('active');
+                customCard.onclick = () => activateMoment(key);
+                customCard.innerHTML = `<h4>${cfg.title.toUpperCase()}</h4><p><strong>Msg:</strong> ${cfg.defaultMessage || "-"}<br><small style="color:#aaa;">🎵 ${displaySong}</small></p><button class="edit-btn" onclick="openMomentEdit(event, '${key}')">⚙️</button>`;
+                container.appendChild(customCard);
+            }
+        }
+    });
+    const stopBtn = document.getElementById("btn-stop-moment");
+    if (stopBtn) stopBtn.style.display = state.activeMoment ? "block" : "none";
+}
+
+function addNewMoment(cat) {
+    const name = prompt("Namn på momentet?");
+    if (!name) return;
+    editingMomentType = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+    editingMomentCategory = cat;
+    selectedTitle = name; selectedSongTitle = ""; selectedVideoId = null; selectedThumbnail = null;
+    document.getElementById("modal-title").innerText = "Nytt: " + name.toUpperCase();
+    document.getElementById("modal-msg-input").value = "";
+    document.getElementById("moment-modal").style.display = "flex";
+}
+
+function openMomentEdit(e, type) {
+    e.stopPropagation();
+    editingMomentType = type;
+    const cfg = nuvarandeState.momentsConfig[type];
+    editingMomentCategory = cfg.category;
+    document.getElementById("modal-title").innerText = "Edit: " + (cfg.title || type).toUpperCase();
+    document.getElementById("modal-msg-input").value = cfg.defaultMessage || "";
+    selectedVideoId = cfg.videoId; selectedTitle = cfg.title; selectedSongTitle = cfg.songTitle; selectedThumbnail = cfg.thumbnail;
+    document.getElementById("moment-modal").style.display = "flex";
+}
+
+function saveMomentSettings() {
+    socket.emit("moment:save_settings", {
+        type: editingMomentType, category: editingMomentCategory,
+        videoId: selectedVideoId, title: selectedTitle,
+        songTitle: selectedSongTitle, thumbnail: selectedThumbnail,
+        defaultMessage: document.getElementById("modal-msg-input").value.trim()
+    });
+    closeModal();
+}
+
+function activateMoment(type) {
+    const input = document.getElementById("moment-text-input");
+    const msg = input ? input.value.trim() : "";
+    socket.emit("moment:activate", { type, message: msg });
+    if (input) input.value = "";
+}
+
+function stopMoment() { socket.emit("moment:stop"); }
+function closeModal() { document.getElementById("moment-modal").style.display = "none"; }
 
 function renderaBibliotek(state) {
     const s = document.getElementById("active-sticky-target"), sc = document.getElementById("playlist-library-target");
@@ -182,4 +260,5 @@ socket.on("state", (state) => {
     renderaBibliotek(state);
     uppdateraPlayerVy();
     uppdateraStaffPlayer(state);
+    updateMomentsUI(state); // Återställd anrop
 });
