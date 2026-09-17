@@ -71,14 +71,17 @@ function refreshShuffled(pub, type) {
 }
 
 function getBackgroundSongAt(pub, step) {
-    const hasMain = pub.shuffledMain && pub.shuffledMain.length > 0;
-    const hasTemp = pub.shuffledTemp && pub.shuffledTemp.length > 0;
+    const mainList = pub.shuffledMain || [];
+    const tempList = pub.shuffledTemp || [];
+    const hasMain = mainList.length > 0;
+    const hasTemp = tempList.length > 0;
+
     if (hasMain && hasTemp) {
-        if (step % 2 === 0) return { ...pub.shuffledMain[Math.floor(step / 2) % pub.shuffledMain.length], addedBy: 'Bakgrund' };
-        return { ...pub.shuffledTemp[Math.floor(step / 2) % pub.shuffledTemp.length], addedBy: 'Extra' };
+        if (step % 2 === 0) return { ...mainList[Math.floor(step / 2) % mainList.length], addedBy: 'Bakgrund' };
+        return { ...tempList[Math.floor(step / 2) % tempList.length], addedBy: 'Extra' };
     }
-    if (hasMain) return { ...pub.shuffledMain[step % pub.shuffledMain.length], addedBy: 'Bakgrund' };
-    if (hasTemp) return { ...pub.shuffledTemp[step % pub.shuffledTemp.length], addedBy: 'Bakgrund' };
+    if (hasMain) return { ...mainList[step % mainList.length], addedBy: 'Bakgrund' };
+    if (hasTemp) return { ...tempList[step % tempList.length], addedBy: 'Bakgrund' };
     return null;
 }
 
@@ -142,7 +145,6 @@ function getFairQueue(pub) {
     while (hasSongs) {
         hasSongs = false;
         const activeUsers = Object.keys(tempQueues).filter(uid => tempQueues[uid].length > 0);
-        if (activeUsers.length === 0) break;
 
         activeUsers.forEach(uid => {
             if (tempQueues[uid].length > 0) {
@@ -189,7 +191,6 @@ function broadcastState(pubId) {
     const payload = buildPayload(pubId);
     if (payload) {
         io.to(pubId).emit('state', payload);
-        io.to(pubId).emit('staff_state', payload);
     }
 }
 
@@ -292,9 +293,7 @@ io.on('connection', (socket) => {
     socket.on('player:ready_for_next', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (p.nowPlaying && data && data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
-            return;
-        }
+        if (p.nowPlaying && data && data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) return;
         p.nowPlaying = null;
         korNastaLatLogik(socket.pubId);
     });
@@ -310,9 +309,9 @@ io.on('connection', (socket) => {
     socket.on('player:remove_song', (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        if (data.id && data.id.startsWith('u_')) {
+        if (data.id && String(data.id).startsWith('u_')) {
             p.queue = p.queue.filter(s => s.id !== data.id);
-        } else if (data.id && data.id.startsWith('bg_')) {
+        } else if (data.id && String(data.id).startsWith('bg_')) {
             p.playlistCursor++;
         }
         broadcastState(socket.pubId);
@@ -380,20 +379,8 @@ io.on('connection', (socket) => {
         const cfg = p.moments[d.type];
         if (!cfg) return;
         if (p.nowPlaying && !p.interruptedSong) p.interruptedSong = p.nowPlaying;
-        p.activeMoment = {
-            type: d.type,
-            title: cfg.title,
-            videoId: cfg.videoId,
-            message: d.message || cfg.defaultMessage,
-            thumbnail: cfg.thumbnail
-        };
-        p.nowPlaying = p.activeMoment.videoId ? {
-            id: 'moment_' + Date.now(),
-            title: cfg.title,
-            videoId: cfg.videoId,
-            thumbnail: cfg.thumbnail,
-            addedBy: 'System'
-        } : null;
+        p.activeMoment = { type: d.type, title: cfg.title, videoId: cfg.videoId, message: d.message || cfg.defaultMessage, thumbnail: cfg.thumbnail };
+        p.nowPlaying = p.activeMoment.videoId ? { id: 'moment_' + Date.now(), title: cfg.title, videoId: cfg.videoId, thumbnail: cfg.thumbnail, addedBy: 'System' } : null;
         broadcastState(socket.pubId);
     });
 
@@ -410,14 +397,7 @@ io.on('connection', (socket) => {
     socket.on('moment:save_settings', (d) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
-        p.moments[d.type] = {
-            title: d.title,
-            category: d.category,
-            videoId: d.videoId,
-            songTitle: d.songTitle,
-            thumbnail: d.thumbnail,
-            defaultMessage: d.defaultMessage
-        };
+        p.moments[d.type] = { title: d.title, category: d.category, videoId: d.videoId, songTitle: d.songTitle, thumbnail: d.thumbnail, defaultMessage: d.defaultMessage };
         sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
     });
