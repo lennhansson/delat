@@ -6,6 +6,7 @@ const pubId = (pubIndex !== -1 && urlDelar[pubIndex + 1]) ? urlDelar[pubIndex + 
 let nuvarandeState = null;
 let staffYtPlayer = null;
 let aktivUniqueId = null;
+let lanseradUniqueId = null; // CommandDone-handskakning: Håller koll på vilken låt som FAKTISKT har startat
 let currentStopPos = 0;
 let timeWatcher = null;
 let hasInteracted = false;
@@ -20,9 +21,20 @@ window.onYouTubeIframeAPIReady = function () {
             onReady: () => { if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState); },
             onStateChange: (e) => {
                 if (e.data === YT.PlayerState.ENDED) triggaSpelareReady();
-                if (e.data === YT.PlayerState.PLAYING) startWatcher();
+                if (e.data === YT.PlayerState.PLAYING) {
+                    startWatcher();
+                    // HANDSHAKE KVITTENS: Låten har officiellt börjat spela (commandDone)
+                    if (nuvarandeState?.nowPlaying) {
+                        lanseradUniqueId = nuvarandeState.nowPlaying.id;
+                    }
+                }
             },
-            onError: () => triggaSpelareReady()
+            onError: () => {
+                // Säkring: Om en video inte kan spelas, nollställ handskakningen och begär en skip direkt
+                lanseradUniqueId = null;
+                aktivUniqueId = null;
+                socket.emit("player:skip");
+            }
         }
     });
 };
@@ -37,7 +49,6 @@ function startWatcher() {
     timeWatcher = setInterval(() => {
         if (staffYtPlayer?.getCurrentTime) {
             const now = staffYtPlayer.getCurrentTime();
-            // Bara trigga om låten faktiskt spelar och passerat stoppgränsen
             if (currentStopPos > 0 && now >= currentStopPos && now > 2) {
                 triggaSpelareReady();
             }
@@ -56,11 +67,10 @@ function startaSpelaren() {
 
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
-    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; return; }
-    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; } return; }
+    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; return; }
+    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; } return; }
 
     const vidIdStr = String(state.nowPlaying.videoId);
-    // Viktigt: Uppdatera bara om det faktiskt är en ny låt-instans
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
@@ -71,13 +81,14 @@ function uppdateraStaffPlayer(state) {
 }
 
 function triggaSpelareReady() {
-    // FIX: SPÄRR MOT DUBBEL-TRIGGER
-    if (!aktivUniqueId) return; // Redan rapporterad som klar
+    // COMMAND_DONE VERIFIERING
+    if (!lanseradUniqueId) return; // Avbryt om det är en falsk/eftersläpande signal innan låten lanserats
 
     if (timeWatcher) clearInterval(timeWatcher);
 
-    const idToFinish = aktivUniqueId;
-    aktivUniqueId = null; // Nollställ omedelbart så ENDED inte kan trigga igen
+    const idToFinish = lanseradUniqueId;
+    lanseradUniqueId = null; // Nollställ handskakningen omedelbart
+    aktivUniqueId = null;
 
     socket.emit("player:ready_for_next", { currentVideoId: idToFinish });
 }
@@ -146,7 +157,13 @@ function uppdateraPlayerVy() {
         </div>`).join("");
 }
 
-function skipLat() { socket.emit("player:skip"); }
+function skipLat() {
+    if (timeWatcher) clearInterval(timeWatcher);
+    lanseradUniqueId = null;
+    aktivUniqueId = null;
+    socket.emit("player:skip");
+}
+
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
 

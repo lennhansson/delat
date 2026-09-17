@@ -248,6 +248,7 @@ io.on('connection', (socket) => {
 
         const newSong = { id: 'u_' + Date.now(), videoId: d.videoId, title: d.title, thumbnail: d.thumbnail, addedBy: 'Gäst', socketId: socket.id, uId: d.uId, duration: d.durationSeconds || 180 };
 
+        // ANTI-SPAM (MÅSTE): Sprid ut önskningar från samma användare med en bakgrundslåt emellan
         if (p.queue.length > 0 && p.queue[p.queue.length - 1].uId === d.uId) {
             const bg = getBackgroundSongAt(p, p.playlistCursor);
             if (bg) {
@@ -268,7 +269,7 @@ io.on('connection', (socket) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
 
-        // Matchar både spår-ID och videoId för att vara helt säker
+        // Verifierar att ID:t som skickas in matchar den faktiskt spelas
         if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.id !== data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
             return;
         }
@@ -360,5 +361,32 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 });
+
+// SPARAD RESERV: HÄR LIGGER DIN GAMLA FAIR QUEUE REKVIRERAD OM DU VILL AKTIVERA DEN SEDAN
+function getFairQueue(pub) {
+    const userQueues = {};
+    pub.queue.forEach(s => {
+        const uid = s.uId || s.socketId || 'anon';
+        if (!userQueues[uid]) userQueues[uid] = [];
+        userQueues[uid].push(s);
+    });
+    const fairList = [];
+    let bgCursor = pub.playlistCursor;
+    const tempQueues = {};
+    Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
+    let hasSongs = true;
+    while (hasSongs) {
+        hasSongs = false;
+        Object.keys(tempQueues).forEach(uid => {
+            if (tempQueues[uid].length > 0) {
+                fairList.push(tempQueues[uid].shift());
+                hasSongs = true;
+            }
+        });
+        const bg = getBackgroundSongAt(pub, bgCursor);
+        if (bg) { fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true }); bgCursor++; }
+    }
+    return fairList;
+}
 
 http.listen(process.env.PORT || 3001, () => { console.log("SERVER STARTAD"); });
