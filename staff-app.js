@@ -218,9 +218,11 @@ function renderaBibliotek(state) {
 function byggPlaylistHtml(namn, typ) {
     const isMain = typ === 'main', isTemp = typ === 'temp';
     let klass = isMain ? "playlist active" : (isTemp ? "playlist temp-active" : "playlist");
+    // FIX: Escapa både enkel- och dubbelcitat för spellistnamn för att förhindra HTML-krasch
+    const safeName = namn.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     let btn = isTemp ? `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">✕</button>` :
-              (isMain ? "" : `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${namn.replace(/'/g, "\\'")}'})">+</button>`);
-    return `<div class="${klass}" onclick="socket.emit('player:byt_valv', {valvNamn: '${namn.replace(/'/g, "\\'")}'})"><div class="cover">${genInitialer(namn)}</div><div class="playlist-name">${namn}</div>${btn}</div>`;
+              (isMain ? "" : `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${safeName}'})">+</button>`);
+    return `<div class="${klass}" onclick="socket.emit('player:byt_valv', {valvNamn: '${safeName}'})"><div class="cover">${genInitialer(namn)}</div><div class="playlist-name">${namn}</div>${btn}</div>`;
 }
 
 function genInitialer(namn) { if (!namn) return ""; const delar = namn.split(' ').filter(n => n.length > 0); return delar.length === 1 ? delar[0].substring(0, 2).toUpperCase() : (delar[0][0] + delar[1][0]).toUpperCase(); }

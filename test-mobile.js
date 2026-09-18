@@ -56,14 +56,18 @@ function sök() {
 }
 
 socket.on("searchResults", (data) => {
-    document.getElementById("results").innerHTML = data.results.map(s => `
-        <div class="song-row" onclick="önskaLåt('${s.videoId}','${s.title.replace(/'/g,"\\'")}','${s.thumbnail}')">
-            <img src="${s.thumbnail}" class="song-thumb">
-            <div class="song-info">
-                <div class="song-title">${s.title}</div>
+    document.getElementById("results").innerHTML = data.results.map(s => {
+        // FIX: Escapa både enkel- och dubbelcitat för att förhindra HTML-krasch
+        const escapedTitle = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        return `
+            <div class="song-row" onclick="önskaLåt('${s.videoId}','${escapedTitle}','${s.thumbnail}')">
+                <img src="${s.thumbnail}" class="song-thumb">
+                <div class="song-info">
+                    <div class="song-title">${s.title}</div>
+                </div>
             </div>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 });
 
 function önskaLåt(videoId, title, thumbnail) {
