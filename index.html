@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101715">
+  <title>Rock-Ola – Låt gästerna sätta tonen.</title>
+  <meta name="description" content="En digital jukebox för restauranger, pubar och barer i Göteborg. Gästerna väljer och betalar för sina favoritlåtar. Du behåller kontrollen över musiken.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101715'/%3E%3Ctext x='13' y='47' font-size='44' font-family='Georgia' font-weight='bold' fill='%237ee1c0'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#innehall">Hoppa till innehållet</a>
+  <header class="site-header wrap">
+    <a href="#" class="brand" aria-label="Rock-Ola – startsidan"><img src="rock-ola-logo.png" alt="Rock-Ola. Din låt. Din kväll." width="1774" height="887"></a>
+    <nav aria-label="Huvudmeny"><a href="#sa-funkar-det">Så funkar det</a><a href="#din-musik">Du har kontrollen</a><a class="nav-cta" href="#kom-igang">Prata med oss <span aria-hidden="true">↗</span></a></nav>
+  </header>
+  <main id="innehall">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="small-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> DIGITAL JUKEBOX · GÖTEBORG</p>
+        <h1 id="hero-title">Din bar. Deras låtar.<br><em>En bättre kväll.</em></h1>
+        <p class="hero-intro">En självspelande jukebox för restauranger, pubar och barer. Gästerna väljer favoritlåtar med mobilen – Rock-Ola sköter resten.</p>
+        <ul class="hero-benefits">
+          <li><span aria-hidden="true">✓</span><div><strong>Kostnadsfritt att ansluta, använda och avsluta.</strong></div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Nöjdare gäster och chans till merförsäljning.</strong></div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Gäststyrd jukebox.</strong></div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Noll administration</strong> – personalen kan fokusera helt på gästerna.</div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Redo på sekunder.</strong> Skanna en QR-kod och så har du din egna adminmiljö.</div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Eran egna musikspelare.</strong> Skapa spellistor och lägg till eller ta bort låtar i din adminmiljö.</div></li>
+        </ul>
+        <div class="hero-footnote"><span aria-hidden="true">↳</span> Vi delar på intäkterna från önskelåtar. Redovisning varje kalendermånad.</div>
+      </div>
+      <aside class="contact-card" id="kom-igang" aria-labelledby="contact-title">
+        <div class="card-topline"><span>ROCK-OLA FÖR DIN BAR</span><span class="card-star" aria-hidden="true">✳</span></div>
+        <h2 id="contact-title">Gratis för baren <em>att använda.</em></h2>
+        <p>Gratis att ansluta och använda. Vi delar på intäkterna från gästernas önskelåtar. Ingen bindningstid. Lämna mobilnummer eller mejl så berättar vi mer.</p>
+        <a class="apply-link" href="anslut.html">Läs villkor och ansök om anslutning <span aria-hidden="true">↗</span></a><form id="lead-form" action="https://formsubmit.co/mika.pirttimaeki@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="Rock-Ola – ny intresseanmälan">
+          <input type="hidden" name="_template" value="table">
+          <div class="honeypot" aria-hidden="true"><label>Lämna tomt<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+          <label for="phone">Mobilnummer <span>valfritt</span></label>
+          <input id="phone" name="Mobilnummer" type="tel" inputmode="tel" autocomplete="tel" placeholder="070 123 45 67" maxlength="30" aria-describedby="contact-hint form-status">
+          <label for="email">E-postadress <span>valfritt</span></label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="du@dinbar.se" maxlength="254" aria-describedby="contact-hint form-status">
+          <p class="field-hint" id="contact-hint">Fyll i minst ett fält – gärna båda.</p>
+          <button class="submit-button" type="submit">Ja, berätta mer <span aria-hidden="true">↗</span></button>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+          <p class="form-note">En första kontakt. Inget köp eller avtal.</p>
+          <details class="privacy"><summary>Så använder vi dina uppgifter</summary><p>Vi använder dina kontaktuppgifter för att svara på din förfrågan om Rock-Ola. Formuläret förmedlas via FormSubmit till Mika på <a href="mailto:mika.pirttimaeki@gmail.com">mika.pirttimaeki@gmail.com</a>. Kontakta oss om du vill att uppgifterna tas bort.</p></details>
+          <noscript><p>Ange mobilnummer, mejladress eller båda. När du skickar öppnas en säker bekräftelsesida.</p></noscript>
+        </form>
+        <div class="card-footer">FÖR RESTAURANGER, PUBAR & BARER</div>
+      </aside>
+    </section>
+    <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>DIN LÅT. DIN KVÄLL.</span><b>✳</b><span>MER KÄNSLA. MINDRE KNAPPANDE.</span><b>✳</b><span>GÖTEBORG, VI HÖRS.</span><b>✳</b><span>DIN LÅT. DIN KVÄLL.</span><b>✳</b><span>MER KÄNSLA. MINDRE KNAPPANDE.</span><b>✳</b><span>GÖTEBORG, VI HÖRS.</span><b>✳</b></div></div>
+    <section class="moments wrap section-space" aria-labelledby="moments-title">
+      <div class="section-heading reveal"><p class="eyebrow">MER ÄN BAKGRUNDSMUSIK</p><h2 id="moments-title">Det börjar med en låt.<br><span>Och blir en kväll att minnas.</span></h2></div>
+      <div class="photo-grid">
+        <figure class="photo-wide reveal"><img src="pub-friends.png" alt="Vänner skrattar tillsammans i en varm, stämningsfull pub" width="1536" height="1024" loading="lazy"><figcaption><span>GEMENSKAP</span><h3>”Åh, det var längesen!”<br>”Den här älskar jag!”</h3></figcaption></figure>
+        <figure class="photo-jukebox reveal"><img src="jukebox.png" alt="Klassisk jukebox med varmt ljus och turkosa detaljer" width="1024" height="1536" loading="lazy"><figcaption><span>EN KLASSIKER, PÅ NYTT</span><h3>Jukeboxens själ.<br>I gästens mobil.</h3></figcaption></figure>
+        <figure class="photo-dance reveal"><img src="slow-dance.jpg" alt="Ett par dansar en tryckare tillsammans i en mysig bar" width="1536" height="1024" loading="lazy"><figcaption><span>DERAS ÖGONBLICK</span><h3>En egenvald låt.<br>En spontan tryckare.</h3></figcaption></figure>
+      </div>
+      <p class="image-note">Inspirationsbilder som fångar känslan med Rock-Ola. Dansfoto: <a href="https://unsplash.com/photos/couple-dancing-in-a-dimly-lit-bar-ZhAEigT_nhw" target="_blank" rel="noopener noreferrer">Preillumination SeTh / Unsplash</a>.</p>
+    </section>
+    <section class="how-section section-space" id="sa-funkar-det" aria-labelledby="how-title"><div class="wrap">
+      <div class="how-heading reveal"><div><p class="eyebrow">FRÅN QR-KOD TILL FAVORITLÅT</p><h2 id="how-title">Enkelt för gästen.<br><em>Skönt för personalen.</em></h2></div><p>När gästen har skannat QR-koden sköts låtönskemål och betalning i webappen. Barpersonalen behöver inte göra något.</p></div>
+      <ol class="steps">
+        <li class="reveal"><h3>Skanna</h3><p>Gästernas QR-kod öppnar Rock-Olas gäst-app i mobilens webbläsare. Där väljer gästen sina önskelåtar – utan nedladdning.</p></li>
+        <li class="reveal"><h3>Välj</h3><p>En favorit, en allsång eller en tryckare – ur det utbud du har valt.</p></li>
+        <li class="reveal"><h3>Betala</h3><p>Gästen betalar med Swish direkt till Rock-Ola. Personalen behöver inte ta emot betalningen.</p></li>
+        <li class="reveal"><h3>Upplev</h3><p>Önskelåten visas som nästa låt. Vid flera önskemål spelas varannan låt från gästernas kö och varannan från barens spellista.</p></li>
+      </ol>
+    </div></section>
+    <section class="control-section wrap section-space" id="din-musik" aria-labelledby="control-title">
+      <div class="control-copy reveal"><p class="eyebrow">DU ÄGER STÄLLET. DU SÄTTER RAMARNA.</p><h2 id="control-title">Gästerna väljer.<br><em>Du har kontrollen.</em></h2><p>Som restaurang-, pub- eller barägare väljer du musiken i ditt adminverktyg. Välj bland tillgängliga spellistor eller lägg in egna. När gästerna skannar QR-koden tar Rock-Ola hand om deras låtönskemål och betalningar automatiskt.</p><ul class="control-list"><li><span aria-hidden="true">♫</span><div><h3>Välj bland färdiga spellistor</h3><p>Hitta rätt känsla bland våra färdiga spellistor. Anpassa dem genom att lägga till eller ta bort låtar så att musiken passar just ditt ställe.</p></div></li><li><span aria-hidden="true">≡</span><div><h3>Skapa egna spellistor och styr musiken</h3><p>Sätt din egen prägel på kvällen med spellistor som du bygger från grunden. Barens adminmiljö är din egen musikspelare – här samlar du dina listor och väljer vad som ska spelas.</p></div></li><li><span aria-hidden="true">♫</span><div><h3>Din adminmiljö är klar på sekunder</h3><p>Som barägare behöver du bara skanna en QR-kod. Då är barens egen Rock-Ola-adminmiljö klar att använda – utan långa installationstider.</p></div></li><li><span aria-hidden="true">♫</span><div><h3>Använd ljudsystemet du redan har</h3><p>Rock-Ola använder barens befintliga ljudsystem. Både barens spellista och gästernas önskelåtar spelas där – ingen ny hårdvara behöver installeras.</p></div></li><li><span aria-hidden="true">↗</span><div><h3>Självspelande, utan arbete eller underhåll</h3><p>Gästernas önskelåtar kommer in automatiskt i spellistan. Barpersonalen behöver varken hantera kön eller sköta betalningarna.</p></div></li></ul></div>
+      <div class="admin-illustration reveal" aria-label="Illustration av musikadministration, inte en fungerande spelare">
+        <div class="admin-top"><span>ROCK-OLA <small>/ DIN KVÄLL</small></span><span class="demo-label">ILLUSTRATION</span></div>
+        <div class="now-playing"><span class="eyebrow">STÄMNINGEN JUST NU</span><h3>Fredag på ditt ställe</h3><p>Ditt musikurval. Gästernas favoriter.</p><div class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="queue-heading"><span>NÄSTA LÅT OCH KÖN</span><span>AUTOMATISK MIX</span></div>
+        <div class="queue-row"><span class="queue-no">01</span><div><strong>Gästens önskelåt</strong><small>Nästa låt · vald i gäst-appen</small></div><span class="track-length" aria-hidden="true">♫</span></div>
+        <div class="queue-row"><span class="queue-no">02</span><div><strong>En låt från barens spellista</strong><small>Barens egen musikprofil</small></div><span class="track-length" aria-hidden="true">♫</span></div>
+        <div class="queue-row"><span class="queue-no">03</span><div><strong>Nästa önskelåt</strong><small>Varannan låt när flera önskemål väntar</small></div><span class="track-length" aria-hidden="true">♫</span></div>
+        <div class="admin-bottom"><span>ER MUSIKPROFIL</span><strong>Precis rätt för er.</strong></div>
+      </div>
+    </section>
+    <section class="settlement-section wrap" aria-labelledby="settlement-title">
+      <div class="settlement-inner reveal"><div><p class="eyebrow">ENKELT ÄVEN BAKOM KULISSERNA</p><h2 id="settlement-title">Inga kostnader.<br>Inget arbete.<br><em>Vi delar på intäkterna</em></h2></div><div class="settlement-copy"><p><strong>Det kostar inget att ansluta eller använda Rock-Ola Jukebox för din restaurang, pub eller bar. Och det är noll bindningstid.</strong></p><p>Restaurangen och Rock-Ola delar på intäkterna från gästernas önskelåtar. Gästerna betalar med Swish direkt till Rock-Ola – personalen slipper arbetet med att ta betalt.</p><p><strong>Redovisning av intäkterna redovisas varje kalendermånad.</strong> Ett självspelande verktyg utan arbete eller underhåll för baren.</p></div></div>
+    </section>
+    <section class="value-section wrap section-space" aria-labelledby="value-title"><div class="section-heading reveal"><p class="eyebrow">BRA STÄMNING ÄR BRA FÖR AFFÄREN</p><h2 id="value-title">Fler skäl att stanna.<br><span>Och att komma tillbaka.</span></h2></div><div class="value-grid"><article class="reveal"><span class="value-symbol" aria-hidden="true">♡</span><h3>En stämningshöjare</h3><p>Kvällen börjar redan hos er. När vänner samlas för en öl före konserten, matchen eller ett annat evenemang kan en låt från bandet de ska se eller det egna lagets låt höja stämningen. Gästernas favoriter gör besöket mer personligt och skapar gemenskap redan före evenemanget.</p></article><article class="reveal"><span class="value-symbol" aria-hidden="true">↗</span><h3>Plats för merförsäljning</h3><p>En kväll som gärna får fortsätta kan öppna för en extra beställning – något att äta, en dessert eller mer att dricka.</p></article><article class="reveal"><span class="value-symbol" aria-hidden="true">✳</span><h3>Ett ställe man pratar om</h3><p>Allsången, överraskningslåten eller den där dansen. Ge gästerna något att minnas och berätta om för sina vänner.</p></article></div></section>
+    <section class="marketing-section wrap section-space" id="marknadsforing" aria-labelledby="marketing-title">
+      <div class="section-heading reveal"><p class="eyebrow">VI HJÄLPER GÄSTERNA ATT HITTA JUKEBOXEN</p><h2 id="marketing-title">Vi står för<br><em>marknadsföringsmaterialet.</em></h2><p class="marketing-intro">Med bordsryttare och ölunderlägg med QR-kod blir Rock-Ola synligt där gästerna sitter. Materialet visar hur enkelt det är att skanna, välja en favoritlåt och betala med Swish.</p></div>
+      <div class="marketing-grid">
+        <figure class="reveal"><a href="olunderlag.png" target="_blank" rel="noopener noreferrer" aria-label="Visa större bild av ölunderlägget"><img src="olunderlag.png" alt="Exempel på Rock-Olas beige ölunderlägg med turkos och korallfärgad dekor samt QR-kod märkt DEMO" width="1254" height="1254" loading="lazy"></a><figcaption><h3>Ölunderlägg som väcker nyfikenhet</h3><p>En påminnelse om att gästen kan välja musiken – precis på bordet.</p></figcaption></figure>
+        <figure class="reveal"><a href="bordsryttare.png" target="_blank" rel="noopener noreferrer" aria-label="Visa större bild av bordsryttaren"><img src="bordsryttare.png" alt="Exempel på Rock-Olas bordsryttare med jukeboxmotiv, texten Vad vill du höra och QR-kod märkt DEMO" width="1536" height="1024" loading="lazy"></a><figcaption><h3>Bordsryttare som bjuder in till låtval</h3><p>Tydlig information om jukeboxen och en QR-kod som öppnar gäst-appen.</p></figcaption></figure>
+      </div><p class="image-note">Designexempel. QR-koderna på bilderna är demo och ersätts med gästernas QR-kod för ditt ställe. Klicka på en bild för att se den större.</p>
+    </section>
+    <section class="closing-section"><div class="wrap closing-inner reveal"><p class="eyebrow">RESTAURANG, PUB ELLER BAR I GÖTEBORG?</p><h2>Ge din nästa kväll<br><em>ett eget soundtrack.</em></h2><a class="closing-cta" href="#kom-igang">Låt oss prata Rock-Ola <span aria-hidden="true">↗</span></a><p>Du känner dina gäster. Vi vill höra om ditt ställe.</p></div></section>
+  </main>
+  <footer class="wrap site-footer"><a class="footer-wordmark" href="#">Rock-Ola<span>Din låt. Din kväll.</span></a><p>Digital jukebox för restauranger, pubar & barer.</p><a href="mailto:mika.pirttimaeki@gmail.com">Kontakta Rock-Ola <span aria-hidden="true">↗</span></a><button class="motion-toggle" type="button" aria-pressed="false">Pausa animationer</button></footer>
+</body>
+</html>
+
