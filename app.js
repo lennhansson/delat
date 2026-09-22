@@ -3,6 +3,33 @@ const status = document.querySelector('#form-status');
 const phone = document.querySelector('#phone');
 const email = document.querySelector('#email');
 const submit = form.querySelector('button[type="submit"]');
+const moreInformation = document.querySelector('#mer-information');
+
+function resetHomeView() {
+  moreInformation.hidden = true;
+  if (window.location.hash === '#sa-funkar-det' || window.location.hash === '#din-musik') {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+resetHomeView();
+window.addEventListener('pageshow', event => {
+  if (event.persisted) resetHomeView();
+});
+
+function showMoreInformation(targetId) {
+  moreInformation.hidden = false;
+  const target = document.querySelector(targetId);
+  if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth' }));
+}
+
+document.querySelectorAll('nav a[href="#sa-funkar-det"], nav a[href="#din-musik"]').forEach(link => {
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    history.replaceState(null, '', link.hash);
+    showMoreInformation(link.hash);
+  });
+});
 
 function validateContact(phoneValue, emailValue) {
   if (!phoneValue && !emailValue) return 'Fyll i mobilnummer eller e-postadress så att vi kan nå dig.';
