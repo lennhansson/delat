@@ -124,7 +124,6 @@ function fillMobileDropdowns(state) {
     tempSel.value = state.aktivTillfalligLista || "";
 }
 
-// ÅTERSTÄLLDA MOMENT-FUNKTIONER
 function updateMomentsUI(state) {
     if (!state.momentsConfig) return;
     const launchpad = document.getElementById('custom-drift');
@@ -218,7 +217,6 @@ function renderaBibliotek(state) {
 function byggPlaylistHtml(namn, typ) {
     const isMain = typ === 'main', isTemp = typ === 'temp';
     let klass = isMain ? "playlist active" : (isTemp ? "playlist temp-active" : "playlist");
-    // FIX: Escapa både enkel- och dubbelcitat för spellistnamn för att förhindra HTML-krasch
     const safeName = namn.replace(/'/g, "\\'").replace(/"/g, "&quot;");
     let btn = isTemp ? `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('REMOVE_TEMP_PLAYLIST')">✕</button>` :
               (isMain ? "" : `<button class="macro-btn" onclick="event.stopPropagation(); socket.emit('ADD_TEMP_PLAYLIST', {playlist: '${safeName}'})">+</button>`);
@@ -245,7 +243,21 @@ function skipLat() {
 }
 
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
-function switchTab(t) { document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active")); document.getElementById("tab-"+t).classList.add("active"); document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none"); document.getElementById("view-"+t).style.display = "block"; }
+
+// UPPDATERAD FLIK-LOGIK SÅ ATT IFRAMEN FAKTISKT LADDAS NÄR MAN KLICKAR PÅ EDIT
+function switchTab(t) {
+    document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
+    document.getElementById("tab-"+t).classList.add("active");
+    document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
+    document.getElementById("view-"+t).style.display = "block";
+
+    if (t === 'edit') {
+        const frame = document.getElementById("isolated-editor-frame");
+        if (frame && (!frame.src || !frame.src.includes('edit-library'))) {
+            frame.src = `/pub/${pubId}/edit-library`;
+        }
+    }
+}
 
 socket.on('connect', () => socket.emit("join_pub", pubId));
 socket.on("state", (state) => {
@@ -262,5 +274,5 @@ socket.on("state", (state) => {
     renderaBibliotek(state);
     uppdateraPlayerVy();
     uppdateraStaffPlayer(state);
-    updateMomentsUI(state); // Återställd anrop
+    updateMomentsUI(state);
 });

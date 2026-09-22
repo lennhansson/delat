@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isolerad Låtlist-Editor</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 15px; margin: 0; }
+        .edit-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+        .pane { flex: 1; min-width: 300px; background: #111; padding: 15px; border-radius: 8px; border: 1px solid #222; }
+        h3 { margin-top: 0; color: #1db954; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input, button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: 1px solid #333; background: #222; color: #fff; box-sizing: border-box; font-size: 14px; }
+        button { background: #1db954; color: #000; font-weight: bold; cursor: pointer; border: none; }
+        button:disabled { background: #444; color: #888; cursor: not-allowed; }
+        button.btn-del { background: #cd1a2b; color: #fff; width: auto; padding: 5px 10px; margin: 0; border-radius: 4px; }
+        .song-row { display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-bottom: 1px solid #222; }
+        .song-row img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+        .song-info { flex: 1; overflow: hidden; }
+        .search-results { max-height: 350px; overflow-y: auto; background: #050505; border-radius: 6px; border: 1px solid #222; }
+        .btn-add-trigger { color: #1db954; font-weight: bold; cursor: pointer; background: none; border: none; width: auto; margin: 0; padding: 5px; font-size: 14px; }
+        .badge { background: #333; color: #aaa; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 5px; }
+        .badge.editable { background: #1db954; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="edit-grid">
+    <!-- VÄLJ OCH SE LISTA -->
+    <div class="pane">
+        <h3>1. Välj eller Skapa Spellista</h3>
+        <select id="edit-playlist-select" onchange="bytRedigeringsLista(this.value)">
+            <option value="">Laddar spellistor...</option>
+        </select>
+
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #222;">
+            <input type="text" id="new-playlist-name" placeholder="Namn på ny spellista...">
+            <button onclick="skapaNyLista()" style="background: #333; color: #fff; border: 1px solid #444;">+ SKAPA NY SPELLISTA</button>
+        </div>
+
+        <div style="display: flex; align-items: center; margin: 20px 0 10px 0;">
+            <div id="current-list-title" style="font-weight: bold; color: #fff; font-size: 15px;"></div>
+            <span id="current-list-badge"></span>
+        </div>
+        <div id="current-list-songs"></div>
+    </div>
+
+    <!-- SÖK OCH LÄGG TILL -->
+    <div class="pane">
+        <h3>2. Sök & Lägg till (YouTube)</h3>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="edit-search-query" placeholder="Sök artist eller låt..." onkeypress="if(event.key==='Enter') utförSökning()">
+            <button onclick="utförSökning()" style="width: auto; padding: 0 20px;">SÖK</button>
+        </div>
+        <div id="edit-search-results" class="search-results"></div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    const urlParts = window.location.pathname.split('/');
+    const pubIndex = urlParts.indexOf('pub');
+    const pubId = (pubIndex !== -1 && urlParts[pubIndex + 1]) ? urlParts[pubIndex + 1] : "default_pub";
+
+    let aktivLista = "";
+    let masterListor = [];
+    let nuvarandeValv = {};
+
+    socket.emit("join_pub", pubId);
+
+    socket.on("state", (state) => {
+        nuvarandeValv = state.valv || {};
+        masterListor = (state.masterPlaylists || []).map(l => l.toLowerCase().trim());
+
+        const select = document.getElementById("edit-playlist-select");
+
+        // Auto-välj barens aktiva huvudlista om det är en editerbar (egen) lista
+        if (!aktivLista && state.aktivHuvudlista) {
+            const huvudListaLower = state.aktivHuvudlista.toLowerCase().trim();
+            if (!masterListor.includes(huvudListaLower)) {
+                aktivLista = state.aktivHuvudlista;
+            }
+        }
+
+        const nuvarandeVal = select.value || aktivLista;
+
+        // Filtrera bort ALLA masterlistor dynamiskt utifrån serverns data
+        const allPlaylists = Object.keys(nuvarandeValv)
+            .filter(l => !masterListor.includes(l.toLowerCase().trim()))
+            .sort();
+
+        if (allPlaylists.length === 0) {
+            select.innerHTML = '<option value="">-- Inga egna spellistor hittades --</option>';
+        } else {
+            select.innerHTML = '<option value="">-- Välj spellista --</option>' +
+                allPlaylists.map(l => {
+                    return `<option value="${l}" ${l === nuvarandeVal ? 'selected' : ''}>${l.toUpperCase()} (EGEN)</option>`;
+                }).join("");
+        }
+
+        if (nuvarandeVal && !masterListor.includes(nuvarandeVal.toLowerCase().trim())) {
+            aktivLista = nuvarandeVal;
+            renderaMålLista(nuvarandeValv[nuvarandeVal] || []);
+        } else {
+            renderaMålLista([]);
+        }
+    });
+
+    function bytRedigeringsLista(namn) {
+        aktivLista = namn;
+        document.getElementById("edit-search-results").innerHTML = "";
+        if (namn && nuvarandeValv[namn]) {
+            renderaMålLista(nuvarandeValv[namn]);
+        } else {
+            renderaMålLista([]);
+        }
+    }
+
+    function skapaNyLista() {
+        const input = document.getElementById("new-playlist-name");
+        const namn = input.value.trim().toLowerCase();
+        if (!namn) return;
+
+        if (masterListor.includes(namn)) {
+            alert("Du kan inte skapa en spellista med samma namn som en låst master-spellista!");
+            return;
+        }
+
+        aktivLista = namn;
+        input.value = "";
+
+        const select = document.getElementById("edit-playlist-select");
+        const opt = document.createElement("option");
+        opt.value = namn;
+        opt.innerText = namn.toUpperCase() + ' (EGEN)';
+        opt.selected = true;
+        select.appendChild(opt);
+
+        renderaMålLista([]);
+    }
+
+    function renderaMålLista(låtar) {
+        const title = document.getElementById("current-list-title");
+        const badge = document.getElementById("current-list-badge");
+        const container = document.getElementById("current-list-songs");
+
+        if (!aktivLista) {
+            title.innerText = "Ingen spellista vald";
+            badge.innerHTML = "";
+
+            const allPlaylists = Object.keys(nuvarandeValv)
+                .filter(l => !masterListor.includes(l.toLowerCase().trim()));
+
+            if (allPlaylists.length === 0) {
+                container.innerHTML = "<p style='color:#1db954; font-weight:bold; line-height:1.6;'>Du har inga egna spellistor än.<br><span style='color:#aaa; font-weight:normal; font-size:13px;'>Skriv ett namn under 'Namn på ny spellista...' och klicka på SKAPA NY SPELLISTA för att göra en!</span></p>";
+            } else {
+                container.innerHTML = "<p style='color:#555;'>Välj en spellista i listan ovan för att börja redigera.</p>";
+            }
+            return;
+        }
+
+        const isMaster = masterListor.includes(aktivLista.toLowerCase().trim());
+        title.innerText = aktivLista.toUpperCase() + ` (${låtar.length} st)`;
+
+        if (isMaster) {
+            badge.className = "badge";
+            badge.innerText = "LÅST MASTER-LISTA (LÄS-ONLY)";
+        } else {
+            badge.className = "badge editable";
+            badge.innerText = "EGEN SPELLISTA (REDIGERBAR)";
+        }
+
+        container.innerHTML = låtar.length === 0 ? "<p style='color:#555;'>Spellistan är tom. Sök efter låtar till höger för att lägga till.</p>" : låtar.map(s => {
+            const durationText = s.duration ? `${Math.floor(s.duration/60)}:${(s.duration%60).toString().padStart(2,'0')}` : '';
+            return `
+            <div class="song-row">
+                <img src="${s.thumbnail || 'https://img.youtube.com/vi/'+s.videoId+'/0.jpg'}">
+                <div class="song-info">
+                    <div style="font-size:14px; font-weight:bold; color:#fff; white-space: normal;">${s.title}</div>
+                    ${durationText ? `<small style="color:#666; display:block; margin-top:4px;">⏱️ ${durationText}</small>` : ''}
+                </div>
+                ${isMaster ? '' : `<button class="btn-del" onclick="taBortLåt('${s.title.replace(/'/g, "\\'")}')">✕</button>`}
+            </div>
+            `;
+        }).join("");
+    }
+
+    function utförSökning() {
+        const q = document.getElementById("edit-search-query").value.trim();
+        if (q) socket.emit("search", { query: q });
+    }
+
+    socket.on("searchResults", (data) => {
+        const target = document.getElementById("edit-search-results");
+        if (!target) return;
+
+        const isMaster = masterListor.includes(aktivLista.toLowerCase().trim());
+
+        target.innerHTML = data.results.map(s => {
+            const escapedTitle = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            return `
+                <div class="song-row">
+                    <img src="${s.thumbnail}">
+                    <div class="song-info">
+                        <div style="font-size:14px; font-weight:bold; color:#fff; white-space: normal;">${s.title}</div>
+                        <small style="color:#666; display:block; margin-top:4px;">⏱️ ${Math.floor(s.durationSeconds/60)}:${(s.durationSeconds%60).toString().padStart(2,'0')}</small>
+                    </div>
+                    ${(isMaster || !aktivLista) ?
+                        `<span style="color:#555; font-size:12px; padding:5px;">Välj egen lista</span>` :
+                        `<button class="btn-add-trigger" onclick="laggTillILista('${s.videoId}','${escapedTitle}','${s.thumbnail}', ${s.durationSeconds})">+ LÄGG TILL</button>`
+                    }
+                </div>
+            `;
+        }).join("");
+    });
+
+    function laggTillILista(videoId, title, thumbnail, durationSeconds) {
+        if (!aktivLista) return alert("Du måste välja eller skapa en egen spellista först!");
+        const isMaster = masterListor.includes(aktivLista.toLowerCase().trim());
+        if (isMaster) return alert("Du kan inte lägga till låtar i en låst master-spellista!");
+
+        socket.emit("library:add_song", { videoId, title, thumbnail, durationSeconds, playlistName: aktivLista });
+        document.getElementById("edit-search-results").innerHTML = "";
+        document.getElementById("edit-search-query").value = "";
+    }
+
+    function taBortLåt(songString) {
+        if (!aktivLista) return;
+        if (!confirm(`Vill du ta bort "${songString}" från ${aktivLista}?`)) return;
+        socket.emit("library:remove_song", { songString, playlistName: aktivLista });
+    }
+</script>
+
+</body>
+</html>
