@@ -1,3 +1,8 @@
+"""ARKIVERAT LEGACY-SKRIPT
+Detta verktyg användes för att komplettera och rätta saknade biblioteksposter.
+Det är inte en del av den aktiva appen.
+"""
+
 import json
 import subprocess
 import re

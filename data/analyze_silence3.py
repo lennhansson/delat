@@ -1,3 +1,8 @@
+"""ARKIVERAT LEGACY-SKRIPT
+Detta analysverktyg är inte en del av den aktiva jukebox-appen.
+Det behålls endast som historik för tidigare ljud-/silenceanalys.
+"""
+
 import json
 import math
 import os

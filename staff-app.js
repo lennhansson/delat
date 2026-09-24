@@ -13,13 +13,41 @@ let editingMomentType = null;
 let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
+let playerRecoveryTimer = null;
 
 const ORDERED_PLAYLISTS = ["happy birthday to you", "acdc", "celiks lista", "saras lista", "la muzika", "favoriter", "before i ieave", "highway man"];
+
+function recoverFromPlayerError(reason) {
+    console.warn('YouTube player recovery:', reason);
+    lanseradUniqueId = null;
+    aktivUniqueId = null;
+    if (playerRecoveryTimer) clearTimeout(playerRecoveryTimer);
+    if (nuvarandeState?.nowPlaying || nuvarandeState?.activeMoment) {
+        socket.emit('player:skip');
+    }
+    updatePlaybackButtonState();
+}
+
+function schedulePlayerRecovery() {
+    if (playerRecoveryTimer) clearTimeout(playerRecoveryTimer);
+    playerRecoveryTimer = setTimeout(() => {
+        try {
+            if (!staffYtPlayer || !nuvarandeState?.nowPlaying) return;
+            const stateCode = staffYtPlayer.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
+            if (stateCode === -1 || stateCode === YT.PlayerState.UNSTARTED || stateCode === YT.PlayerState.ENDED) {
+                console.warn('Player stalled or unavailable; skipping current item.', { stateCode, videoId: nuvarandeState.nowPlaying.videoId });
+                recoverFromPlayerError('player stalled');
+            }
+        } catch (error) {
+            recoverFromPlayerError(error?.message || 'player health check failed');
+        }
+    }, 7000);
+}
 
 window.onYouTubeIframeAPIReady = function () {
     staffYtPlayer = new YT.Player("staff-yt-player", {
         width: "100%", height: "100%",
-        playerVars: { autoplay: 1, controls: 1, origin: window.location.origin, enablejsapi: 1, rel: 0, mute: 0 },
+        playerVars: { autoplay: 1, controls: 1, enablejsapi: 1, rel: 0, mute: 0 },
         events: {
             onReady: () => { if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState); },
             onStateChange: (e) => {
@@ -30,12 +58,9 @@ window.onYouTubeIframeAPIReady = function () {
                         lanseradUniqueId = nuvarandeState.nowPlaying.id;
                     }
                 }
+                updatePlaybackButtonState();
             },
-            onError: () => {
-                lanseradUniqueId = null;
-                aktivUniqueId = null;
-                socket.emit("player:skip");
-            }
+            onError: (e) => recoverFromPlayerError(`YouTube error ${e?.data ?? 'unknown'}`)
         }
     });
 };
@@ -57,6 +82,32 @@ function startWatcher() {
     }, 500);
 }
 
+function updatePlaybackButtonState() {
+    const toggleBtn = document.getElementById('mobile-play-toggle');
+    if (!toggleBtn) return;
+
+    const currentState = staffYtPlayer?.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
+    const isPlaying = currentState === YT.PlayerState.PLAYING;
+    toggleBtn.textContent = isPlaying ? '❚❚' : '▶';
+    toggleBtn.setAttribute('aria-label', isPlaying ? 'Pausa ljud' : 'Spela upp ljud');
+}
+
+function togglePlayback() {
+    if (!staffYtPlayer) return;
+
+    const currentState = staffYtPlayer.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
+    if (currentState === YT.PlayerState.PLAYING) {
+        staffYtPlayer.pauseVideo();
+    } else {
+        hasInteracted = true;
+        staffYtPlayer.unMute();
+        staffYtPlayer.playVideo();
+        if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState);
+    }
+
+    updatePlaybackButtonState();
+}
+
 function startaSpelaren() {
     hasInteracted = true;
     if (staffYtPlayer?.playVideo) {
@@ -64,20 +115,28 @@ function startaSpelaren() {
         staffYtPlayer.playVideo();
         if (nuvarandeState) uppdateraStaffPlayer(nuvarandeState);
     }
+    updatePlaybackButtonState();
 }
 
 function uppdateraStaffPlayer(state) {
     if (!staffYtPlayer?.loadVideoById) return;
-    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; return; }
-    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; } return; }
+    if (state.activeMoment?.type === 'pause') { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; updatePlaybackButtonState(); return; }
+    if (!state.nowPlaying) { if (aktivUniqueId !== null) { staffYtPlayer.stopVideo(); aktivUniqueId = null; lanseradUniqueId = null; } updatePlaybackButtonState(); return; }
 
-    const vidIdStr = String(state.nowPlaying.videoId);
+    const vidIdStr = String(state.nowPlaying.videoId || '');
+    if (!/^[A-Za-z0-9_-]{11}$/.test(vidIdStr)) {
+        console.warn('Skipping invalid or unavailable YouTube ID:', vidIdStr);
+        recoverFromPlayerError('invalid video id');
+        return;
+    }
+
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
         const loadOptions = { videoId: vidIdStr, startSeconds: state.nowPlaying.startPosition || 0 };
         if (currentStopPos > loadOptions.startSeconds) loadOptions.endSeconds = currentStopPos;
         staffYtPlayer.loadVideoById(loadOptions);
+        schedulePlayerRecovery();
     }
 }
 
@@ -126,6 +185,20 @@ function fillMobileDropdowns(state) {
 
 function updateMomentsUI(state) {
     if (!state.momentsConfig) return;
+
+    const mobileSelect = document.getElementById('select-moment-type');
+    if (mobileSelect) {
+        const currentValue = mobileSelect.value;
+        const entries = Object.keys(state.momentsConfig).map(key => ({
+            key,
+            label: (state.momentsConfig[key]?.title || key).toUpperCase()
+        }));
+
+        mobileSelect.innerHTML = '<option value="">Välj Moment...</option>' + entries.map(({ key, label }) => `
+            <option value="${key}" ${currentValue === key ? 'selected' : ''}>${label}</option>
+        `).join('');
+    }
+
     const launchpad = document.getElementById('custom-drift');
     if (!launchpad) {
         const stopBtnMobile = document.getElementById("btn-stop-moment");
@@ -244,6 +317,51 @@ function skipLat() {
 
 function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
 
+function renderPubLogs(events) {
+    const listEl = document.getElementById("pub-log-list");
+    const statusEl = document.getElementById("pub-log-status");
+    if (!listEl || !statusEl) return;
+
+    const safeEvents = Array.isArray(events) ? events.slice(-5).reverse() : [];
+    if (!safeEvents.length) {
+        statusEl.textContent = "Inga fel eller recovery-händelser registrerade ännu.";
+        listEl.innerHTML = "<div style='padding:8px 10px; border:1px solid #2a2a2a; border-radius:6px; color:#aaa;'>Säkerhetsstatus: stabil.</div>";
+        return;
+    }
+
+    statusEl.textContent = `Senaste ${safeEvents.length} händelser för ${pubId}`;
+    listEl.innerHTML = safeEvents.map(event => {
+        const recovered = event.recovered ? "✅" : "⚠️";
+        const time = event.timestamp ? new Date(event.timestamp).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "nu";
+        return `
+            <div style="padding:8px 10px; border:1px solid #2a2a2a; border-radius:6px; background:#111; line-height:1.4;">
+                <div style="display:flex; justify-content:space-between; gap:8px; margin-bottom:4px;">
+                    <strong style="color:${event.recovered ? '#1ed760' : '#ffb703'};">${recovered} ${event.type || 'event'}</strong>
+                    <span style="color:#888;">${time}</span>
+                </div>
+                <div style="color:#ddd;">${event.message || 'Ingen förklaring'}</div>
+                ${event.details ? `<div style="color:#aaa; margin-top:4px;">${event.details}</div>` : ''}
+            </div>
+        `;
+    }).join("");
+}
+
+async function fetchPubLogs() {
+    try {
+        const response = await fetch(`/pub/${pubId}/logs`);
+        if (!response.ok) throw new Error('log-request-failed');
+        const data = await response.json();
+        renderPubLogs(data.events || []);
+    } catch (error) {
+        const listEl = document.getElementById("pub-log-list");
+        const statusEl = document.getElementById("pub-log-status");
+        if (listEl && statusEl) {
+            statusEl.textContent = "Kunde inte hämta fellogg.";
+            listEl.innerHTML = "<div style='padding:8px 10px; border:1px solid #2a2a2a; border-radius:6px; color:#ffb703;'>Loggning är tillgänglig men kunde inte laddas just nu.</div>";
+        }
+    }
+}
+
 // UPPDATERAD FLIK-LOGIK SÅ ATT IFRAMEN FAKTISKT LADDAS NÄR MAN KLICKAR PÅ EDIT
 function switchTab(t) {
     document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
@@ -259,7 +377,10 @@ function switchTab(t) {
     }
 }
 
-socket.on('connect', () => socket.emit("join_pub", pubId));
+socket.on('connect', () => {
+    socket.emit("join_pub", pubId);
+    fetchPubLogs();
+});
 socket.on("state", (state) => {
     nuvarandeState = state;
     document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
@@ -270,9 +391,11 @@ socket.on("state", (state) => {
     const statTot = document.getElementById("stat-totalt");
     if (statTot) statTot.innerText = state.statistikTotalt || 0;
 
+    fetchPubLogs();
     fillMobileDropdowns(state);
     renderaBibliotek(state);
     uppdateraPlayerVy();
     uppdateraStaffPlayer(state);
+    updatePlaybackButtonState();
     updateMomentsUI(state);
 });

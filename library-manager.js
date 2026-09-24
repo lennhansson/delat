@@ -115,10 +115,51 @@ function enrichLibraryFromSearch(results) {
     results.forEach(item => addOrUpdateSong(item));
 }
 
+function normalizeSearchText(value) {
+    if (!value) return "";
+    return String(value)
+        .toLowerCase()
+        .replace(/[\[\]()\-_–—]/g, ' ')
+        .replace(/[^a-zåäö0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function searchLibrary(query, limit = 5) {
+    const q = normalizeSearchText(query);
+    if (!q) return [];
+
+    const results = Object.values(library)
+        .filter(song => {
+            const artist = song.artist || "";
+            const title = song.title || "";
+            const videoId = song.videoId || "";
+            const haystack = `${artist} ${title} ${videoId}`.toLowerCase();
+            return haystack.includes(q);
+        })
+        .slice(0, limit)
+        .map(song => ({
+            videoId: song.videoId,
+            title: `${song.artist || 'Okänd Artist'} - ${song.title || 'Okänd titel'}`,
+            thumbnail: song.thumbnail || `https://img.youtube.com/vi/${song.videoId}/0.jpg`,
+            durationSeconds: Number(song.duration) || 180,
+            artist: song.artist || 'Okänd Artist',
+            songTitle: song.title || 'Okänd titel'
+        }));
+
+    return results;
+}
+
 function getLibrary() { return library; }
 
 loadLibrary();
 
 module.exports = {
-    getLibrary, enrichLibraryFromSearch, addOrUpdateSong, removeSongFromPlaylist, cleanTitle
+    getLibrary,
+    enrichLibraryFromSearch,
+    addOrUpdateSong,
+    removeSongFromPlaylist,
+    cleanTitle,
+    searchLibrary,
+    normalizeSearchText
 };

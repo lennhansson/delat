@@ -24,12 +24,12 @@
         </div>
 
         <div class="main-controls">
-            <button class="mobile-btn btn-start" onclick="startaSpelaren()">STARTA LJUD</button>
+            <button id="mobile-play-toggle" class="mobile-btn btn-start" onclick="togglePlayback()" aria-label="Spela upp eller pausa">▶</button>
             <button class="mobile-btn btn-skip" onclick="skipLat()">SKIP LÅT</button>
         </div>
 
         <div class="queue-mini">
-            <h3 style="font-size:12px; color:#666; margin-bottom:10px;">KOMMANDE (NÄSTA 2):</h3>
+            <h3 class="queue-title">KÖ (NÄSTA 10):</h3>
             <div id="player-queue-target" class="compact-queue"></div>
         </div>
     </section>
@@ -53,21 +53,7 @@
         </div>
     </section>
 
-    <!-- 3. MOMENTS -->
-    <section class="mobile-section">
-        <h2 class="section-title">MOMENTS</h2>
-        <input type="text" id="moment-text-input" class="mobile-input-big" placeholder="Manuellt meddelande (valfritt)...">
-
-        <div class="moment-controls">
-            <select id="select-moment-type" class="mobile-input-big">
-                <option value="">Välj Moment...</option>
-            </select>
-            <button class="mobile-btn btn-gold" style="width:100%; margin-top:10px;" onclick="const m = document.getElementById('select-moment-type').value; if(m) activateMoment(m);">AKTIVERA MOMENT</button>
-        </div>
-        <button id="btn-stop-moment" class="mobile-btn btn-stop" style="display:none;" onclick="stopMoment()">STOPPA MOMENT</button>
-    </section>
-
-    <!-- 4. EDITERA LÅTLISTA -->
+    <!-- 3. EDITERA LÅTLISTA -->
     <section class="mobile-section" id="view-edit">
         <h2 class="section-title">EDITERA BIBLIOTEK</h2>
 
@@ -92,6 +78,20 @@
         </div>
     </section>
 
+    <!-- 4. MOMENTS -->
+    <section class="mobile-section">
+        <h2 class="section-title">MOMENTS</h2>
+        <input type="text" id="moment-text-input" class="mobile-input-big" placeholder="Manuellt meddelande (valfritt)...">
+
+        <div class="moment-controls">
+            <select id="select-moment-type" class="mobile-input-big">
+                <option value="">Välj Moment...</option>
+            </select>
+            <button class="mobile-btn btn-gold" style="width:100%; margin-top:10px;" onclick="const m = document.getElementById('select-moment-type').value; if(m) activateMoment(m);">AKTIVERA MOMENT</button>
+        </div>
+        <button id="btn-stop-moment" class="mobile-btn btn-stop" style="display:none;" onclick="stopMoment()">STOPPA MOMENT</button>
+    </section>
+
     <!-- 5. ADMIN & STATS -->
     <footer class="mobile-footer">
         <h2 class="section-title">INSTÄLLNINGAR & STATS</h2>
@@ -111,6 +111,12 @@
                 <span class="stat-label">Totalt:</span>
                 <strong id="stat-totalt">0</strong>
             </div>
+        </div>
+
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid #2a2a2a;">
+            <h3 style="margin:0 0 10px 0; color:#fff; font-size:12px; letter-spacing:1px; text-transform:uppercase;">Fellogg</h3>
+            <div id="pub-log-status" style="font-size:11px; color:#aaa; margin-bottom:8px;">Laddar...</div>
+            <div id="pub-log-list" style="display:flex; flex-direction:column; gap:8px; font-size:11px; color:#ddd;"></div>
         </div>
     </footer>
 </div>

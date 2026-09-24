@@ -14017,5 +14017,1827 @@
       "F3",
       "F4"
     ]
+  },
+  "1949": {
+    "videoId": "test-metadata-123",
+    "artist": "ABBA",
+    "title": "Dancing Queen",
+    "thumbnail": "https://example.com/thumb.jpg",
+    "playlists": [
+      "testlista"
+    ],
+    "duration": 210,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1950": {
+    "videoId": "bulk-1",
+    "artist": "ABBA",
+    "title": "SOS",
+    "thumbnail": "https://example.com/1.jpg",
+    "playlists": [],
+    "duration": 210,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1951": {
+    "videoId": "bulk-2",
+    "artist": "ABBA",
+    "title": "Mamma Mia",
+    "thumbnail": "https://example.com/2.jpg",
+    "playlists": [],
+    "duration": 224,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1952": {
+    "videoId": "bulk-3",
+    "artist": "ABBA",
+    "title": "Waterloo",
+    "thumbnail": "https://example.com/3.jpg",
+    "playlists": [],
+    "duration": 197,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1953": {
+    "videoId": "bulk-4",
+    "artist": "ABBA",
+    "title": "Fernando",
+    "thumbnail": "https://example.com/4.jpg",
+    "playlists": [],
+    "duration": 240,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1954": {
+    "videoId": "bulk-5",
+    "artist": "ABBA",
+    "title": "Take A Chance On Me",
+    "thumbnail": "https://example.com/5.jpg",
+    "playlists": [],
+    "duration": 220,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1955": {
+    "videoId": "BSfW8L4ZJRA",
+    "artist": "Chris Norman",
+    "title": "Living Next Door To Alice (One Acoustic Evening)",
+    "thumbnail": "https://i.ytimg.com/vi/BSfW8L4ZJRA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLC5Ma1mFv3Iqo-sW_RnnFlbDHj4eA",
+    "playlists": [],
+    "duration": 255,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1956": {
+    "videoId": "bUy83PKjkOI",
+    "artist": "Smokie",
+    "title": "Who The \"F...\" Is Alice?",
+    "thumbnail": "https://i.ytimg.com/vi/bUy83PKjkOI/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYQSBWKHIwDw==&rs=AOn4CLAX9ecKdrr19SX7J7-vj0uVnam8qw",
+    "playlists": [],
+    "duration": 221,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1957": {
+    "videoId": "VUS27t8TOn4",
+    "artist": "Smokie",
+    "title": "Living Next Door to Alice",
+    "thumbnail": "https://i.ytimg.com/vi/VUS27t8TOn4/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLADRyFH5P2FAw9c6rNWDcP5R80vWg",
+    "playlists": [],
+    "duration": 208,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1958": {
+    "videoId": "z4PTqkqapAA",
+    "artist": "Okänd Artist",
+    "title": "LIVING NEXT DOOR TO ALICE | Smokie Never Imagined This CRUSHING Southern Version",
+    "thumbnail": "https://i.ytimg.com/vi/z4PTqkqapAA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCCnVWi7_rGAMUbXYfbQbv-DBKskQ",
+    "playlists": [],
+    "duration": 315,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1959": {
+    "videoId": "0AUF21YOH2Y",
+    "artist": "Smokie",
+    "title": "Living Next Door to Alice",
+    "thumbnail": "https://i.ytimg.com/vi/0AUF21YOH2Y/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBlKGUwDw==&rs=AOn4CLDYJKPDac234YMsN8Bl3_8HEc5pxA",
+    "playlists": [],
+    "duration": 216,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1960": {
+    "videoId": "4rgLhYYaDic",
+    "artist": "Okänd Artist",
+    "title": "LIVING NEXTDOOR TO ALICE (island remix)",
+    "thumbnail": "https://i.ytimg.com/vi/4rgLhYYaDic/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAwBxP35FPKPVOqn3r_RzklAj3dSw",
+    "playlists": [],
+    "duration": 282,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1961": {
+    "videoId": "-XxGf4KAWPs",
+    "artist": "Smokie",
+    "title": "Living next door to Alice",
+    "thumbnail": "https://i.ytimg.com/vi/-XxGf4KAWPs/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYHiAwKH8wDw==&rs=AOn4CLCNbBfmG6AYBLmrqyZ4wNOGySlS_g",
+    "playlists": [],
+    "duration": 214,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1962": {
+    "videoId": "T97QEV2-Bjg",
+    "artist": "Smokie",
+    "title": "Living Next Door To Alice (Pop 76, 12.12.1976)",
+    "thumbnail": "https://i.ytimg.com/vi/T97QEV2-Bjg/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLClmxR5lXjVg9fOAgpBE28Q2sNOuQ",
+    "playlists": [],
+    "duration": 207,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1963": {
+    "videoId": "P4A77XqJ0fs",
+    "artist": "Smokie",
+    "title": "Living Next Door to Alice (ZDF-Fernsehgarten - 2017-06-18)",
+    "thumbnail": "https://i.ytimg.com/vi/P4A77XqJ0fs/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBQKEgwDw==&rs=AOn4CLALaIgxJT7Kst3KUeUVXOr2qUFwMg",
+    "playlists": [],
+    "duration": 280,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1964": {
+    "videoId": "uFgnZGA-Q7Y",
+    "artist": "Smokie",
+    "title": "Living Next Door to Alice (Ein Kessel Buntes 25.12.1977)",
+    "thumbnail": "https://i.ytimg.com/vi/uFgnZGA-Q7Y/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCCsuXkVDiTOP1KCQf9KsUq8fAWuQ",
+    "playlists": [],
+    "duration": 216,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1965": {
+    "videoId": "_GDGnwkFAWA",
+    "artist": "Polina Gagarina",
+    "title": "Living Next Door to Alice",
+    "thumbnail": "https://i.ytimg.com/vi/_GDGnwkFAWA/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBDKEgwDw==&rs=AOn4CLDFTw0wsHLyNGIUP4bRId4GJaUjXA",
+    "playlists": [],
+    "duration": 216,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1966": {
+    "videoId": "7HP9Z_3exGE",
+    "artist": "Robin S",
+    "title": "Show Me Love",
+    "thumbnail": "https://i.ytimg.com/vi/7HP9Z_3exGE/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4EgALgA4oCDAgAEAEYfyBHKCowDw==&rs=AOn4CLA3NyE2rVRDCG8z-d10I99xQ3pp5w",
+    "playlists": [],
+    "duration": 270,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1967": {
+    "videoId": "1mMYQy5pYH0",
+    "artist": "Okänd Artist",
+    "title": "14 Toppers in concert 2016 We Love Robin S Medley.mp4",
+    "thumbnail": "https://i.ytimg.com/vi/1mMYQy5pYH0/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4AdQGgALgA4oCDAgAEAEYfyAVKCwwDw==&rs=AOn4CLBEYFyVRGX7S-aISePsppowzkHzlw",
+    "playlists": [],
+    "duration": 354,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1968": {
+    "videoId": "9-wnNeVO650",
+    "artist": "Robin S., Crystal Waters & CeCe Peniston",
+    "title": "Show Me Love, Gypsy Woman, Finally",
+    "thumbnail": "https://i.ytimg.com/vi/9-wnNeVO650/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYEyBTKH8wDw==&rs=AOn4CLBA4TyLL9pt4XFXwzUGY919DhzLUw",
+    "playlists": [],
+    "duration": 365,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1969": {
+    "videoId": "B36vtkBlLmg",
+    "artist": "Okänd Artist",
+    "title": "Robin S | Show Me Love LIVE",
+    "thumbnail": "https://i.ytimg.com/vi/B36vtkBlLmg/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYciA5KDkwDw==&rs=AOn4CLBaLMbW8bAs9E6N2iv6nceyuQ8Y5A",
+    "playlists": [],
+    "duration": 342,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1970": {
+    "videoId": "GLw-WKWp2gM",
+    "artist": "Okänd Artist",
+    "title": "Love for Love",
+    "thumbnail": "https://i.ytimg.com/vi/GLw-WKWp2gM/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLB8dzbBNCT-rXGn8T74qGnWAUOpVw",
+    "playlists": [],
+    "duration": 256,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1971": {
+    "videoId": "w1Xfrtg_lXg",
+    "artist": "Okänd Artist",
+    "title": "Robin S x Crystal Waters x Cece Peniston perform their Classics for BET",
+    "thumbnail": "https://i.ytimg.com/vi/w1Xfrtg_lXg/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYciA7KDswDw==&rs=AOn4CLByfGzKb3glty05piYnzOXQcIYdKA",
+    "playlists": [],
+    "duration": 328,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1972": {
+    "videoId": "ZBPu6MDhC-U",
+    "artist": "Robin S",
+    "title": "Luv 4 Luv (93:2 HD) /1993/",
+    "thumbnail": "https://i.ytimg.com/vi/ZBPu6MDhC-U/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBlKGUwDw==&rs=AOn4CLANwKXMpudMXq0IYOHagA_657uRPA",
+    "playlists": [],
+    "duration": 244,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1973": {
+    "videoId": "jZZBVQDdqzA",
+    "artist": "Okänd Artist",
+    "title": "Show Me Love (Radio Mix)",
+    "thumbnail": "https://i.ytimg.com/vi/jZZBVQDdqzA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCeiKUFjhjIcOC7NTG3Gys6DSjW5A",
+    "playlists": [],
+    "duration": 202,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1974": {
+    "videoId": "dH7Qmmk0FFA",
+    "artist": "Robin S",
+    "title": "Show Me Love",
+    "thumbnail": "https://i.ytimg.com/vi/dH7Qmmk0FFA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCgDlg3pWE97KZuBQn68v3q1XT5hQ",
+    "playlists": [],
+    "duration": 192,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1975": {
+    "videoId": "8qOEcsHQAhE",
+    "artist": "Robin S",
+    "title": "Luv 4 Luv (Top Of The Pops 1993)",
+    "thumbnail": "https://i.ytimg.com/vi/8qOEcsHQAhE/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBAmlWDm1xUB82WyA7K5lQQPcz3kw",
+    "playlists": [],
+    "duration": 207,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1976": {
+    "videoId": "grZEQWnPPIw",
+    "artist": "Okänd Artist",
+    "title": "Robin S \"Show Me Love\" live! It's Showtime at the Apollo! 1993",
+    "thumbnail": "https://i.ytimg.com/vi/grZEQWnPPIw/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4AdQGgALgA4oCDAgAEAEYZSBKKFAwDw==&rs=AOn4CLDFY3gGrUTzlOKWdaUiTJAf_qpmPQ",
+    "playlists": [],
+    "duration": 322,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1977": {
+    "videoId": "LWDQxZE4dBs",
+    "artist": "Okänd Artist",
+    "title": "Show Me Love (Extended Mix)",
+    "thumbnail": "https://i.ytimg.com/vi/LWDQxZE4dBs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBWZR80PPyDZTLBFh-TpDp2q1zZEw",
+    "playlists": [],
+    "duration": 465,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1978": {
+    "videoId": "XKElk9zTB04",
+    "artist": "Jeff Lynne's ELO",
+    "title": "Telephone Line (Live at Wembley Stadium)",
+    "thumbnail": "https://i.ytimg.com/vi/XKElk9zTB04/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA3a_0F2x82xbGK9LRmC60flgediQ",
+    "playlists": [],
+    "duration": 292,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1979": {
+    "videoId": "UkekqVPIc2M",
+    "artist": "Electric Light Orchestra",
+    "title": "Hold On Tight",
+    "thumbnail": "https://i.ytimg.com/vi/UkekqVPIc2M/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDcokBjkiJDU5qCGbcouL2jPAZDGg",
+    "playlists": [],
+    "duration": 188,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1980": {
+    "videoId": "kXpjF1qtpt0",
+    "artist": "Jeff Lynne's ELO",
+    "title": "Turn to Stone (Live at Wembley Stadium)",
+    "thumbnail": "https://i.ytimg.com/vi/kXpjF1qtpt0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA_-T7z8UzNlV0_By1oUXTbs9o3wA",
+    "playlists": [],
+    "duration": 240,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1981": {
+    "videoId": "21VeAmPOBzI",
+    "artist": "Electric Light Orchestra",
+    "title": "Rock n' Roll Is King",
+    "thumbnail": "https://i.ytimg.com/vi/21VeAmPOBzI/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAb2SbfXY-Swkv4AMlVQ3lWTfp2-Q",
+    "playlists": [],
+    "duration": 186,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1982": {
+    "videoId": "Jc4g7JsbjlI",
+    "artist": "Okänd Artist",
+    "title": "Jeff Lynnes Elo Wembley or Bust 2017 720p",
+    "thumbnail": "https://i.ytimg.com/vi/Jc4g7JsbjlI/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBXhMqsZti-DjenKDvvvN3_lzHMNQ",
+    "playlists": [],
+    "duration": 248,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1983": {
+    "videoId": "jPlWqWZppNQ",
+    "artist": "Okänd Artist",
+    "title": "Jeff Lynne's ELO Livin Thing Live Philly '18",
+    "thumbnail": "https://i.ytimg.com/vi/jPlWqWZppNQ/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYRiA9KH8wDw==&rs=AOn4CLCqoDhmuByYd44g1EyumWRJMmavvw",
+    "playlists": [],
+    "duration": 251,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1984": {
+    "videoId": "X8F3Rr-UqLU",
+    "artist": "Electric Light Orchestra",
+    "title": "Need Her Love (Audio)",
+    "thumbnail": "https://i.ytimg.com/vi/X8F3Rr-UqLU/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAvX-CzUoO2GQPEL7sVF4PF-MFzMA",
+    "playlists": [],
+    "duration": 313,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1985": {
+    "videoId": "UCk87V2lvXb6AMZXkLY3_phQ",
+    "artist": "Okänd Artist",
+    "title": "ELO",
+    "thumbnail": "https://yt3.ggpht.com/ZnTkzwuDDzC9HnQ4HJPyl07F8PTikYDCNjbU7wyyrfh7bVnQ6RrHQrdxXHUSiQiwo8DPF1o0uQ=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1986": {
+    "videoId": "e_MSqS1-Ubs",
+    "artist": "IN FLAMES",
+    "title": "Meet Your Maker",
+    "thumbnail": "https://i.ytimg.com/vi/e_MSqS1-Ubs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA2Eq9blIKVIgJCxIaQtcXDmdyIvQ",
+    "playlists": [],
+    "duration": 244,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1987": {
+    "videoId": "2d1pRlRxkJw",
+    "artist": "In Flames",
+    "title": "The Quiet Place",
+    "thumbnail": "https://i.ytimg.com/vi/2d1pRlRxkJw/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBv7T28HCU14uyBOuPdaU-Vgnf8EQ",
+    "playlists": [],
+    "duration": 203,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1988": {
+    "videoId": "B7iIS91fMAc",
+    "artist": "In Flames",
+    "title": "Cloud Connected",
+    "thumbnail": "https://i.ytimg.com/vi/B7iIS91fMAc/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCrG33hu2eTndCLP0p4OA-CWznNEQ",
+    "playlists": [],
+    "duration": 224,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1989": {
+    "videoId": "r2UAmo9TntM",
+    "artist": "Okänd Artist",
+    "title": "I'm the Highway",
+    "thumbnail": "https://i.ytimg.com/vi/r2UAmo9TntM/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAM3uIk7u-37hJNBvQsgLQWkNCcuQ",
+    "playlists": [],
+    "duration": 222,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1990": {
+    "videoId": "4OkSsFsXLD8",
+    "artist": "IN FLAMES",
+    "title": "I Am Above",
+    "thumbnail": "https://i.ytimg.com/vi/4OkSsFsXLD8/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCRCM6VPZfIAzs8JB1LeoB2qiOB5w",
+    "playlists": [],
+    "duration": 234,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1991": {
+    "videoId": "co6WMzDOh1o",
+    "artist": "U2",
+    "title": "Beautiful Day",
+    "thumbnail": "https://i.ytimg.com/vi/co6WMzDOh1o/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA4ZOwCyf2rmyN0hspAqlXKAYZuiw",
+    "playlists": [],
+    "duration": 244,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1992": {
+    "videoId": "ftjEcrrf7r0",
+    "artist": "U2",
+    "title": "One",
+    "thumbnail": "https://i.ytimg.com/vi/ftjEcrrf7r0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAkYc2smUKnHy_asb1_tBCdPLjrbQ",
+    "playlists": [],
+    "duration": 274,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1993": {
+    "videoId": "LHcP4MWABGY",
+    "artist": "U2",
+    "title": "Pride (In The Name Of Love)",
+    "thumbnail": "https://i.ytimg.com/vi/LHcP4MWABGY/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAhZIGK4wugTFoTRvf5erUKxQXu-A",
+    "playlists": [],
+    "duration": 247,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1994": {
+    "videoId": "hRnS0Wf64Is",
+    "artist": "U2",
+    "title": "Street Of Dreams",
+    "thumbnail": "https://i.ytimg.com/vi/hRnS0Wf64Is/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCjguXoGLzjBXoR3qZVoGy6J6HcSw",
+    "playlists": [],
+    "duration": 280,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1995": {
+    "videoId": "GzZWSrr5wFI",
+    "artist": "U2",
+    "title": "Where The Streets Have No Name",
+    "thumbnail": "https://i.ytimg.com/vi/GzZWSrr5wFI/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLB5OjocU5NXys4rtg1IOrzqJvgSsA",
+    "playlists": [],
+    "duration": 434,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1996": {
+    "videoId": "5WybiA263bw",
+    "artist": "U2",
+    "title": "Sweetest Thing",
+    "thumbnail": "https://i.ytimg.com/vi/5WybiA263bw/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDHNT71fmLb2gXIIr6nFW--5B3z8g",
+    "playlists": [],
+    "duration": 195,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1997": {
+    "videoId": "R-BT2yzXP8w",
+    "artist": "U2",
+    "title": "Stuck In A Moment You Can't Get Out Of",
+    "thumbnail": "https://i.ytimg.com/vi/R-BT2yzXP8w/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLD7zhgRUJmwKeSSoo8mmGXKtKr3SQ",
+    "playlists": [],
+    "duration": 272,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1998": {
+    "videoId": "KTzmzrruHwc",
+    "artist": "U2",
+    "title": "The Unforgettable Fire",
+    "thumbnail": "https://i.ytimg.com/vi/KTzmzrruHwc/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBrsMwTqdT7vtaO9pbZWBxZjSq1Cg",
+    "playlists": [],
+    "duration": 289,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "1999": {
+    "videoId": "ZpDQJnI4OhU",
+    "artist": "Mary J. Blige, U2",
+    "title": "One",
+    "thumbnail": "https://i.ytimg.com/vi/ZpDQJnI4OhU/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBIsmVutz5yFXjY7zmEh6UZgGNpgQ",
+    "playlists": [],
+    "duration": 267,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2000": {
+    "videoId": "6DeDzsCGbsQ",
+    "artist": "U2",
+    "title": "With Or Without You | U2 At The BBC",
+    "thumbnail": "https://i.ytimg.com/vi/6DeDzsCGbsQ/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLB82_qctZkpHt6YawD8YZSPt3JyWg",
+    "playlists": [],
+    "duration": 300,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2001": {
+    "videoId": "jeYCyCaK_5k",
+    "artist": "U2",
+    "title": "New Year's Day",
+    "thumbnail": "https://i.ytimg.com/vi/jeYCyCaK_5k/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDMRL98FLg2RI1kI97IS46nUk-EGw",
+    "playlists": [],
+    "duration": 255,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2002": {
+    "videoId": "RWx7pHAT-fw",
+    "artist": "Bo Kaspers Orkester",
+    "title": "Innan allt försvinner",
+    "thumbnail": "https://i.ytimg.com/vi/RWx7pHAT-fw/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBqi-5An6OaFHOliDejAqjIwCoXSw",
+    "playlists": [],
+    "duration": 266,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2003": {
+    "videoId": "U35Hw0GTYQc",
+    "artist": "Bo Kaspers Orkester",
+    "title": "Semester",
+    "thumbnail": "https://i.ytimg.com/vi/U35Hw0GTYQc/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBDJZpvzzUId1KScORkQvAKMXyWqg",
+    "playlists": [],
+    "duration": 218,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2004": {
+    "videoId": "4CCapv298bg",
+    "artist": "Bo Kaspers Orkester",
+    "title": "Svårt att säga nej",
+    "thumbnail": "https://i.ytimg.com/vi/4CCapv298bg/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDUuiKKoj3fk1bZzIkR29KJpNUmGw",
+    "playlists": [],
+    "duration": 219,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2005": {
+    "videoId": "a-gunbgHuXw",
+    "artist": "Bo Kaspers Orkester",
+    "title": "Ett fullkomligt kaos",
+    "thumbnail": "https://i.ytimg.com/vi/a-gunbgHuXw/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBPxJMwI0vmmdASOxoVAIIOmWIJMg",
+    "playlists": [],
+    "duration": 181,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2006": {
+    "videoId": "DP1cEMaNvwQ",
+    "artist": "Bo Kaspers Orkester",
+    "title": "\"Dansa på min grav (2026 version)\" Official Video",
+    "thumbnail": "https://i.ytimg.com/vi/DP1cEMaNvwQ/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCOASphZDdFSzz9s3ndbsQPAJ7zew",
+    "playlists": [],
+    "duration": 315,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2007": {
+    "videoId": "xelN9lL5dw4",
+    "artist": "Bo kaspers orkester",
+    "title": "Tonårsland",
+    "thumbnail": "https://i.ytimg.com/vi/xelN9lL5dw4/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBPKEwwDw==&rs=AOn4CLDzfISJZ-8Ghh06EG4fX_yhvMmItQ",
+    "playlists": [],
+    "duration": 57,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2008": {
+    "videoId": "R70BF3c32zA",
+    "artist": "Bo Kaspers Orkester",
+    "title": "Diskotek (Live \"Go'kväll\")",
+    "thumbnail": "https://i.ytimg.com/vi/R70BF3c32zA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBzWXQ1myuzfaqwBIBySBAOLsKm6Q",
+    "playlists": [],
+    "duration": 224,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2009": {
+    "videoId": "DheJpjQW7n8",
+    "artist": "Bo Kaspers Orkester",
+    "title": "När du landat (har jag vaknat)",
+    "thumbnail": "https://i.ytimg.com/vi/DheJpjQW7n8/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAGJXNBfGoP1i3zXVv7GEm0JsoniA",
+    "playlists": [],
+    "duration": 216,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2010": {
+    "videoId": "H4H7NeweZ-g",
+    "artist": "Bo Kaspers Orkester",
+    "title": "I Samma Bil",
+    "thumbnail": "https://i.ytimg.com/vi/H4H7NeweZ-g/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4CgAKgAooCDAgAEAEYUSBeKGUwDw==&rs=AOn4CLAwSXa64Z6MTJx-Sg3CpMnPNR8udQ",
+    "playlists": [],
+    "duration": 230,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2011": {
+    "videoId": "z4KyoYKLxC4",
+    "artist": "Okänd Artist",
+    "title": "Tonårsland",
+    "thumbnail": "https://i.ytimg.com/vi/z4KyoYKLxC4/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCJqTKH1mskqw0fjEQOSfhwgTrisA",
+    "playlists": [],
+    "duration": 191,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2012": {
+    "videoId": "_3-Tb2atxAU",
+    "artist": "Bo kaspers orkester",
+    "title": "Just när du trodde allt var över",
+    "thumbnail": "https://i.ytimg.com/vi/_3-Tb2atxAU/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBYKEswDw==&rs=AOn4CLC0kBQIIh_RrbgZmTzxNNw5VIvQ3A",
+    "playlists": [],
+    "duration": 26,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2013": {
+    "videoId": "lvSyOKE493Q",
+    "artist": "Okänd Artist",
+    "title": "Oh Mama | Deadlight County | Official Lyric Video",
+    "thumbnail": "https://i.ytimg.com/vi/lvSyOKE493Q/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCSaKPlqIIaECW8pKP--44q-CkXFg",
+    "playlists": [],
+    "duration": 263,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2014": {
+    "videoId": "bJ_V4siqrp8",
+    "artist": "Okänd Artist",
+    "title": "Oh Mama",
+    "thumbnail": "https://i.ytimg.com/vi/bJ_V4siqrp8/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBjot0hkC4dhJH3IQUQwOlicjll9Q",
+    "playlists": [],
+    "duration": 230,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2015": {
+    "videoId": "f30pWmF49R0",
+    "artist": "Lili & Susie",
+    "title": "Oh mama",
+    "thumbnail": "https://i.ytimg.com/vi/f30pWmF49R0/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4AcwDgAKgAooCDAgAEAEYfyA1KEIwDw==&rs=AOn4CLCKLhi1yp196AIOPwlPU6P9zDO01g",
+    "playlists": [],
+    "duration": 229,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2016": {
+    "videoId": "Q3Pxs8bxAp8",
+    "artist": "Lili & Sussie",
+    "title": "Oh Mama (Solstollarna '87)",
+    "thumbnail": "https://i.ytimg.com/vi/Q3Pxs8bxAp8/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYYSBlKEIwDw==&rs=AOn4CLAwMIEjJuhmLtXiF2ZtilBAOx85QQ",
+    "playlists": [],
+    "duration": 201,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2017": {
+    "videoId": "6UWJtGT9sx4",
+    "artist": "Lili & Susie",
+    "title": "Oh Mama (1987) • TopPop",
+    "thumbnail": "https://i.ytimg.com/vi/6UWJtGT9sx4/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDqUK0KnrIpFT5cx7tozk1i8biFIg",
+    "playlists": [],
+    "duration": 231,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2018": {
+    "videoId": "VjLiMnVyz58",
+    "artist": "lili susie",
+    "title": "oh mama Remix",
+    "thumbnail": "https://i.ytimg.com/vi/VjLiMnVyz58/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYciBIKDQwDw==&rs=AOn4CLC-o3cS3GuFjrqx0k374vZS-fKTSg",
+    "playlists": [],
+    "duration": 193,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2019": {
+    "videoId": "C2cuCu58tbs",
+    "artist": "Okänd Artist",
+    "title": "Oh Mama",
+    "thumbnail": "https://i.ytimg.com/vi/C2cuCu58tbs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCAK-107gam28RxpJTRx-ElEDIVQQ",
+    "playlists": [],
+    "duration": 231,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2020": {
+    "videoId": "Ao3XJ-UDdzI",
+    "artist": "Clean Bandit",
+    "title": "Mama (feat. Ellie Goulding)",
+    "thumbnail": "https://i.ytimg.com/vi/Ao3XJ-UDdzI/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLB6yn3yAXxgre85HYuzNce8W2ltjg",
+    "playlists": [],
+    "duration": 269,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2021": {
+    "videoId": "oNbkAx8CTCQ",
+    "artist": "Clean Bandit",
+    "title": "Mama ft. Ellie Goulding",
+    "thumbnail": "https://i.ytimg.com/vi/oNbkAx8CTCQ/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCInH-5DYZZZtPQy4rwOh8CriZN3g",
+    "playlists": [],
+    "duration": 191,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2022": {
+    "videoId": "HOwYYoXuFjk",
+    "artist": "2.clock",
+    "title": "Oh MaMa (Officiell Video)",
+    "thumbnail": "https://i.ytimg.com/vi/HOwYYoXuFjk/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDW-S8OZscFp2sfAEHDjiFfGXInuw",
+    "playlists": [],
+    "duration": 165,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2023": {
+    "videoId": "0LpX2EylXxM",
+    "artist": "Oh Mamma",
+    "title": "UB40 (Vibes)",
+    "thumbnail": "https://i.ytimg.com/vi/0LpX2EylXxM/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCoEuwN6DCmBsDBx3E1yCAXfzO0Hg",
+    "playlists": [],
+    "duration": 273,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2024": {
+    "videoId": "eFgKdhMvE5U",
+    "artist": "Albin Lee Meldau",
+    "title": "Mamma (INGRID STUDIOS SESSION)",
+    "thumbnail": "https://i.ytimg.com/vi/eFgKdhMvE5U/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYciBJKCwwDw==&rs=AOn4CLBYMwNOObtCHSsoICsafbBNIXy2QA",
+    "playlists": [],
+    "duration": 267,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2025": {
+    "videoId": "L5jI9I03q8E",
+    "artist": "Ain't Got No, I Got Life",
+    "title": "Nina Simone",
+    "thumbnail": "https://i.ytimg.com/vi/L5jI9I03q8E/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4EgALgA4oCDAgAEAEYZSBlKGUwDw==&rs=AOn4CLBdTKB2dD_t8LYhjg3LwnznR1arVg",
+    "playlists": [],
+    "duration": 248,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2026": {
+    "videoId": "-sEP0-8VAow",
+    "artist": "Nina Simone",
+    "title": "I Wish I Knew How It Would Feel To Be Free (Montreux 1976)",
+    "thumbnail": "https://i.ytimg.com/vi/-sEP0-8VAow/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4EgALgA4oCDAgAEAEYciBcKEEwDw==&rs=AOn4CLARM3Yt36N9qlEp4oOIAePlGIZYJA",
+    "playlists": [],
+    "duration": 374,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2027": {
+    "videoId": "eYSbUOoq4Vg",
+    "artist": "nina simone",
+    "title": "my baby just cares for me",
+    "thumbnail": "https://i.ytimg.com/vi/eYSbUOoq4Vg/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4DgAKAA4oCDAgAEAEYZSBlKGUwDw==&rs=AOn4CLCwH_duLE0RU_R8_xh88g4_3bCoZg",
+    "playlists": [],
+    "duration": 220,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2028": {
+    "videoId": "r57J0jPyZRs",
+    "artist": "NINA SIMONE",
+    "title": "Sinnerman (1965) [Video Clip]",
+    "thumbnail": "https://i.ytimg.com/vi/r57J0jPyZRs/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBI35ZrxbQujVmOhnxMDHFY6Qol0A",
+    "playlists": [],
+    "duration": 328,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2029": {
+    "videoId": "45BqY0cpapQ",
+    "artist": "Nina Simone",
+    "title": "My Way",
+    "thumbnail": "https://i.ytimg.com/vi/45BqY0cpapQ/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4EgALgA4oCDAgAEAEYfyBJKCowDw==&rs=AOn4CLAriBUn-syaQf80kmN8ukvtuXOeQA",
+    "playlists": [],
+    "duration": 316,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2030": {
+    "videoId": "JS8LWRCS6do",
+    "artist": "Nina Simone",
+    "title": "Don't Let Me Be Misunderstood",
+    "thumbnail": "https://i.ytimg.com/vi/JS8LWRCS6do/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBN88Oixu-EfB-FciEM2pjFAuIABQ",
+    "playlists": [],
+    "duration": 172,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2031": {
+    "videoId": "5cnZjClf6zM",
+    "artist": "Okänd Artist",
+    "title": "Nina Simone \"Love Me Or Leave Me\" on The Ed Sullivan Show",
+    "thumbnail": "https://i.ytimg.com/vi/5cnZjClf6zM/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCjxsnL1DdljMZ7ZQUt0VFzhrLZ7Q",
+    "playlists": [],
+    "duration": 184,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2032": {
+    "videoId": "inNBpizpZkE",
+    "artist": "Nina Simone",
+    "title": "I Wish I Knew How It Would Feel to Be Free (Official Audio)",
+    "thumbnail": "https://i.ytimg.com/vi/inNBpizpZkE/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAVcQfQqz2KOeKLUb6kAui0-oh89w",
+    "playlists": [],
+    "duration": 191,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2033": {
+    "videoId": "u1ZoHfJZACA",
+    "artist": "Black",
+    "title": "Wonderful Life",
+    "thumbnail": "https://i.ytimg.com/vi/u1ZoHfJZACA/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCIEHWiEEeM0f2iHP8heTXq0K7ETg",
+    "playlists": [],
+    "duration": 298,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2034": {
+    "videoId": "abGe6uM9Ias",
+    "artist": "Katie Melua",
+    "title": "Wonderful Life",
+    "thumbnail": "https://i.ytimg.com/vi/abGe6uM9Ias/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLABX24bKwlFEoMtoWLim_b4ME7cmQ",
+    "playlists": [],
+    "duration": 244,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2035": {
+    "videoId": "CaCSuzR4DwM",
+    "artist": "Louis Armstrong",
+    "title": "What A Wonderful World (At The BBC)",
+    "thumbnail": "https://i.ytimg.com/vi/CaCSuzR4DwM/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDyEZd6Ch4YYP7gPct5PuK9QjbKxQ",
+    "playlists": [],
+    "duration": 146,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2036": {
+    "videoId": "iLR3gZrU2Xo",
+    "artist": "Okänd Artist",
+    "title": "IT'S A WONDERFUL LIFE | Official Trailer | Paramount Movies",
+    "thumbnail": "https://i.ytimg.com/vi/iLR3gZrU2Xo/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLANXkKQDmrxZAdpx3S7aa_PrPWmBQ",
+    "playlists": [],
+    "duration": 76,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2037": {
+    "videoId": "rBrd_3VMC3c",
+    "artist": "Louis Armstrong",
+    "title": "What A Wonderful World",
+    "thumbnail": "https://i.ytimg.com/vi/rBrd_3VMC3c/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAiymX0bVaI2PdZXDUIseJSrxMH8w",
+    "playlists": [],
+    "duration": 139,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2038": {
+    "videoId": "jMMUgnf2E9c",
+    "artist": "Peaky Blinders",
+    "title": "Wonderful Life",
+    "thumbnail": "https://i.ytimg.com/vi/jMMUgnf2E9c/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYQiBdKGUwDw==&rs=AOn4CLA-uwDBHWRphTE9fJlRKZF2v-yH8g",
+    "playlists": [],
+    "duration": 266,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2039": {
+    "videoId": "1TB1x67Do5U",
+    "artist": "Hurts",
+    "title": "Wonderful Life (New Version - Official Video)",
+    "thumbnail": "https://i.ytimg.com/vi/1TB1x67Do5U/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAUFPG3dq-FaJHuxn6UssAn8c4a0Q",
+    "playlists": [],
+    "duration": 245,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2040": {
+    "videoId": "4hoDwVy6IQ4",
+    "artist": "Bring Me The Horizon",
+    "title": "wonderful life (Lyric Video) ft. Dani Filth",
+    "thumbnail": "https://i.ytimg.com/vi/4hoDwVy6IQ4/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAsiKNTlfs0e-9-PjTEdqm-mOQq8Q",
+    "playlists": [],
+    "duration": 277,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2041": {
+    "videoId": "Zeu1JS2h-UI",
+    "artist": "Elvis Presley",
+    "title": "What a Wonderful Life (Bossa Nova Baby - Official Audio)",
+    "thumbnail": "https://i.ytimg.com/vi/Zeu1JS2h-UI/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLC5JHsNx3RqN9W07igjQZskkqXntQ",
+    "playlists": [],
+    "duration": 150,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2042": {
+    "videoId": "mys7atHZWLo",
+    "artist": "Elvis Presley",
+    "title": "What A Wonderful Life 1080",
+    "thumbnail": "https://i.ytimg.com/vi/mys7atHZWLo/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCoKJ-GltX5qiI3ak0lrK3qO1soUQ",
+    "playlists": [],
+    "duration": 164,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2043": {
+    "videoId": "7TttjeXZYE8",
+    "artist": "Hurts",
+    "title": "Wonderful Life (Original Video)",
+    "thumbnail": "https://i.ytimg.com/vi/7TttjeXZYE8/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBe9PAaJoNtXmqCk8ma2Qt0EU45hQ",
+    "playlists": [],
+    "duration": 256,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2044": {
+    "videoId": "UC0e3QhIYukixgh5VVpKHH9Q",
+    "artist": "Okänd Artist",
+    "title": "Kodpunkt",
+    "thumbnail": "//yt3.ggpht.com/8mXAVK4tU5IMVS92Loq7DYMyqqByTuTsJebkKky-Fv1Os8Gzxw6YlpHCSie0lWNeDaFwH5p7wQ=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2045": {
+    "videoId": "PB7CZ36No6I",
+    "artist": "黒崎真音",
+    "title": "cold bullet blues (ljud)",
+    "thumbnail": "https://i.ytimg.com/vi/PB7CZ36No6I/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYTiBWKGUwDw==&rs=AOn4CLCWhpfY6gOXSeg9JeHEDu0W41iX7Q",
+    "playlists": [],
+    "duration": 355,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2046": {
+    "videoId": "UC3uGImAPXlKN7m4i0Bf2DlQ",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "//yt3.ggpht.com/QGRNX2KGWuG51ddSvjcBcsWUYZVMfr5s5N1fXSkPgxMVbG3l5aObUFamGNf8jW0StBeDrWKn6A=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2047": {
+    "videoId": "LnLRtZt3iQo",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula Pannkakskungen I Fredrik Jonsson I [Samarbete med MatHem.se]",
+    "thumbnail": "https://i.ytimg.com/vi/LnLRtZt3iQo/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDaxkub62DrEs9a_xk3raOEaSSfLg",
+    "playlists": [],
+    "duration": 49,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2048": {
+    "videoId": "xah7yTKwnCY",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "https://i.ytimg.com/vi/xah7yTKwnCY/hqdefault.jpg?sqp=-oaymwE9COADEI4CSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Ab4CgALwAYoCDAgAEAEYQiBXKGUwDw==&rs=AOn4CLAWT8954kg-pPcaiWHhlNMMG1GMNw",
+    "playlists": [],
+    "duration": 21,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2049": {
+    "videoId": "UCeqekC3ZIoDuJ3s4nIJhCRw",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "//yt3.googleusercontent.com/ytc/AIdro_ldPDCQE5gIiCRNRnERyUyj3AhBCrlSlMjeJZqBzB8=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2050": {
+    "videoId": "UCpNwIg9Rj2PO-TkVG0z_-UQ",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "//yt3.googleusercontent.com/ytc/AIdro_nuoTi8aQcD8BOBccP3Ed5oBigVM6Sdd3mKpLeP0BgUiPg=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2051": {
+    "videoId": "r3FuCKYHXqA",
+    "artist": "Okänd Artist",
+    "title": "Emmaline´s Kalle Kula i rött mot Speedpartners A Boomerang i blått",
+    "thumbnail": "https://i.ytimg.com/vi/r3FuCKYHXqA/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDm70UVFGsqECXuZ49gmqn97vPbwA",
+    "playlists": [],
+    "duration": 55,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2052": {
+    "videoId": "UCFrYjvvN_JY6AklBiPZ_s_A",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "//yt3.googleusercontent.com/ytc/AIdro_kPhZXRrjGLMCF47Y7zvAdP1x7Fi5cfM2wo8AR1UyM=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2053": {
+    "videoId": "UCv9jt4G4Mo32m0b4xlu-D_w",
+    "artist": "Okänd Artist",
+    "title": "Kalle Kula",
+    "thumbnail": "//yt3.googleusercontent.com/ytc/AIdro_n-MjYQg3QcgGcRby6P58giDmGdjIZLxjqaEFiqruK4=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2054": {
+    "videoId": "UCXMYxKMh3prxnM_4kYZuB3g",
+    "artist": "Okänd Artist",
+    "title": "PoliceActivity",
+    "thumbnail": "//yt3.googleusercontent.com/ytc/AIdro_nmi2r7Whuhkfm-lonbrZf1TKO-I-JxgFF888PmoUFB9Q=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2055": {
+    "videoId": "0VRlwb1oOt8",
+    "artist": "Okänd Artist",
+    "title": "Police probing video of man with smart glasses allegedly trailing female students near Marymount MRT",
+    "thumbnail": "https://i.ytimg.com/vi/0VRlwb1oOt8/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4AbYIgAKAD4oCDAgAEAEYZSBbKE8wDw==&rs=AOn4CLAiz5MbM4pdUcRMvnoLnhERSJ3fLw",
+    "playlists": [],
+    "duration": 24,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2056": {
+    "videoId": "fChr6rEnYMU",
+    "artist": "Okänd Artist",
+    "title": "दुनिया के अलग-अलग देशों की पुलिस कैसी दिखती है 🌍👮",
+    "thumbnail": "https://i.ytimg.com/vi/fChr6rEnYMU/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4AbYIgAKAD4oCDAgAEAEYZSBlKGUwDw==&rs=AOn4CLBKx2rirqI1cKiFoyFqSjsY7ALX3w",
+    "playlists": [],
+    "duration": 48,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2057": {
+    "videoId": "XVHq6JiwgwI",
+    "artist": "Okänd Artist",
+    "title": "My Police Car Light Got Taken!🚨 Tomica & Hot Wheels Skit #cars #toys #police",
+    "thumbnail": "https://i.ytimg.com/vi/XVHq6JiwgwI/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4Ac4FgAKACooCDAgAEAEYYCBgKGAwDw==&rs=AOn4CLALCjEJCBP1qPY3P-V8r2Aqg-7lPw",
+    "playlists": [],
+    "duration": 6,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2058": {
+    "videoId": "RVEzB1R2MNA",
+    "artist": "Okänd Artist",
+    "title": "Money Heist vs Police 46 #moneyheist #parkour #police #escape #shorts #cpider98",
+    "thumbnail": "https://i.ytimg.com/vi/RVEzB1R2MNA/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4AbYIgAKAD4oCDAgAEAEYZSBZKEwwDw==&rs=AOn4CLA7GvgSb7e6cs_e1CfxTaOtOmcbfg",
+    "playlists": [],
+    "duration": 26,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2059": {
+    "videoId": "QZdJkDMh9fw",
+    "artist": "Okänd Artist",
+    "title": "Police Bikes Run at 300 KM/H 💀🏍️",
+    "thumbnail": "https://i.ytimg.com/vi/QZdJkDMh9fw/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAAlAADIQj0AgKJDeAHwAQH4AbYIgAKAD4oCDAgAEAEYfyBXKC4wDw==&rs=AOn4CLCym-2Z1iK1bC2MF1rCVfyjNwUncg",
+    "playlists": [],
+    "duration": 113,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2060": {
+    "videoId": "j-ebGxiL9fk",
+    "artist": "Okänd Artist",
+    "title": "Real Police Body Cam Footage: Woman Found Inside Home With Wanted Fugitive | Body Cam | ID",
+    "thumbnail": "https://i.ytimg.com/vi/j-ebGxiL9fk/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBvaAtdlhirMYPfw9MizCkumTShPw",
+    "playlists": [],
+    "duration": 140,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2061": {
+    "videoId": "OMOGaugKpzs",
+    "artist": "The Police",
+    "title": "Every Breath You Take",
+    "thumbnail": "https://i.ytimg.com/vi/OMOGaugKpzs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLD98EPRBnkDwvJX0Ml0UQkUhjsvOA",
+    "playlists": [],
+    "duration": 229,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2062": {
+    "videoId": "FXozwCdSLb0",
+    "artist": "The Police",
+    "title": "Every Breath You Take",
+    "thumbnail": "https://i.ytimg.com/vi/FXozwCdSLb0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAKLwixd8aQAPyAeXHbzm_bsESm0g",
+    "playlists": [],
+    "duration": 229,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2063": {
+    "videoId": "iOT_zuDHvVk",
+    "artist": "The Police",
+    "title": "Every Breath You Take (Visualiser)",
+    "thumbnail": "https://i.ytimg.com/vi/iOT_zuDHvVk/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDnz6_2NqWaApmpuAT1eia2QIrQgg",
+    "playlists": [],
+    "duration": 254,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2064": {
+    "videoId": "6cucosmPj-A",
+    "artist": "Okänd Artist",
+    "title": "Every Breath You Take",
+    "thumbnail": "https://i.ytimg.com/vi/6cucosmPj-A/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA3WkuqxbPFgAzW4nmZiSSmZzZ9jQ",
+    "playlists": [],
+    "duration": 253,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2065": {
+    "videoId": "HwvNkB5GwJ0",
+    "artist": "Okänd Artist",
+    "title": "The Police Every Breath You Take 2008 Live HD",
+    "thumbnail": "https://i.ytimg.com/vi/HwvNkB5GwJ0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAXmV--_cSbaLpB9a3LOzHkkzmE-g",
+    "playlists": [],
+    "duration": 355,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2066": {
+    "videoId": "aENX1Sf3fgQ",
+    "artist": "The Police",
+    "title": "Every Little Thing She Does Is Magic",
+    "thumbnail": "https://i.ytimg.com/vi/aENX1Sf3fgQ/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBWJMMVVIB6TSM5k__LMoE88YsQmA",
+    "playlists": [],
+    "duration": 261,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2067": {
+    "videoId": "Ipm7hkmZK5g",
+    "artist": "Okänd Artist",
+    "title": "💥The Police • Every Breath You Take 🎵 • Jennifer Connelly❤ • Career Opportunities 1991",
+    "thumbnail": "https://i.ytimg.com/vi/Ipm7hkmZK5g/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYZSBQKEwwDw==&rs=AOn4CLDaLaVZLYP4qnhHiPD8nqrxWK9EQg",
+    "playlists": [],
+    "duration": 233,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2068": {
+    "videoId": "7UgMnbFtKWo",
+    "artist": "The Police",
+    "title": "Every Breath You Take (Sub. Español + Lyrics)",
+    "thumbnail": "https://i.ytimg.com/vi/7UgMnbFtKWo/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDX7ILbnqwuAF_8PB4KZG-2KRH5Ow",
+    "playlists": [],
+    "duration": 253,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2069": {
+    "videoId": "rGWF3ZsZPYs",
+    "artist": "The Police",
+    "title": "Every Breath You Take (Official Lyric Video)",
+    "thumbnail": "https://i.ytimg.com/vi/rGWF3ZsZPYs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLB3h4RKn7gNPM5HeamnHXY8Vcsxow",
+    "playlists": [],
+    "duration": 231,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2070": {
+    "videoId": "G5GP4OAqYNs",
+    "artist": "The Police",
+    "title": "Every Breath You Take (Extended Mix) (1983)",
+    "thumbnail": "https://i.ytimg.com/vi/G5GP4OAqYNs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCHHAmEFjsoYlYhK9sdfSunLflJKQ",
+    "playlists": [],
+    "duration": 464,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2071": {
+    "videoId": "-WMK0SLW790",
+    "artist": "The Police",
+    "title": "Every Breath You Take (Subtitulada en español)",
+    "thumbnail": "https://i.ytimg.com/vi/-WMK0SLW790/hq720.jpg?sqp=-oaymwE9COgCEMoBSFryq4qpAy8IARUAAAAAGAElAADIQj0AgKJDeAHwAQH4Af4JgALQBYoCDAgAEAEYciBNKDYwDw==&rs=AOn4CLCesP7wTLqirdsQfmHbcnabba2ANA",
+    "playlists": [],
+    "duration": 251,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2072": {
+    "videoId": "pAa4u5MScGY",
+    "artist": "Okänd Artist",
+    "title": "Mannen lyckades fly från Nordkorea – då hittade kirurgerna det här",
+    "thumbnail": "https://i.ytimg.com/vi/pAa4u5MScGY/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCFdm5o_kZly9aCPHokSp-BiFKa-w",
+    "playlists": [],
+    "duration": 44,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2073": {
+    "videoId": "UC1G_fHP80hoodKGFFtBIr7w",
+    "artist": "Okänd Artist",
+    "title": "Svensk Kirurgisk Förening",
+    "thumbnail": "//yt3.ggpht.com/qni_JidLQ2IuF4aRfU0PQ4d8cwUrDFxwtZrpgORZvjd73OV1nwb2qLVQGzKjhXiq3RBUk5mAoQ=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2074": {
+    "videoId": "Fft5igeEIEM",
+    "artist": "Okänd Artist",
+    "title": "Kirurgens version | Officiell trailer | Netflix",
+    "thumbnail": "https://i.ytimg.com/vi/Fft5igeEIEM/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLA4Oq6Qiyyk59IklFlVSkK3GAZqaA",
+    "playlists": [],
+    "duration": 108,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2075": {
+    "videoId": "XU5fu5BfC-c",
+    "artist": "Magnus och brasse",
+    "title": "Ställ Dig sist",
+    "thumbnail": "https://i.ytimg.com/vi/XU5fu5BfC-c/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLCuK7ZuIPPOupNBRfnxxuKId6_ilg",
+    "playlists": [],
+    "duration": 59,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2076": {
+    "videoId": "UCN7BxA8oEarlYVnwT88QcBQ",
+    "artist": "Okänd Artist",
+    "title": "Magnus & Brasse – Ämne",
+    "thumbnail": "//yt3.ggpht.com/ggaB-gHvfcElIOPIWyQrdorGdALljb05xMFmqC8rGN73z6sZU7ZYfv0usSPI3WMT-SJ_-1lCK1A=s88-c-k-c0x00ffffff-no-rj-mo",
+    "playlists": [],
+    "duration": 180,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2077": {
+    "videoId": "Bw9YngAa8F4",
+    "artist": "Magnus och Brasse",
+    "title": "Färjan",
+    "thumbnail": "https://i.ytimg.com/vi/Bw9YngAa8F4/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDjjhGShIBzvTJsZaQO_8vQA1Z6UQ",
+    "playlists": [],
+    "duration": 59,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
+  },
+  "2078": {
+    "videoId": "pGFodzC6jxs",
+    "artist": "Magnus och brasse",
+    "title": "En kaka till",
+    "thumbnail": "https://i.ytimg.com/vi/pGFodzC6jxs/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAum9FSmwP-wA0rJfbqFofIgC8wPA",
+    "playlists": [],
+    "duration": 83,
+    "future": [
+      "F1",
+      "F2",
+      "F3",
+      "F4"
+    ]
   }
 }
