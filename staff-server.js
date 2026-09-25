@@ -584,7 +584,7 @@ async function findAvailablePort(startPort = Number(process.env.PORT || 3001), m
             tester.once('listening', () => {
                 tester.close(() => resolve(true));
             });
-            tester.listen(port);
+            tester.listen(port, '0.0.0.0');
         });
 
         if (isFree) return port;

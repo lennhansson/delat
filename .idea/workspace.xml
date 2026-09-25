@@ -4,70 +4,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="mer text i låtönskning4">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+    <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="mer text i låtönskning5">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/check-songs.info.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check_songs.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check_songs.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check_songs1.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/check_songs2.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/alla_låtar.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/alla_låtar.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/analyze_silence2.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/analyze_silence2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/analyze_silence3.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/analyze_silence3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/anlyze_silense.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/anlyze_silense.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/anlyze_silense.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/default_pub.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/default_pub.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/fix_missing.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/fix_missing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/favicon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-128x128.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-144x144.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-152x152.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-16x16.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-180x180.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-192x192-maskable.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-192x192.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-32x32.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-384x384.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-48x48.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-512x512-maskable.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-512x512.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-64x64.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/icons/icon-96x96.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/manifest.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/meta-tags.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1179x2556.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1290x2796.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1334x750.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1536x2048.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1640x2360.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-1668x2388.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2048x1536.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2048x2732.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2360x1640.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2388x1668.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2556x1179.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2732x2048.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-2796x1290.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/pwa-assets (1)/splash/splash-750x1334.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/testbar.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/iframe data-testid=embed-iframe sty.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/jukebox-arkitektur.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/jukebox-player-logic.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/library-manager.js" beforeDir="false" afterPath="$PROJECT_DIR$/library-manager.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mobile-app.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/gubbrock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/lattlyssnat.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/songlist/radio.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/staff-app.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/staff-app.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/staff-mobile.css" beforeDir="false" afterPath="$PROJECT_DIR$/staff-mobile.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/staff-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-mobile.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-server.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,12 +81,20 @@
       <option name="presentableId" value="LOCAL−00001" />
       <updated>1789652719850</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL−00002" summary="mer text i låtönskning5">
+      <option name="closed" value="true" />
+      <created>1790256758218</created>
+      <option name="number" value="LOCAL−00002" />
+      <option name="presentableId" value="LOCAL−00002" />
+      <updated>1790256758218</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="ser ok ut" />
     <MESSAGE value="mer text i låtönskning4" />
-    <option name="LAST_COMMIT_MESSAGE" value="mer text i låtönskning4" />
+    <MESSAGE value="mer text i låtönskning5" />
+    <option name="LAST_COMMIT_MESSAGE" value="mer text i låtönskning5" />
   </component>
 </project>
