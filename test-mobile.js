@@ -11,7 +11,13 @@ if (!uId) {
 let mittSaldo = 0;
 let html5QrCode = null;
 let nuvarandeKupongKod = "";
+let nuvarandeQuery = "";
+let nuvarandeOffset = 0;
+let debounceTimer = null;
 
+socket.on('connect', () => {
+    socket.emit("join_pub", pubId);
+});
 socket.emit("join_pub", pubId);
 
 // SWIPE
@@ -50,14 +56,91 @@ function genereraDelaQR() {
     new QRCode(target, { text: window.location.href, width: 180, height: 180 });
 }
 
-function sök() {
-    const q = document.getElementById("query").value.trim();
-    if (q) socket.emit("search", { query: q });
+function hanteraSokInput() {
+    const queryInput = document.getElementById("query");
+    const suggestBox = document.getElementById("suggest-box");
+    if (!queryInput || !suggestBox) return;
+
+    const q = queryInput.value.trim();
+
+    if (q.length < 3) {
+        suggestBox.style.display = "none";
+        suggestBox.innerHTML = "";
+        return;
+    }
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        socket.emit("suggest", { query: q });
+    }, 150);
+}
+
+socket.on("suggestResults", (data) => {
+    const suggestBox = document.getElementById("suggest-box");
+    if (!suggestBox) return;
+
+    const suggestions = data.suggestions || [];
+    if (suggestions.length === 0) {
+        suggestBox.style.display = "none";
+        suggestBox.innerHTML = "";
+        return;
+    }
+
+    suggestBox.style.display = "block";
+    suggestBox.innerHTML = suggestions.map(item => {
+        const tagKlass = item.type === 'artist' ? 'artist' : 'song';
+        const tagText = item.type === 'artist' ? '🎤 ARTIST' : '🎵 LÅT';
+        const safeQuery = item.query.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        return `
+            <div class="suggest-item" onclick="valjForslag('${safeQuery}')">
+                <span class="suggest-tag ${tagKlass}">${tagText}</span>
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.label}</span>
+            </div>
+        `;
+    }).join("");
+});
+
+function valjForslag(queryText) {
+    const queryInput = document.getElementById("query");
+    const suggestBox = document.getElementById("suggest-box");
+    if (queryInput) queryInput.value = queryText;
+    if (suggestBox) {
+        suggestBox.style.display = "none";
+        suggestBox.innerHTML = "";
+    }
+    sök();
+}
+
+function sök(isLoadMore = false) {
+    const suggestBox = document.getElementById("suggest-box");
+    if (suggestBox) {
+        suggestBox.style.display = "none";
+        suggestBox.innerHTML = "";
+    }
+
+    const queryInput = document.getElementById("query");
+    const q = queryInput ? queryInput.value.trim() : "";
+    if (!q) return;
+
+    if (!isLoadMore) {
+        nuvarandeQuery = q;
+        nuvarandeOffset = 0;
+    }
+
+    socket.emit("search", { query: nuvarandeQuery, offset: nuvarandeOffset, limit: 5 });
+}
+
+function laddaFler() {
+    nuvarandeOffset += 5;
+    sök(true);
 }
 
 socket.on("searchResults", (data) => {
-    document.getElementById("results").innerHTML = data.results.map(s => {
-        // FIX: Escapa både enkel- och dubbelcitat för att förhindra HTML-krasch
+    const resultsContainer = document.getElementById("results");
+    if (!resultsContainer) return;
+
+    const isLoadMore = (data.offset || 0) > 0;
+    const itemsHtml = (data.results || []).map(s => {
         const escapedTitle = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         return `
             <div class="song-row" onclick="önskaLåt('${s.videoId}','${escapedTitle}','${s.thumbnail}')">
@@ -68,6 +151,24 @@ socket.on("searchResults", (data) => {
             </div>
         `;
     }).join("");
+
+    const existingBtnContainer = document.getElementById("btn-load-more-container");
+    if (existingBtnContainer) existingBtnContainer.remove();
+
+    if (isLoadMore) {
+        resultsContainer.innerHTML += itemsHtml;
+    } else {
+        resultsContainer.innerHTML = itemsHtml;
+    }
+
+    if (data.results && data.results.length === 5) {
+        const loadMoreBtnHtml = `
+            <div id="btn-load-more-container">
+                <button class="btn-load-more" onclick="laddaFler()">➕ VISA FLER RESULTAT</button>
+            </div>
+        `;
+        resultsContainer.innerHTML += loadMoreBtnHtml;
+    }
 });
 
 function önskaLåt(videoId, title, thumbnail) {
@@ -75,28 +176,38 @@ function önskaLåt(videoId, title, thumbnail) {
 }
 
 socket.on("state", (data) => {
-    document.getElementById("pub-titel").innerText = data.pubNamn;
+    const pubTitle = document.getElementById("pub-titel");
+    if (pubTitle) pubTitle.innerText = data.pubNamn;
+
     const np = data.nowPlaying;
     const npContainer = document.getElementById("now-playing-container");
-    if (np) {
-        npContainer.style.display = "flex";
-        document.getElementById("np-thumb").src = np.thumbnail;
-        document.getElementById("np-title").innerText = np.title;
-    } else { npContainer.style.display = "none"; }
+    if (npContainer) {
+        if (np) {
+            npContainer.style.display = "flex";
+            const npThumb = document.getElementById("np-thumb");
+            const npTitle = document.getElementById("np-title");
+            if (npThumb) npThumb.src = np.thumbnail;
+            if (npTitle) npTitle.innerText = np.title;
+        } else {
+            npContainer.style.display = "none";
+        }
+    }
 
     const qList = document.getElementById("queue-lista");
-    const displayQueue = (data.queue || []).slice(0, 3);
-    qList.innerHTML = displayQueue.length === 0 ? "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom</div>" : displayQueue.map((l, i) => `
-        <div class="song-row ${l.uId === uId ? 'my-song' : ''}">
-            <div class="song-index">${i + 1}</div>
-            <div class="song-thumb-container" style="display:flex; align-items:center;">
-                <img src="${l.thumbnail || 'https://img.youtube.com/vi/'+l.videoId+'/0.jpg'}" class="song-thumb">
+    if (qList) {
+        const displayQueue = (data.queue || []).slice(0, 3);
+        qList.innerHTML = displayQueue.length === 0 ? "<div style='text-align:center; color:#666; padding:20px;'>Kön är tom</div>" : displayQueue.map((l, i) => `
+            <div class="song-row ${l.uId === uId ? 'my-song' : ''}">
+                <div class="song-index">${i + 1}</div>
+                <div class="song-thumb-container" style="display:flex; align-items:center;">
+                    <img src="${l.thumbnail || 'https://img.youtube.com/vi/'+l.videoId+'/0.jpg'}" class="song-thumb">
+                </div>
+                <div class="song-info">
+                    <div class="song-title">${l.title}</div>
+                </div>
             </div>
-            <div class="song-info">
-                <div class="song-title">${l.title}</div>
-            </div>
-        </div>
-    `).join("");
+        `).join("");
+    }
 
     const saldoText = document.getElementById("saldo-info-text");
     if (saldoText) saldoText.innerText = mittSaldo;
@@ -104,8 +215,10 @@ socket.on("state", (data) => {
 
 socket.on("kupong_success", () => {
     if (mittSaldo > 0) mittSaldo--;
-    document.getElementById("results").innerHTML = "";
-    document.getElementById("query").value = "";
+    const results = document.getElementById("results");
+    const query = document.getElementById("query");
+    if (results) results.innerHTML = "";
+    if (query) query.value = "";
     showToast("Låt tillagd! 🎵");
 });
 
@@ -119,7 +232,8 @@ async function delaLank() {
 }
 
 function startaScanner() {
-    document.getElementById("scanner-layer").style.display = "block";
+    const scannerLayer = document.getElementById("scanner-layer");
+    if (scannerLayer) scannerLayer.style.display = "block";
     html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
         nuvarandeKupongKod = text;
@@ -134,13 +248,15 @@ function startaScanner() {
 
 function stoppaScanner() {
     if (html5QrCode) html5QrCode.stop().finally(() => {
-        document.getElementById("scanner-layer").style.display = "none";
+        const scannerLayer = document.getElementById("scanner-layer");
+        if (scannerLayer) scannerLayer.style.display = "none";
         html5QrCode = null;
     });
 }
 
 function showToast(msg, isError) {
     const t = document.getElementById("toast");
+    if (!t) return;
     t.innerText = msg; t.style.background = isError ? "#e91429" : "#1db954";
     t.style.display = "block";
     setTimeout(() => t.style.display = "none", 3000);

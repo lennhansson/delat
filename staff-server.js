@@ -230,10 +230,14 @@ async function korNastaLatLogik(pubId) {
             trackPubEvent(pubId, 'invalid-song', 'Discarded invalid next song candidate', { recovered: true, source: 'playback', details: 'missing videoId or invalid object' });
             p.queue = p.queue.filter(s => s.id !== n.id);
             p.playlistCursor++;
-            p.nextSongAttempts = 0;
-            p.nowPlaying = null;
-            broadcastState(pubId);
-            return;
+            if ((p.nextSongAttempts || 0) >= MAX_NEXT_SONG_ATTEMPTS) {
+                p.nowPlaying = null;
+                p.nextSongAttempts = 0;
+                broadcastState(pubId);
+                return;
+            }
+            p.isTransitioning = false;
+            return korNastaLatLogik(pubId);
         }
 
         const realIdx = p.queue.findIndex(s => s.id === n.id);
@@ -252,9 +256,8 @@ async function korNastaLatLogik(pubId) {
                 broadcastState(pubId);
                 return;
             }
-            p.nowPlaying = null;
-            broadcastState(pubId);
-            return;
+            p.isTransitioning = false;
+            return korNastaLatLogik(pubId);
         }
 
         p.nextSongAttempts = 0;
@@ -339,12 +342,28 @@ io.on('connection', (socket) => {
         if (p.nowPlaying && data?.currentVideoId && p.nowPlaying.id !== data.currentVideoId && p.nowPlaying.videoId !== data.currentVideoId) {
             return;
         }
+        if (p.activeMoment) {
+            p.activeMoment = null;
+            p.nowPlaying = p.interruptedSong || null;
+            p.interruptedSong = null;
+            if (!p.nowPlaying) await korNastaLatLogik(socket.pubId);
+            else broadcastState(socket.pubId);
+            return;
+        }
         await korNastaLatLogik(socket.pubId);
     });
 
     socket.on('player:skip', async () => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
+        if (p.activeMoment) {
+            p.activeMoment = null;
+            p.nowPlaying = p.interruptedSong || null;
+            p.interruptedSong = null;
+            if (!p.nowPlaying) await korNastaLatLogik(socket.pubId);
+            else broadcastState(socket.pubId);
+            return;
+        }
         p.nowPlaying = null;
         await korNastaLatLogik(socket.pubId);
     });
@@ -418,23 +437,56 @@ io.on('connection', (socket) => {
         else broadcastState(socket.pubId);
     });
 
-    socket.on('search', async (d) => {
-        if (!socket.pubId) return;
-        try {
-            let results = buildSafeSearchResults(
-                libraryManager.searchLibrary(d.query, 5).map(r => ({
-                    id: r.videoId,
-                    videoId: r.videoId,
-                    title: r.title,
-                    thumbnail: r.thumbnail,
-                    duration: Number(r.durationSeconds) || 180
-                })),
-                5
-            );
+    socket.on('suggest', (d) => {
+        if (!socket.pubId || !d || !d.query) return;
+        const q = libraryManager.normalizeSearchText(d.query);
+        if (!q || q.length < 3) return socket.emit('suggestResults', { suggestions: [] });
 
-            if (results.length < 5) {
+        const lib = libraryManager.getLibrary();
+        const suggestions = [];
+        const seenArtists = new Set();
+
+        // 1. Matcha artister först
+        Object.values(lib).forEach(song => {
+            if (suggestions.length >= 5) return;
+            const artist = song.artist || '';
+            if (artist && libraryManager.normalizeSearchText(artist).includes(q) && !seenArtists.has(artist.toLowerCase())) {
+                seenArtists.add(artist.toLowerCase());
+                suggestions.push({ type: 'artist', label: artist, query: artist });
+            }
+        });
+
+        // 2. Matcha låtar om vi har plats kvar
+        Object.values(lib).forEach(song => {
+            if (suggestions.length >= 5) return;
+            const fullTitle = `${song.artist || ''} - ${song.title || ''}`;
+            if (libraryManager.normalizeSearchText(fullTitle).includes(q)) {
+                suggestions.push({ type: 'song', label: fullTitle, query: fullTitle, videoId: song.videoId, thumbnail: song.thumbnail });
+            }
+        });
+
+        socket.emit('suggestResults', { suggestions });
+    });
+
+    socket.on('search', async (d) => {
+        if (!socket.pubId || !d) return;
+        const offset = Number(d.offset) || 0;
+        const limit = Number(d.limit) || 5;
+        const query = d.query || '';
+
+        try {
+            const allLocal = libraryManager.searchLibrary(query, 50);
+            let results = allLocal.slice(offset, offset + limit).map(r => ({
+                id: r.videoId,
+                videoId: r.videoId,
+                title: r.title,
+                thumbnail: r.thumbnail,
+                duration: Number(r.durationSeconds) || 180
+            }));
+
+            if (results.length < limit && offset === 0) {
                 const youtubeResults = await withTimeout((async () => {
-                    const res = await youtubeSearchApi.GetListByKeyword(d.query, false, 12);
+                    const res = await youtubeSearchApi.GetListByKeyword(query, false, 12);
                     return (res.items || []).map(i => ({
                         id: flattenId(i.id),
                         videoId: flattenId(i.id),
@@ -444,12 +496,6 @@ io.on('connection', (socket) => {
                     })).filter(s => s.duration > 0 && s.duration <= MAX_SONG_DURATION);
                 })(), SEARCH_TIMEOUT_MS, []);
 
-                if (youtubeResults.length === 0 && !d.query) {
-                    trackPubEvent(socket.pubId, 'search-empty', 'Empty search request ignored', { recovered: true, source: 'search', details: 'empty-query' });
-                } else if (youtubeResults.length === 0) {
-                    trackPubEvent(socket.pubId, 'search-timeout', 'YouTube search timed out or returned nothing; used local results', { recovered: true, source: 'search', details: 'local-fallback' });
-                }
-
                 const seenVideoIds = new Set(results.map(r => r.videoId));
                 const missingFromDb = youtubeResults.filter(r => !seenVideoIds.has(r.videoId));
 
@@ -457,10 +503,12 @@ io.on('connection', (socket) => {
                     libraryManager.enrichLibraryFromSearch(missingFromDb);
                 }
 
-                results = [...results, ...buildSafeSearchResults(missingFromDb, 5 - results.length)].slice(0, 5);
+                results = [...results, ...buildSafeSearchResults(missingFromDb, limit - results.length)].slice(0, limit);
             }
 
             socket.emit('searchResults', {
+                offset,
+                limit,
                 results: results.map(r => ({
                     videoId: r.videoId,
                     title: r.title,
@@ -470,7 +518,7 @@ io.on('connection', (socket) => {
             });
         } catch (e) {
             trackPubEvent(socket.pubId, 'search-error', 'Search failed and returned empty result', { recovered: true, source: 'search', details: String(e) });
-            socket.emit('searchResults', { results: [] });
+            socket.emit('searchResults', { offset, limit, results: [] });
         }
     });
 
@@ -548,7 +596,7 @@ io.on('connection', (socket) => {
 });
 
 // Släng: äldre fair-queue-logik, inte kopplad till nuvarande serverflöde.
-// Den användes inte i den aktiva kö- eller uppspelningslogiken, så den lämnas kvar
+// Den användes inte i den aktiva kö- eller uppspeliningslogiken, så den lämnas kvar
 // som kommenterad backlog för enkel reversering och senare rensning.
 // function getFairQueue(pub) {
 //     const userQueues = {};

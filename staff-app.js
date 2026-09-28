@@ -22,9 +22,7 @@ function recoverFromPlayerError(reason) {
     lanseradUniqueId = null;
     aktivUniqueId = null;
     if (playerRecoveryTimer) clearTimeout(playerRecoveryTimer);
-    if (nuvarandeState?.nowPlaying || nuvarandeState?.activeMoment) {
-        socket.emit('player:skip');
-    }
+    socket.emit('player:skip');
     updatePlaybackButtonState();
 }
 
@@ -34,7 +32,7 @@ function schedulePlayerRecovery() {
         try {
             if (!staffYtPlayer || !nuvarandeState?.nowPlaying) return;
             const stateCode = staffYtPlayer.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
-            if (stateCode === -1 || stateCode === YT.PlayerState.UNSTARTED || stateCode === YT.PlayerState.ENDED) {
+            if (stateCode !== YT.PlayerState.PLAYING) {
                 console.warn('Player stalled or unavailable; skipping current item.', { stateCode, videoId: nuvarandeState.nowPlaying.videoId });
                 recoverFromPlayerError('player stalled');
             }
@@ -53,6 +51,7 @@ window.onYouTubeIframeAPIReady = function () {
             onStateChange: (e) => {
                 if (e.data === YT.PlayerState.ENDED) triggaSpelareReady();
                 if (e.data === YT.PlayerState.PLAYING) {
+                    if (playerRecoveryTimer) clearTimeout(playerRecoveryTimer);
                     startWatcher();
                     if (nuvarandeState?.nowPlaying) {
                         lanseradUniqueId = nuvarandeState.nowPlaying.id;
@@ -172,12 +171,15 @@ function bytTempLista() {
 function fillMobileDropdowns(state) {
     const mainSel = document.getElementById("select-main-playlist");
     const tempSel = document.getElementById("select-temp-playlist");
+    const editSel = document.getElementById("select-edit-playlist");
     if (!mainSel) return;
     const playlists = getSortedPlaylistNames(state.valv);
-    [mainSel, tempSel].forEach(sel => {
+    [mainSel, tempSel, editSel].forEach(sel => {
+        if (!sel) return;
         const currentVal = sel.value;
         sel.innerHTML = (sel === mainSel ? '' : '<option value="">Välj lista...</option>') +
             playlists.map(p => `<option value="${p}" ${p === currentVal ? 'selected' : ''}>${p.toUpperCase()}</option>`).join("");
+        if (currentVal) sel.value = currentVal;
     });
     mainSel.value = state.aktivHuvudlista || "";
     tempSel.value = state.aktivTillfalligLista || "";
@@ -195,8 +197,9 @@ function updateMomentsUI(state) {
         }));
 
         mobileSelect.innerHTML = '<option value="">Välj Moment...</option>' + entries.map(({ key, label }) => `
-            <option value="${key}" ${currentValue === key ? 'selected' : ''}>${label}</option>
+            <option value="${key}">${label}</option>
         `).join('');
+        if (currentValue) mobileSelect.value = currentValue;
     }
 
     const launchpad = document.getElementById('custom-drift');
@@ -233,34 +236,116 @@ function updateMomentsUI(state) {
     if (stopBtn) stopBtn.style.display = state.activeMoment ? "block" : "none";
 }
 
+function skapaNyListaMobil() {
+    const input = document.getElementById("txt-new-playlist");
+    const name = input?.value?.trim()?.toLowerCase();
+    if (!name) return;
+
+    const masterListor = (nuvarandeState?.masterPlaylists || []).map(l => l.toLowerCase().trim());
+    if (masterListor.includes(name)) {
+        alert("Du kan inte skapa en spellista med samma namn som en låst master-spellista!");
+        return;
+    }
+
+    input.value = "";
+    const select = document.getElementById("select-edit-playlist");
+    if (select) {
+        let opt = Array.from(select.options).find(o => o.value.toLowerCase() === name);
+        if (!opt) {
+            opt = document.createElement("option");
+            opt.value = name;
+            opt.innerText = name.toUpperCase();
+            select.appendChild(opt);
+        }
+        select.value = name;
+        uppdateraEditVyMobil(name);
+    }
+}
+
+function uppdateraEditVyMobil(playlistName) {
+    const content = document.getElementById("edit-view-content");
+    const target = document.getElementById("edit-song-list-target");
+    const titleEl = document.getElementById("edit-view-title");
+    if (!content || !target) return;
+
+    if (!playlistName) {
+        content.style.display = "none";
+        return;
+    }
+
+    content.style.display = "block";
+    if (titleEl) titleEl.textContent = `Låtar i listan (${playlistName.toUpperCase()}):`;
+
+    const songs = nuvarandeState?.valv?.[playlistName] || [];
+    if (songs.length === 0) {
+        target.innerHTML = "<div style='padding:8px; color:#888; font-size:12px;'>Inga låtar i listan. Sök ovan för att lägga till.</div>";
+        return;
+    }
+
+    target.innerHTML = songs.map(s => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #222; font-size:12px;">
+            <span>${s.title}</span>
+            <button style="color:#cd1a2b; background:none; border:none; font-weight:bold; padding:4px 8px; cursor:pointer;" onclick="taBortLatFranEdit('${playlistName.replace(/'/g, "\\'")}', '${s.title.replace(/'/g, "\\'")}')">✕</button>
+        </div>
+    `).join("");
+}
+
+function taBortLatFranEdit(playlistName, songTitle) {
+    socket.emit('library:remove_song', { playlistName, songString: songTitle });
+}
+
+function sokLatTillEdit() {
+    const q = document.getElementById("txt-edit-search")?.value?.trim();
+    if (!q) return;
+    const resEl = document.getElementById("edit-search-results");
+    if (resEl) resEl.innerHTML = "<div style='padding:8px; color:#aaa; font-size:12px;'>Söker...</div>";
+    socket.emit('search', { query: q });
+}
+
+function laggTillLatIEdit(playlistName, videoId, title, thumbnail, durationSeconds) {
+    socket.emit('library:add_song', { playlistName, videoId, title, thumbnail, durationSeconds });
+    const resEl = document.getElementById("edit-search-results");
+    if (resEl) resEl.innerHTML = "";
+    const searchInput = document.getElementById("txt-edit-search");
+    if (searchInput) searchInput.value = "";
+}
+
 function addNewMoment(cat) {
     const name = prompt("Namn på momentet?");
     if (!name) return;
     editingMomentType = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
     editingMomentCategory = cat;
     selectedTitle = name; selectedSongTitle = ""; selectedVideoId = null; selectedThumbnail = null;
-    document.getElementById("modal-title").innerText = "Nytt: " + name.toUpperCase();
-    document.getElementById("modal-msg-input").value = "";
-    document.getElementById("moment-modal").style.display = "flex";
+    const modalTitle = document.getElementById("modal-title");
+    if (modalTitle) modalTitle.innerText = "Nytt: " + name.toUpperCase();
+    const msgInput = document.getElementById("modal-msg-input");
+    if (msgInput) msgInput.value = "";
+    const modal = document.getElementById("moment-modal");
+    if (modal) modal.style.display = "flex";
 }
 
 function openMomentEdit(e, type) {
     e.stopPropagation();
     editingMomentType = type;
-    const cfg = nuvarandeState.momentsConfig[type];
+    const cfg = nuvarandeState?.momentsConfig?.[type];
+    if (!cfg) return;
     editingMomentCategory = cfg.category;
-    document.getElementById("modal-title").innerText = "Edit: " + (cfg.title || type).toUpperCase();
-    document.getElementById("modal-msg-input").value = cfg.defaultMessage || "";
+    const modalTitle = document.getElementById("modal-title");
+    if (modalTitle) modalTitle.innerText = "Edit: " + (cfg.title || type).toUpperCase();
+    const msgInput = document.getElementById("modal-msg-input");
+    if (msgInput) msgInput.value = cfg.defaultMessage || "";
     selectedVideoId = cfg.videoId; selectedTitle = cfg.title; selectedSongTitle = cfg.songTitle; selectedThumbnail = cfg.thumbnail;
-    document.getElementById("moment-modal").style.display = "flex";
+    const modal = document.getElementById("moment-modal");
+    if (modal) modal.style.display = "flex";
 }
 
 function saveMomentSettings() {
+    const msgInput = document.getElementById("modal-msg-input");
     socket.emit("moment:save_settings", {
         type: editingMomentType, category: editingMomentCategory,
         videoId: selectedVideoId, title: selectedTitle,
         songTitle: selectedSongTitle, thumbnail: selectedThumbnail,
-        defaultMessage: document.getElementById("modal-msg-input").value.trim()
+        defaultMessage: msgInput ? msgInput.value.trim() : ""
     });
     closeModal();
 }
@@ -273,7 +358,10 @@ function activateMoment(type) {
 }
 
 function stopMoment() { socket.emit("moment:stop"); }
-function closeModal() { document.getElementById("moment-modal").style.display = "none"; }
+function closeModal() {
+    const modal = document.getElementById("moment-modal");
+    if (modal) modal.style.display = "none";
+}
 
 function renderaBibliotek(state) {
     const s = document.getElementById("active-sticky-target"), sc = document.getElementById("playlist-library-target");
@@ -315,7 +403,10 @@ function skipLat() {
     socket.emit("player:skip");
 }
 
-function toggleQrKrav() { socket.emit("admin:toggle_qr", { qrKrav: document.getElementById("chk-qr-krav").checked }); }
+function toggleQrKrav() {
+    const el = document.getElementById("chk-qr-krav");
+    if (el) socket.emit("admin:toggle_qr", { qrKrav: el.checked });
+}
 
 function renderPubLogs(events) {
     const listEl = document.getElementById("pub-log-list");
@@ -365,9 +456,11 @@ async function fetchPubLogs() {
 // UPPDATERAD FLIK-LOGIK SÅ ATT IFRAMEN FAKTISKT LADDAS NÄR MAN KLICKAR PÅ EDIT
 function switchTab(t) {
     document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"));
-    document.getElementById("tab-"+t).classList.add("active");
+    const tabEl = document.getElementById("tab-"+t);
+    if (tabEl) tabEl.classList.add("active");
     document.querySelectorAll(".tab-view").forEach(v => v.style.display = "none");
-    document.getElementById("view-"+t).style.display = "block";
+    const viewEl = document.getElementById("view-"+t);
+    if (viewEl) viewEl.style.display = "block";
 
     if (t === 'edit') {
         const frame = document.getElementById("isolated-editor-frame");
@@ -381,9 +474,38 @@ socket.on('connect', () => {
     socket.emit("join_pub", pubId);
     fetchPubLogs();
 });
+
+socket.on('searchResults', (data) => {
+    const resEl = document.getElementById("edit-search-results");
+    if (!resEl) return;
+    const playlistName = document.getElementById("select-edit-playlist")?.value;
+    if (!playlistName) {
+        resEl.innerHTML = "<div style='padding:8px; color:#ffb703; font-size:12px;'>Välj en lista först!</div>";
+        return;
+    }
+    const results = data?.results || [];
+    if (results.length === 0) {
+        resEl.innerHTML = "<div style='padding:8px; color:#aaa; font-size:12px;'>Inga resultat hittades.</div>";
+        return;
+    }
+    resEl.innerHTML = results.map(r => {
+        const titleSafe = r.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const vId = r.videoId;
+        const thumb = r.thumbnail || '';
+        const dur = r.durationSeconds || 180;
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #333; font-size:12px;">
+                <div style="flex:1; margin-right:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.title}</div>
+                <button style="background:#1ed760; color:#000; border:none; border-radius:4px; padding:4px 8px; font-weight:bold; cursor:pointer;" onclick="laggTillLatIEdit('${playlistName.replace(/'/g, "\\'")}', '${vId}', '${titleSafe}', '${thumb}', ${dur})">+ LÄGG TILL</button>
+            </div>
+        `;
+    }).join('');
+});
+
 socket.on("state", (state) => {
     nuvarandeState = state;
-    document.getElementById("lbl-now-playing").innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+    const lblNowPlaying = document.getElementById("lbl-now-playing");
+    if (lblNowPlaying) lblNowPlaying.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
     const qrKravEl = document.getElementById("chk-qr-krav");
     if (qrKravEl) qrKravEl.checked = !!state.qrKrav;
     const statKup = document.getElementById("stat-kuponger");
@@ -391,11 +513,14 @@ socket.on("state", (state) => {
     const statTot = document.getElementById("stat-totalt");
     if (statTot) statTot.innerText = state.statistikTotalt || 0;
 
-    fetchPubLogs();
+    if (state.logs) renderPubLogs(state.logs); else fetchPubLogs();
     fillMobileDropdowns(state);
     renderaBibliotek(state);
     uppdateraPlayerVy();
     uppdateraStaffPlayer(state);
     updatePlaybackButtonState();
     updateMomentsUI(state);
+
+    const editSelVal = document.getElementById("select-edit-playlist")?.value;
+    if (editSelVal) uppdateraEditVyMobil(editSelVal);
 });

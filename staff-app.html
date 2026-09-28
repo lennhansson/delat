@@ -128,6 +128,10 @@
 
         <!-- Moments View -->
         <div id="view-moments" class="tab-view" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #1a1a1a; padding: 10px 15px; border-radius: 6px; border: 1px solid #333;">
+                <span><strong>Automatiskt Schema:</strong> <span id="lbl-schedule-status" style="color:#1ed760;">PÅ</span></span>
+                <button id="btn-toggle-schedule" class="btn-action" style="background: #1ed760; color: #000; width: auto; padding: 6px 15px; margin: 0;" onclick="toggleSchedule()">PÅ</button>
+            </div>
             <div class="title">Moments Dashboard</div>
             <input type="text" id="moment-text-input" class="big-message-input" placeholder="Manuellt meddelande (lämna tom för standardtext)...">
             <div class="moments-grid">
@@ -162,6 +166,32 @@
     <div class="modal-content">
         <h3 id="modal-title">Programmera Moment</h3>
         <input type="text" id="modal-msg-input" class="modal-input" placeholder="Standardmeddelande...">
+
+        <!-- Automated Schedule Settings -->
+        <div style="margin: 15px 0; padding: 10px; background: #222; border-radius: 6px; font-size: 13px; text-align: left; border: 1px solid #333;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" id="modal-schedule-enable"> Aktivera automatiskt schema
+            </label>
+            <div id="modal-schedule-body" style="display: none; margin-top: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span>Klockslag:</span>
+                    <input type="time" id="modal-schedule-time" value="01:30" style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;">
+                </div>
+                <div>
+                    <div style="margin-bottom: 6px; color: #aaa;">Aktiva dagar:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="modal-schedule-days">
+                        <label><input type="checkbox" value="mon"> Mån</label>
+                        <label><input type="checkbox" value="tue"> Tis</label>
+                        <label><input type="checkbox" value="wed"> Ons</label>
+                        <label><input type="checkbox" value="thu"> Tor</label>
+                        <label><input type="checkbox" value="fri"> Fre</label>
+                        <label><input type="checkbox" value="sat"> Lör</label>
+                        <label><input type="checkbox" value="sun"> Sön</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div style="display:flex; gap:5px; margin-bottom:10px;">
             <input type="text" id="modal-search-input" class="modal-input" style="flex:1; margin-bottom:0;" placeholder="Sök nytt ljud (YouTube)...">
             <button class="btn-action" onclick="searchMomentVideo()">SÖK</button>

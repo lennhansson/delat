@@ -89,6 +89,66 @@ h1 {
     letter-spacing: 0.5px;
 }
 
+/* SÖKFÖRSLAG DROPDOWN (AUTOSUGGEST) */
+.suggest-box {
+    background: rgba(28, 28, 30, 0.98);
+    backdrop-filter: blur(15px);
+    border: 1px solid #3c3c3e;
+    border-radius: 12px;
+    margin-top: -8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.suggest-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    font-size: 14px;
+    color: #fff;
+    text-align: left;
+}
+
+.suggest-item:last-child {
+    border-bottom: none;
+}
+
+.suggest-item:active {
+    background: rgba(255,255,255,0.15);
+}
+
+.suggest-tag {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #2a2a2a;
+    color: #aaa;
+    flex-shrink: 0;
+}
+
+.suggest-tag.artist {
+    background: #1ed76022;
+    color: #1ed760;
+    border: 1px solid #1ed76044;
+}
+
+.btn-load-more {
+    margin: 10px 0 20px 0;
+    width: 100%;
+    background: rgba(30,215,96,0.1);
+    border: 1px solid #1ed760;
+    color: #1ed760;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 /* KORT OCH CONTAINERS - Mycket mindre för att spara plats */
 .card {
     background: rgba(18, 18, 18, 0.8);

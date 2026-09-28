@@ -46,9 +46,10 @@
         <!-- FLIK 1: JUKEBOX -->
         <section id="tab-jukebox" class="tab-content active">
             <div class="search-pill">
-                <input type="text" id="query" placeholder="Vilken låt vill du höra?" onkeyup="if(event.key==='Enter') sök()">
+                <input type="text" id="query" placeholder="Vilken låt vill du höra?" oninput="hanteraSokInput()" onkeyup="if(event.key==='Enter') sök()">
                 <button class="search-btn" onclick="sök()">SÖK</button>
             </div>
+            <div id="suggest-box" class="suggest-box" style="display:none;"></div>
             <div id="results"></div>
 
             <h2 class="section-title">Kommande (Top 3)</h2>
