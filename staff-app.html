@@ -134,6 +134,9 @@
             </div>
             <div class="title">Moments Dashboard</div>
             <input type="text" id="moment-text-input" class="big-message-input" placeholder="Manuellt meddelande (lämna tom för standardtext)...">
+            <div id="moment-trigger-summary" style="margin: 0 0 12px 0; padding: 10px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #ddd; font-size: 12px; line-height: 1.5;">
+                Inga aktiva triggers ännu.
+            </div>
             <div class="moments-grid">
                 <div class="moment-col">
                     <h3>Drift & Info</h3>
@@ -173,20 +176,16 @@
                 <input type="checkbox" id="modal-schedule-enable"> Aktivera automatiskt schema
             </label>
             <div id="modal-schedule-body" style="display: none; margin-top: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <span>Klockslag:</span>
-                    <input type="time" id="modal-schedule-time" value="01:30" style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;">
-                </div>
                 <div>
-                    <div style="margin-bottom: 6px; color: #aaa;">Aktiva dagar:</div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px;" id="modal-schedule-days">
-                        <label><input type="checkbox" value="mon"> Mån</label>
-                        <label><input type="checkbox" value="tue"> Tis</label>
-                        <label><input type="checkbox" value="wed"> Ons</label>
-                        <label><input type="checkbox" value="thu"> Tor</label>
-                        <label><input type="checkbox" value="fri"> Fre</label>
-                        <label><input type="checkbox" value="sat"> Lör</label>
-                        <label><input type="checkbox" value="sun"> Sön</label>
+                    <div style="margin-bottom: 6px; color: #aaa;">Aktiva dagar och klockslag:</div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;" id="modal-schedule-days">
+                        <label data-schedule-day="mon" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="mon"><span style="flex: 1;">Måndag</span><input type="time" value="01:30" aria-label="Klockslag måndag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="tue" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="tue"><span style="flex: 1;">Tisdag</span><input type="time" value="01:30" aria-label="Klockslag tisdag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="wed" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="wed"><span style="flex: 1;">Onsdag</span><input type="time" value="01:30" aria-label="Klockslag onsdag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="thu" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="thu"><span style="flex: 1;">Torsdag</span><input type="time" value="01:30" aria-label="Klockslag torsdag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="fri" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="fri"><span style="flex: 1;">Fredag</span><input type="time" value="01:30" aria-label="Klockslag fredag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="sat" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="sat"><span style="flex: 1;">Lördag</span><input type="time" value="01:30" aria-label="Klockslag lördag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
+                        <label data-schedule-day="sun" style="display: flex; align-items: center; gap: 10px;"><input type="checkbox" value="sun"><span style="flex: 1;">Söndag</span><input type="time" value="01:30" aria-label="Klockslag söndag" disabled style="background: #333; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px;"></label>
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Staff Mobile - Jukebox</title>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <link rel="stylesheet" href="/staff-mobile.css">
 </head>
 <body>
@@ -39,15 +39,15 @@
         <h2 class="section-title">BAKGRUNDSMUSIK</h2>
 
         <div class="input-group">
-            <label>Huvudlista (Aktiv):</label>
-            <select id="select-main-playlist" onchange="socket.emit('player:byt_valv', {valvNamn: this.value})">
+            <label for="select-main-playlist">Huvudlista (Aktiv):</label>
+            <select id="select-main-playlist" onchange="bytHuvudLista()">
                 <option value="">Välj lista...</option>
             </select>
         </div>
 
         <div class="input-group">
-            <label>Extra lista (Tillfällig):</label>
-            <select id="select-temp-playlist" onchange="if(this.value) socket.emit('ADD_TEMP_PLAYLIST', {playlist: this.value}); else socket.emit('REMOVE_TEMP_PLAYLIST');">
+            <label for="select-temp-playlist">Extra lista (Tillfällig):</label>
+            <select id="select-temp-playlist" onchange="bytTempLista()">
                 <option value="">Ingen extra lista</option>
             </select>
         </div>
@@ -58,14 +58,14 @@
         <h2 class="section-title">EDITERA BIBLIOTEK</h2>
 
         <div class="input-group">
-            <label>Välj lista att redigera:</label>
+            <label for="select-edit-playlist">Välj lista att redigera:</label>
             <select id="select-edit-playlist" onchange="uppdateraEditVyMobil(this.value)">
                 <option value="">Välj lista...</option>
             </select>
         </div>
 
         <div class="input-group" style="margin-top:12px;">
-            <label>Eller skapa ny spellista:</label>
+            <label for="txt-new-playlist">Eller skapa ny spellista:</label>
             <div style="display:flex; gap:8px;">
                 <input type="text" id="txt-new-playlist" placeholder="Namn på ny lista..." style="flex:1; padding:8px; border-radius:4px; border:1px solid #333; background:#222; color:#fff; font-size:13px;">
                 <button onclick="skapaNyListaMobil()" style="background:#1ed760; color:#000; font-weight:bold; border:none; border-radius:4px; padding:8px 12px; cursor:pointer; font-size:12px;">+ SKAPA</button>
@@ -90,6 +90,9 @@
     <section class="mobile-section">
         <h2 class="section-title">MOMENTS</h2>
         <input type="text" id="moment-text-input" class="mobile-input-big" placeholder="Manuellt meddelande (valfritt)...">
+        <div id="moment-trigger-summary" style="margin-top:10px; padding:8px 10px; background:#1a1a1a; border:1px solid #333; border-radius:6px; color:#ddd; font-size:11px; line-height:1.5;">
+            Inga aktiva triggers ännu.
+        </div>
 
         <div class="moment-controls">
             <select id="select-moment-type" class="mobile-input-big">

@@ -4,16 +4,13 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="mer text i låtönskning6">
+    <list default="true" id="9b854757-6f32-4e95-bc47-167c7849344b" name="Changes" comment="från test">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data/alla_låtar.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/alla_låtar.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-app.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-app.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/staff-mobile.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/staff-server.js" beforeDir="false" afterPath="$PROJECT_DIR$/staff-server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.css" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.html" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test-mobile.js" beforeDir="false" afterPath="$PROJECT_DIR$/test-mobile.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +99,14 @@
       <option name="presentableId" value="LOCAL−00003" />
       <updated>1790345180823</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL−00004" summary="från test">
+      <option name="closed" value="true" />
+      <created>1790615090550</created>
+      <option name="number" value="LOCAL−00004" />
+      <option name="presentableId" value="LOCAL−00004" />
+      <updated>1790615090550</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -110,6 +114,7 @@
     <MESSAGE value="mer text i låtönskning4" />
     <MESSAGE value="mer text i låtönskning5" />
     <MESSAGE value="mer text i låtönskning6" />
-    <option name="LAST_COMMIT_MESSAGE" value="mer text i låtönskning6" />
+    <MESSAGE value="från test" />
+    <option name="LAST_COMMIT_MESSAGE" value="från test" />
   </component>
 </project>

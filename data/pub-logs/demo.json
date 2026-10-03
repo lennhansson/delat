@@ -1,0 +1,10 @@
+[
+  {
+    "timestamp": "2026-09-24T11:00:12.326Z",
+    "type": "search-empty",
+    "message": "Empty search request ignored",
+    "recovered": true,
+    "source": "search",
+    "details": "empty-query"
+  }
+]

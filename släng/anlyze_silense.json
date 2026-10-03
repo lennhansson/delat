@@ -1,0 +1,300 @@
+import json
+import subprocess
+import tempfile
+import os
+import math
+from pathlib import Path
+
+YT_DLP = "yt-dlp"
+FFMPEG = "ffmpeg"
+
+DB_THRESHOLD = -45.0      # RMS-tröskel i dB
+MIN_NON_SILENT_SEC = 0.4  # Kräv minst 0,4 sek av icke-tyst för att säga att musiken börjat/slutit
+WINDOW_SEC = 0.05         # Analysfönster: 50 ms
+MARGIN_SEC = 12           # Hämta 12 sek i början och slutet
+
+def run_cmd(cmd, capture=True):
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=capture,
+            text=True,
+            check=True,
+            errors="replace"
+        )
+        return result.stdout, result.stderr, None
+    except subprocess.CalledProcessError as e:
+        return e.stdout or "", e.stderr or "", e
+
+def fetch_audio_segment(video_id, start_offset=None, end_offset=None, out_path=None):
+    """
+    Hämtar ljudsegment med yt-dlp:
+      - Om start_offset är given: hämta från 0 till start_offset sekunder.
+      - Om end_offset är given (positivt): hämta sista end_offset sekunderna.
+    Returnerar (ok, filväg, felmeddelande).
+    """
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    if out_path is None:
+        fd, out_path = tempfile.mkstemp(suffix=".wav")
+        os.close(fd)
+
+    if end_offset is not None and start_offset is None:
+        # Sista end_offset sekunderna: använd --download-sections "*start-end"
+        # Vi vill ha de sista end_offset sekunderna: "*<duration-end_offset>-<duration>"
+        # yt-dlp stöder negativa tider: "*-END" betyder "sista END sekunderna"
+        # Men vi måste ange både start och slut: "*-END" är inte tillåtet, vi använder "*-END" som start och "end" som slut.
+        # Enligt dokumentationen: "*-10" är inte tillåtet, men "*-10-end" kan fungera i nyare versioner.
+        # Vi provar: "*-<end_offset>" som start och "end" som slut.
+        section = f"*-{int(end_offset)}-end"
+        cmd = [
+            YT_DLP,
+            "--extract-audio",
+            "--audio-format", "wav",
+            "--download-sections", section,
+            "-o", out_path,
+            url
+        ]
+    else:
+        # Från 0 till MARGIN_SEC sekunder
+        duration_sec = MARGIN_SEC if start_offset is None else start_offset
+        section = f"*0:00-0:{int(duration_sec)}"
+        cmd = [
+            YT_DLP,
+            "--extract-audio",
+            "--audio-format", "wav",
+            "--download-sections", section,
+            "-o", out_path,
+            url
+        ]
+
+    out, err, exc = run_cmd(cmd)
+    if exc is not None:
+        return False, out_path, f"yt-dlp misslyckades: {err.strip()}"
+    if not os.path.exists(out_path):
+        return False, out_path, "yt-dlp skapade ingen ljudfil"
+    return True, out_path, ""
+
+def compute_rms_db_from_file(wav_path):
+    """
+    Använder ffmpeg för att beräkna RMS i korta fönster (WINDOW_SEC).
+    Returnerar en lista med (tidsstämpel_sec, rms_db).
+    """
+    # ffmpeg -i in.wav -af astats=metadata=1:reset=WINDOW_SEC -f null -
+    # Vi parse: lavfi.astats.Overall.RMS_level
+    window_ms = int(WINDOW_SEC * 1000)
+    cmd = [
+        FFMPEG,
+        "-i", wav_path,
+        "-af", f"astats=metadata=1:reset={window_ms}",
+        "-f", "null",
+        "-"
+    ]
+    _, stderr, exc = run_cmd(cmd, capture=True)
+    if exc is not None:
+        # Försök ändå parsar stderr
+        pass
+
+    rms_values = []
+    current_time = 0.0
+
+    for line in stderr.splitlines():
+        # Exempel på linjer:
+        # [null @ 0x...] lavfi.astats.Overall.RMS_level: -45.123456
+        if "lavfi.astats.Overall.RMS_level" in line:
+            # Försök extrahera RMS-värdet
+            # Det kan finnas flera空格, vi söker efter ": " och sedan ett flyttal
+            parts = line.split("lavfi.astats.Overall.RMS_level:")
+            if len(parts) < 2:
+                continue
+            val_part = parts[-1].strip()
+            # Val_part kan vara t.ex. "-45.123456" eller "-45.123456 dB"
+            tokens = val_part.split()
+            if not tokens:
+                continue
+            try:
+                rms_db = float(tokens[0])
+            except ValueError:
+                continue
+            rms_values.append((current_time, rms_db))
+            current_time += WINDOW_SEC
+
+    return rms_values
+
+def find_play_from(rms_series, duration_sec):
+    """
+    Går igenom rms_series från början och hittar första sekvensen av
+    minst MIN_NON_SILENT_SEC av icke-tysta fönster (RMS >= DB_THRESHOLD).
+    Returnerar tidpunkten (sekunder) där denna sekvens börjar.
+    Om ingen sådan sekvens hittas, returnera 0.0.
+    """
+    non_silent_window = 0.0
+    for t, rms_db in rms_series:
+        if rms_db >= DB_THRESHOLD:
+            non_silent_window += WINDOW_SEC
+            if non_silent_window >= MIN_NON_SILENT_SEC:
+                # Vi har hittat tillräckligt med icke-tyst tid
+                # Starten av denna sekvens är:
+                start_of_burst = t - non_silent_window + WINDOW_SEC
+                return max(0.0, start_of_burst)
+        else:
+            non_silent_window = 0.0
+    # Ingen tydlig start hittad → börja från 0
+    return 0.0
+
+def find_play_to(rms_series, duration_sec):
+    """
+    Går igenom rms_series från slutet och hittar sista sekvensen av
+    minst MIN_NON_SILENT_SEC av icke-tysta fönster.
+    Returnerar tidpunkten (sekunder) där denna sekvens slutar.
+    Om ingen sådan sekvens hittas, returnera duration_sec.
+    """
+    # Vi går baklänges genom rms_series
+    non_silent_window = 0.0
+    last_time = duration_sec
+
+    for t, rms_db in reversed(rms_series):
+        if rms_db >= DB_THRESHOLD:
+            non_silent_window += WINDOW_SEC
+            if non_silent_window >= MIN_NON_SILENT_SEC:
+                # Vi har hittat tillräckligt med icke-tyst tid bakåt
+                # Slutet av denna sekvens är:
+                end_of_burst = t + non_silent_window
+                return min(duration_sec, end_of_burst)
+        else:
+            non_silent_window = 0.0
+
+    # Ingen tydlig slutpunkt hittad → använd hela duration
+    return last_time
+
+def save_json_atomic(path, data):
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp_path.replace(path)
+
+def main():
+    json_path_str = input("Ange sökväg till JSON-filen att analysera: ").strip()
+    json_path = Path(json_path_str)
+
+    if not json_path.exists():
+        print(f"Filen '{json_path}' finns inte.")
+        return
+
+    print("Läser in JSON...")
+    with json_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # data är ett objekt med nycklar "1001", "1002", ...
+    items = list(data.items())
+    total = len(items)
+
+    already_done = 0
+    analyzed = 0
+    errors = 0
+
+    print(f"Totalt {total} låtar.\n")
+
+    for idx, (key, record) in enumerate(items, start=1):
+        future = record.get("future", [])
+        if not isinstance(future, list) or len(future) < 3:
+            # Saknar korrekt future-struktur → markera som fel och hoppa
+            errors += 1
+            continue
+
+        f2 = future[0]
+        f3 = future[1]
+
+        # Om både F2 och F3 redan är tal → hoppa över
+        if isinstance(f2, (int, float)) and isinstance(f3, (int, float)):
+            already_done += 1
+            continue
+
+        video_id = record.get("videoId", "")
+        duration = record.get("duration")
+        artist = record.get("artist", "Okänd artist")
+        title = record.get("title", "Okänd titel")
+
+        if not video_id or duration is None:
+            # Markera F4-fel
+            future[2] = "F4: ingen videoId/duration"
+            save_json_atomic(json_path, data)
+            errors += 1
+            print(f"[{idx}/{total}] {key} – {artist} – {title} → ingen videoId/duration, F4 satt.")
+            continue
+
+        print(f"[{idx}/{total}] {key} – {artist} – {title} ... ", end="", flush=True)
+
+        # Hämta första segmentet (0–12 sek)
+        ok_start, path_start, err_start = fetch_audio_segment(video_id, start_offset=None)
+        if not ok_start:
+            future[2] = f"F4: kunde inte hämta startljud ({err_start})"
+            save_json_atomic(json_path, data)
+            errors += 1
+            print(f"fel vid startljud: {err_start}")
+            continue
+
+        # Hämta sista segmentet (sista 12 sek)
+        ok_end, path_end, err_end = fetch_audio_segment(video_id, end_offset=MARGIN_SEC)
+        if not ok_end:
+            # Städa startfilen
+            try:
+                os.remove(path_start)
+            except Exception:
+                pass
+            future[2] = f"F4: kunde inte hämta slutljud ({err_end})"
+            save_json_atomic(json_path, data)
+            errors += 1
+            print(f"fel vid slutljud: {err_end}")
+            continue
+
+        # Analysera startsegmentet
+        rms_start = compute_rms_db_from_file(path_start)
+        # Duration för startsegmentet är högst MARGIN_SEC, men vi kan använda len(rms_start)*WINDOW_SEC
+        duration_start = len(rms_start) * WINDOW_SEC
+        play_from = find_play_from(rms_start, duration_start)
+
+        # Analysera slutsegmentet
+        rms_end = compute_rms_db_from_file(path_end)
+        duration_end = len(rms_end) * WINDOW_SEC
+        # play_to beräknas relativt slutet av hela låten:
+        # Vi har analyserat de sista duration_end sekunderna.
+        # find_play_to ger oss en tid relativt början av detta segment (0 = början av slutsegmentet).
+        # Vi vill ha en tid relativt hela låten:
+        #   slutet_av_låten = duration
+        #   slutsegmentet börjar vid: duration - duration_end
+        #   play_to_rel = find_play_to(rms_end, duration_end)  # relativt slutsegmentets början
+        #   play_to = (duration - duration_end) + play_to_rel
+        play_to_rel = find_play_to(rms_end, duration_end)
+        play_to = max(0.0, min(duration, (duration - duration_end) + play_to_rel))
+
+        # Städa temp-filer
+        for p in (path_start, path_end):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
+        # Sätt F2 och F3
+        future[0] = round(play_from, 2)
+        future[1] = round(play_to, 2)
+        # Behåll F4 som "F4" om allt gick bra, eller sätt explicit om du vill
+        if isinstance(future[2], str) and future[2].startswith("F4:"):
+            # Behåll felmeddelande om det redan finns, annars sätt "F4"
+            pass
+        else:
+            future[2] = "F4"
+
+        save_json_atomic(json_path, data)
+        analyzed += 1
+        print(f"F2={future[0]:.2f}, F3={future[1]:.2f} → sparad.")
+
+    print("\n" + "=" * 60)
+    print("Klar!")
+    print(f" - Redan klara (F2/F3 är tal): {already_done}")
+    print(f" - Analyserade denna körning: {analyzed}")
+    print(f" - Fel / hoppar över: {errors}")
+    print(f"Resultatet har sparats löpande till: {json_path}")
+
+if __name__ == "__main__":
+    main()

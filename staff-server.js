@@ -98,7 +98,7 @@ function sparaPubData(pubId) {
     const data = {
         namn: pub.namn, aktivtValv: pub.aktivtValv, aktivTillfalligLista: pub.aktivTillfalligLista,
         qrKrav: pub.qrKrav, statistikKuponger: pub.statistikKuponger, statistikTotalt: pub.statistikTotalt,
-        moments: pub.moments, consumedTickets: pub.consumedTickets || {}
+        moments: pub.moments, consumedTickets: pub.consumedTickets || {}, scheduleEnabled: !!pub.scheduleEnabled
     };
     fs.writeFileSync(path.join(__dirname, 'data', `${pubId}.json`), JSON.stringify(data, null, 2));
 }
@@ -110,13 +110,14 @@ function hämtaPubData(pubId) {
         let d = {
             namn: `${pubId.toUpperCase()} Jukebox`, aktivtValv: '', aktivTillfalligLista: '', qrKrav: false,
             statistikKuponger: 0, statistikTotalt: 0,
+            scheduleEnabled: true,
             moments: {
-                "pause": { title: "TYST / PAUS", category: "drift", type: "pause", isLocked: true },
-                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Last Call", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift" },
-                "birthday": { videoId: "hS7GAnO146U", title: "Födelsedag", songTitle: "Happy Birthday", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂", category: "firande" },
-                "shoutout": { videoId: "dQw4w9WgXcQ", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i houseet! 📢", category: "firande" },
-                "closing": { videoId: "xGytDsqkQY8", title: "Stängning", songTitle: "Closing Time", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙", category: "avslut" },
-                "tack": { videoId: "h-mXUnmE_Z4", title: "Tack", songTitle: "Thank You", thumbnail: "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg", defaultMessage: "Slut för idag, tack för ikväll!", category: "avslut" }
+                "pause": { title: "TYST / PAUS", category: "drift", type: "pause", isLocked: true, schedule: { enabled: false, time: "01:30", weekdays: [] } },
+                "lastcall": { videoId: "Ryt_mY8u9p8", title: "Last Call", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift", schedule: { enabled: false, time: "01:30", weekdays: ['fri', 'sat'] } },
+                "birthday": { videoId: "hS7GAnO146U", title: "Födelsedag", songTitle: "Happy Birthday", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂", category: "firande", schedule: { enabled: false, time: "00:00", weekdays: [] } },
+                "shoutout": { videoId: "dQw4w9WgXcQ", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i houseet! 📢", category: "firande", schedule: { enabled: false, time: "00:00", weekdays: [] } },
+                "closing": { videoId: "xGytDsqkQY8", title: "Stängning", songTitle: "Closing Time", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙", category: "avslut", schedule: { enabled: false, time: "02:00", weekdays: [] } },
+                "tack": { videoId: "h-mXUnmE_Z4", title: "Tack", songTitle: "Thank You", thumbnail: "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg", defaultMessage: "Slut för idag, tack för ikväll!", category: "avslut", schedule: { enabled: false, time: "02:30", weekdays: [] } }
             },
             consumedTickets: {}
         };
@@ -126,7 +127,7 @@ function hämtaPubData(pubId) {
                 Object.assign(d, diskData);
             } catch (e) { console.error("Fel vid inläsning av pubfil:", e); }
         }
-        pubar[pubId] = { ...d, queue: [], nowPlaying: null, interruptedSong: null, playlistCursor: 0, shuffledMain: [], shuffledTemp: [], activeMoment: null, isTransitioning: false };
+        pubar[pubId] = { ...d, queue: [], nowPlaying: null, interruptedSong: null, playlistCursor: 0, shuffledMain: [], shuffledTemp: [], activeMoment: null, isTransitioning: false, scheduleEnabled: d.scheduleEnabled !== false };
     }
     const p = pubar[pubId];
 
@@ -176,7 +177,7 @@ function buildPayload(pubId) {
         pubNamn: p.namn, qrKrav: !!p.qrKrav, statistikKuponger: p.statistikKuponger, statistikTotalt: p.statistikTotalt,
         aktivHuvudlista: p.aktivtValv, aktivTillfalligLista: p.aktivTillfalligLista,
         nowPlaying: p.nowPlaying, queue: mappedQ, fullQueue: mappedQ, valv: p.valv, activeMoment: p.activeMoment, momentsConfig: p.moments,
-        masterPlaylists: Object.keys(gemensamma)
+        scheduleEnabled: !!p.scheduleEnabled, masterPlaylists: Object.keys(gemensamma)
     };
 }
 
@@ -299,12 +300,15 @@ app.get('/pub/:pubId/player', (req, res) => res.sendFile(path.join(__dirname, 't
 app.get('/pub/:pubId/edit-library', (req, res) => res.sendFile(path.join(__dirname, 'edit-library.html')));
 
 io.on('connection', (socket) => {
-    socket.on('join_pub', (id) => {
+    socket.on('join_pub', async (id) => {
         if (!id) return;
         socket.join(id);
         socket.pubId = id;
-        hämtaPubData(id);
+        const p = hämtaPubData(id);
         broadcastState(id);
+        if (p && !p.nowPlaying && !p.activeMoment) {
+            await korNastaLatLogik(id);
+        }
     });
 
     socket.on('addSong', async (d) => {
@@ -379,14 +383,18 @@ io.on('connection', (socket) => {
         broadcastState(socket.pubId);
     });
 
-    socket.on('player:byt_valv', (data) => {
+    socket.on('player:byt_valv', async (data) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
         p.aktivtValv = data.valvNamn;
         p.playlistCursor = 0;
         refreshShuffled(p, 'main');
         sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
+        if (!p.nowPlaying && !p.activeMoment) {
+            await korNastaLatLogik(socket.pubId);
+        } else {
+            broadcastState(socket.pubId);
+        }
     });
 
     socket.on('admin:toggle_qr', (d) => {
@@ -397,14 +405,57 @@ io.on('connection', (socket) => {
         broadcastState(socket.pubId);
     });
 
-    socket.on('ADD_TEMP_PLAYLIST', (d) => {
+    socket.on('admin:toggle_schedule', (d) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        p.scheduleEnabled = !!d?.enabled;
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('moment:save_settings', (d) => {
+        if (!socket.pubId || !d || !d.type) return;
+        const p = hämtaPubData(socket.pubId);
+        const existing = p.moments[d.type] || {};
+        const schedule = d.schedule || {};
+        const existingSchedule = existing.schedule || {};
+        const weekdays = Array.isArray(schedule.weekdays) ? schedule.weekdays : (Array.isArray(existingSchedule.weekdays) ? existingSchedule.weekdays : []);
+        const times = schedule.times && typeof schedule.times === 'object' && !Array.isArray(schedule.times) ? { ...schedule.times } : {};
+        weekdays.forEach(day => {
+            if (!times[day]) times[day] = schedule.time || existingSchedule.time || '01:30';
+        });
+        p.moments[d.type] = {
+            ...existing,
+            type: d.type,
+            category: d.category || existing.category || 'drift',
+            title: d.title || existing.title || d.type,
+            songTitle: d.songTitle || existing.songTitle || '',
+            videoId: d.videoId || existing.videoId || '',
+            thumbnail: d.thumbnail || existing.thumbnail || '',
+            defaultMessage: d.defaultMessage || existing.defaultMessage || '',
+            schedule: {
+                enabled: !!schedule.enabled,
+                time: schedule.time || existingSchedule.time || times[weekdays[0]] || '01:30',
+                weekdays,
+                times
+            }
+        };
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+    });
+
+    socket.on('ADD_TEMP_PLAYLIST', async (d) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
         if (!d || !d.playlist) return;
         p.aktivTillfalligLista = d.playlist;
         refreshShuffled(p, 'temp');
         sparaPubData(socket.pubId);
-        broadcastState(socket.pubId);
+        if (!p.nowPlaying && !p.activeMoment) {
+            await korNastaLatLogik(socket.pubId);
+        } else {
+            broadcastState(socket.pubId);
+        }
     });
 
     socket.on('REMOVE_TEMP_PLAYLIST', () => {
@@ -595,50 +646,34 @@ io.on('connection', (socket) => {
     });
 });
 
-// Släng: äldre fair-queue-logik, inte kopplad till nuvarande serverflöde.
-// Den användes inte i den aktiva kö- eller uppspeliningslogiken, så den lämnas kvar
-// som kommenterad backlog för enkel reversering och senare rensning.
-// function getFairQueue(pub) {
-//     const userQueues = {};
-//     pub.queue.forEach(s => {
-//         const uid = s.uId || s.socketId || 'anon';
-//         if (!userQueues[uid]) userQueues[uid] = [];
-//         userQueues[uid].push(s);
-//     });
-//     const fairList = [];
-//     let bgCursor = pub.playlistCursor;
-//     const tempQueues = {};
-//     Object.keys(userQueues).forEach(uid => tempQueues[uid] = [...userQueues[uid]]);
-//     let hasSongs = true;
-//     while (hasSongs) {
-//         hasSongs = false;
-//         Object.keys(tempQueues).forEach(uid => {
-//             if (tempQueues[uid].length > 0) {
-//                 fairList.push(tempQueues[uid].shift());
-//                 hasSongs = true;
-//             }
-//         });
-//         const bg = getBackgroundSongAt(pub, bgCursor);
-//         if (bg) { fairList.push({ ...bg, id: 'bg_' + bgCursor, isListSong: true }); bgCursor++; }
-//     }
-//     return fairList;
-// }
+async function isPortInUse(port) {
+    const hosts = ['127.0.0.1', '::1', '0.0.0.0', '::'];
 
-async function findAvailablePort(startPort = Number(process.env.PORT || 3001), maxAttempts = 25) {
-    for (let port = startPort; port < startPort + maxAttempts; port++) {
-        const isFree = await new Promise((resolve) => {
+    for (const host of hosts) {
+        const busy = await new Promise((resolve) => {
             const tester = net.createServer();
-            tester.once('error', (err) => resolve(err.code !== 'EADDRINUSE'));
+            tester.once('error', (err) => resolve(err.code === 'EADDRINUSE'));
             tester.once('listening', () => {
-                tester.close(() => resolve(true));
+                tester.close(() => resolve(false));
             });
-            tester.listen(port, '0.0.0.0');
+            tester.listen(port, host);
         });
 
-        if (isFree) return port;
+        if (busy) return true;
     }
 
-    throw new Error(`No free port found starting from ${startPort}`);
+    return false;
+}
+
+async function findAvailablePort(startPort = Number(process.env.PORT || 3001), maxAttempts = 25) {
+    const safeStartPort = Number.isInteger(startPort) && startPort > 0 ? startPort : Number(process.env.PORT || 3001);
+
+    for (let port = safeStartPort; port < safeStartPort + maxAttempts; port++) {
+        const busy = await isPortInUse(port);
+        if (!busy) return port;
+    }
+
+    throw new Error(`No free port found starting from ${safeStartPort}`);
 }
 
 function startServer() {

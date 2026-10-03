@@ -1,0 +1,18 @@
+======================================================================
+PROJEKTBESKRIVNING & ARKITEKTUR: SMART JUKEBOX
+Plats på disk: C:\Users\lennh\testjb
+======================================================================
+
+KÄRNREGLER (FÅR EJ BRYTAS):
+1. INGEN YT-DLP: Vi använder ALDRIG yt-dlp för att ladda ner filer. Musik och video spelas uteslutande via YouTube Iframe API (spelaren i webbläsaren).
+2. HELA FILER: Vid kodändringar ska ALLTID hela filer levereras för att undvika kod- och versionsfel.
+3. INGEN HÅRDKODNING AV LÅTAR: Inga låtlistor, valv eller artister får hårdkodas i serverfilerna (t.ex. testserver.js).
+
+----------------------------------------------------------------------
+SYSTEMETS IDÉ & FUNKTION:
+Ett modernt, webbaserat jukeboxsystem för barer och pubar. 
+- Gästerna skannar en QR-kod för att nå mobilgränssnittet (test-mobile.html) där de kan söka efter och önska låtar till kön.
+- Systemet kan ställas in i "Kupong-läge" via spelaren, vilket kräver att gästerna har en unik kryptografiskt signerad biljett (genererad via skriv-ut-kuponger.html) för att få önska.
+
+----------------------------------------------------------------------
+======================================================================
