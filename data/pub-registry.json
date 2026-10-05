@@ -18,5 +18,25 @@
     "id": "test",
     "name": "Test",
     "guestVisible": false
+  },
+  {
+    "id": "xxx",
+    "name": "XXX",
+    "guestVisible": true
+  },
+  {
+    "id": "mika",
+    "name": "Mika",
+    "guestVisible": true
+  },
+  {
+    "id": "Lenn",
+    "name": "Lenn",
+    "guestVisible": true
+  },
+  {
+    "id": "jenny",
+    "name": "Jenny",
+    "guestVisible": true
   }
 ]
