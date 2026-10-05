@@ -20,7 +20,8 @@
 
         <div class="now-playing-box">
             <div class="status-dot"></div>
-            <strong id="lbl-now-playing">Laddar spelare...</strong>
+            <strong id="lbl-now-playing" style="flex:1; min-width:0;">Laddar spelare...</strong>
+            <button id="btn-ban-current" type="button" aria-label="Banna låten som spelas" title="Stoppa och banna för puben" disabled style="padding:6px 10px; border:0; border-radius:6px; background:#cd1a2b; color:#fff; font-weight:700;" onclick="banCurrentSong()">✕</button>
         </div>
 
         <div class="main-controls">
@@ -122,6 +123,11 @@
                 <span class="stat-label">Totalt:</span>
                 <strong id="stat-totalt">0</strong>
             </div>
+        </div>
+
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid #2a2a2a;">
+            <button id="btn-toggle-banned-mobile" class="mobile-btn" style="width:100%;" onclick="toggleBannedSongs()">Visa Bannade Låtar</button>
+            <div id="banned-song-list" style="font-size:13px; color:#ddd; display:none; margin-top:10px;"></div>
         </div>
 
         <div style="margin-top:16px; padding-top:12px; border-top:1px solid #2a2a2a;">

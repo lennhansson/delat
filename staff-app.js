@@ -13,6 +13,7 @@ let editingMomentType = null;
 let editingMomentCategory = null;
 let selectedVideoId = null, selectedTitle = null, selectedSongTitle = null, selectedThumbnail = null;
 let hasInteracted = false;
+let isUserPaused = false;
 let playerRecoveryTimer = null;
 let momentScheduleTimer = null;
 const localCreatedPlaylists = new Set();
@@ -210,7 +211,7 @@ window.onYouTubeIframeAPIReady = function () {
                     }
                 }
                 if (e.data === YT.PlayerState.CUED || e.data === YT.PlayerState.PAUSED) {
-                    if (hasInteracted && staffYtPlayer?.playVideo) {
+                    if (hasInteracted && !isUserPaused && staffYtPlayer?.playVideo) {
                         try { staffYtPlayer.playVideo(); } catch (err) {}
                     }
                 }
@@ -241,13 +242,17 @@ function startWatcher() {
 }
 
 function updatePlaybackButtonState() {
-    const toggleBtn = document.getElementById('mobile-play-toggle');
-    if (!toggleBtn) return;
+    const toggleBtns = document.querySelectorAll('#mobile-play-toggle, .play-toggle-btn');
+    if (!toggleBtns || !toggleBtns.length) return;
 
     const currentState = staffYtPlayer?.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
     const isPlaying = typeof YT !== 'undefined' && currentState === YT.PlayerState.PLAYING;
-    toggleBtn.textContent = isPlaying ? '❚❚' : '▶';
-    toggleBtn.setAttribute('aria-label', isPlaying ? 'Pausa ljud' : 'Spela upp ljud');
+    toggleBtns.forEach(btn => {
+        if (btn) {
+            btn.textContent = isPlaying ? '❚❚' : '▶';
+            btn.setAttribute('aria-label', isPlaying ? 'Pausa ljud' : 'Spela upp ljud');
+        }
+    });
 }
 
 function togglePlayback() {
@@ -258,8 +263,10 @@ function togglePlayback() {
 
     const currentState = staffYtPlayer.getPlayerState ? staffYtPlayer.getPlayerState() : -1;
     if (currentState === YT.PlayerState.PLAYING) {
+        isUserPaused = true;
         staffYtPlayer.pauseVideo();
     } else {
+        isUserPaused = false;
         hasInteracted = true;
         try { staffYtPlayer.unMute(); } catch (e) {}
         if (!nuvarandeState?.nowPlaying) {
@@ -284,6 +291,7 @@ function togglePlayback() {
 
 function startaSpelaren() {
     hasInteracted = true;
+    isUserPaused = false;
     if (!nuvarandeState?.nowPlaying) {
         socket.emit('player:skip');
     } else if (staffYtPlayer) {
@@ -316,6 +324,7 @@ function uppdateraStaffPlayer(state) {
     }
 
     if (state.nowPlaying.id !== aktivUniqueId && vidIdStr.length > 0) {
+        isUserPaused = false;
         aktivUniqueId = state.nowPlaying.id;
         currentStopPos = state.nowPlaying.stopPosition || 0;
         const loadOptions = { videoId: vidIdStr, startSeconds: state.nowPlaying.startPosition || 0 };
@@ -534,6 +543,68 @@ function taBortLatFranEdit(playlistName, songTitle) {
     socket.emit('library:remove_song', { playlistName, songString: songTitle });
 }
 
+function requestBannedSongs() {
+    socket.emit('staff:get_banned_songs');
+}
+
+function updateBannedToggleButtons(text) {
+    const btnDesktop = document.getElementById('btn-toggle-banned');
+    if (btnDesktop) btnDesktop.textContent = text;
+    const btnMobile = document.getElementById('btn-toggle-banned-mobile');
+    if (btnMobile) btnMobile.textContent = text;
+}
+
+function toggleBannedSongs() {
+    const target = document.getElementById('banned-song-list');
+    if (!target) return;
+    const isHidden = target.style.display === 'none' || target.style.display === '';
+    if (isHidden) {
+        target.style.display = 'block';
+        requestBannedSongs();
+        updateBannedToggleButtons('Dölj Bannade Låtar');
+    } else {
+        target.style.display = 'none';
+        updateBannedToggleButtons('Visa Bannade Låtar');
+    }
+}
+
+function banQueuedSong(id, videoId) {
+    socket.emit('staff:ban_queued_song', { id, videoId });
+}
+
+function banCurrentSong() {
+    const song = nuvarandeState?.nowPlaying;
+    if (song?.id && song.videoId) banQueuedSong(song.id, song.videoId);
+}
+
+function restoreBannedSong(videoId) {
+    socket.emit('staff:unban_song', { videoId });
+}
+
+function renderBannedSongs(songs) {
+    const target = document.getElementById('banned-song-list');
+    if (!target) return;
+    target.replaceChildren();
+    if (!songs.length) {
+        target.textContent = 'Inga bannade låtar.';
+        return;
+    }
+
+    songs.forEach(song => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #333;';
+        const label = document.createElement('span');
+        label.textContent = song.title;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn-action';
+        button.textContent = 'Återställ';
+        button.addEventListener('click', () => restoreBannedSong(song.videoId));
+        row.append(label, button);
+        target.append(row);
+    });
+}
+
 function sokLatTillEdit() {
     const q = document.getElementById("txt-edit-search")?.value?.trim();
     if (!q) return;
@@ -669,7 +740,7 @@ function uppdateraPlayerVy() {
     t.innerHTML = q.map((l,i) => `
         <div class="song-row" style="padding:8px 0; border-bottom:1px solid #111;">
             <span>${i+1}. ${escapeHtml(l.title)}</span>
-            <button class="btn-delete" style="color:#cd1a2b; border:none; background:none; font-weight:bold; cursor:pointer;" onclick="socket.emit('player:remove_song', {id: '${l.id}'})">✕</button>
+            <button class="btn-delete" aria-label="Banna ${escapeHtml(l.title)}" title="Ta bort från kön och banna för puben" style="color:#cd1a2b; border:none; background:none; font-weight:bold; cursor:pointer;" onclick="banQueuedSong('${l.id}', '${l.videoId}')">✕</button>
         </div>`).join("");
 }
 
@@ -763,12 +834,12 @@ document.addEventListener('DOMContentLoaded', () => {
         enableEl.addEventListener('change', syncScheduleFormUI);
     }
 
-            const daysWrap = document.getElementById('modal-schedule-days');
-            if (daysWrap) {
-                daysWrap.addEventListener('change', event => {
-                    if (event.target.matches('input[type="checkbox"]')) syncScheduleDayTimeUI();
-                });
-            }
+    const daysWrap = document.getElementById('modal-schedule-days');
+    if (daysWrap) {
+        daysWrap.addEventListener('change', event => {
+            if (event.target.matches('input[type="checkbox"]')) syncScheduleDayTimeUI();
+        });
+    }
 
     const installBtn = document.getElementById('pwa-install-btn');
     if (installBtn) {
@@ -836,6 +907,8 @@ socket.on("state", (state) => {
     nuvarandeState = state;
     const lblNowPlaying = document.getElementById("lbl-now-playing");
     if (lblNowPlaying) lblNowPlaying.innerText = state.nowPlaying ? state.nowPlaying.title : "Tyst...";
+    const banCurrentButton = document.getElementById('btn-ban-current');
+    if (banCurrentButton) banCurrentButton.disabled = !(state.nowPlaying?.id && state.nowPlaying?.videoId);
     const qrKravEl = document.getElementById("chk-qr-krav");
     if (qrKravEl) qrKravEl.checked = !!state.qrKrav;
     const statKup = document.getElementById("stat-kuponger");
@@ -855,4 +928,10 @@ socket.on("state", (state) => {
 
     const editSelVal = document.getElementById("select-edit-playlist")?.value;
     if (editSelVal) uppdateraEditVyMobil(editSelVal);
+});
+
+socket.on('staff:banned_songs', renderBannedSongs);
+
+socket.on('song_banned', (data) => {
+    window.alert(data?.msg || 'Den låten är inte tillgänglig här.');
 });

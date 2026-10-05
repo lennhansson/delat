@@ -223,6 +223,7 @@ socket.on("kupong_success", () => {
 });
 
 socket.on("kupong_error", (d) => showToast(d.msg, true));
+socket.on("song_banned", (d) => showToast(d?.msg || "Den låten är inte tillgänglig här.", true));
 
 async function delaLank() {
     try {

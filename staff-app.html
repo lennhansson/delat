@@ -57,7 +57,11 @@
                 <div class="player-main" style="background: #191919; padding: 15px; border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong id="lbl-now-playing" style="font-size: 18px; color: #1db954;">Tyst...</strong>
-                        <button class="btn-action" style="background: #cd1a2b;" onclick="skipLat()">SKIP</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button id="mobile-play-toggle" class="btn-action" type="button" aria-label="Spela upp eller pausa" style="background: #1ed760; color: #000; font-weight: bold; width: auto; padding: 6px 14px; font-size: 16px;" onclick="togglePlayback()">▶</button>
+                            <button id="btn-ban-current" class="btn-action" type="button" aria-label="Banna låten som spelas" title="Stoppa och banna för puben" disabled style="background: #cd1a2b; width: auto; padding: 6px 10px;" onclick="banCurrentSong()">✕</button>
+                            <button class="btn-action" style="background: #cd1a2b;" onclick="skipLat()">SKIP</button>
+                        </div>
                     </div>
                     <div id="staff-player-container" style="width: 100%; aspect-ratio: 16/9; background: #000;">
                         <div id="staff-yt-player"></div>
@@ -105,6 +109,11 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+            </div>
+
+            <div class="settings-card">
+                <button id="btn-toggle-banned" class="btn-action" style="width:100%;" onclick="toggleBannedSongs()">Visa Bannade Låtar</button>
+                <div id="banned-song-list" style="font-size:13px; color:#ddd; display:none; margin-top:10px;"></div>
             </div>
 
             <div class="settings-card">

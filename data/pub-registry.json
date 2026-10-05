@@ -1,0 +1,22 @@
+[
+  {
+    "id": "7-an",
+    "name": "7-AN",
+    "guestVisible": true
+  },
+  {
+    "id": "demo",
+    "name": "Demo",
+    "guestVisible": false
+  },
+  {
+    "id": "default_pub",
+    "name": "Default pub",
+    "guestVisible": false
+  },
+  {
+    "id": "test",
+    "name": "Test",
+    "guestVisible": false
+  }
+]

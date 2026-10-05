@@ -1,6 +1,6 @@
 {
   "namn": "7-AN Jukebox",
-  "aktivtValv": "Hardrock",
+  "aktivtValv": "Fleetwood_Mac",
   "aktivTillfalligLista": "Creedence_Clearwater_Revival",
   "qrKrav": false,
   "statistikKuponger": 0,
@@ -43,10 +43,10 @@
       "category": "firande"
     },
     "shoutout": {
-      "videoId": "dQw4w9WgXcQ",
+      "videoId": "",
       "title": "Hälsning",
       "songTitle": "Attention",
-      "thumbnail": "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg",
+      "thumbnail": "",
       "defaultMessage": "Uppmärksamhet i huset! 📢",
       "category": "firande"
     },
@@ -76,5 +76,16 @@
     }
   },
   "consumedTickets": {},
-  "scheduleEnabled": true
+  "scheduleEnabled": true,
+  "bannedSongs": {
+    "igrTDWRxGs0": {
+      "title": "Derya Yıldırım & Grup Şimşek - Bal"
+    },
+    "WXTIJzPg1H4": {
+      "title": "Altın Gün - Goca Dünya"
+    },
+    "DBS1gwoX2V8": {
+      "title": "Arif Sağ - Su Su"
+    }
+  }
 }

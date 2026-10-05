@@ -6,10 +6,19 @@ app.use(express.static(__dirname));
 const io = require('socket.io')(http, { cors: { origin: "*" } });
 const fs = require('fs');
 const path = require('path');
+const pubRegistry = require('./data/pub-registry.json');
 const crypto = require('crypto');
 const youtubeSearchApi = require('youtube-search-api');
 const libraryManager = require('./library-manager');
 const { readPubLog, trackPubEvent } = require('./pub-logger');
+const {
+    filterAvailableSongs,
+    getBannedSongEntries,
+    isSongBanned,
+    isValidVideoId,
+    normalizeBannedSongs,
+    setSongBan
+} = require('./pub-song-bans');
 const {
     withTimeout,
     buildSafeSearchResults,
@@ -18,10 +27,21 @@ const {
 } = require('./stability-guards');
 
 const pubar = {};
+const registeredPubIds = new Set(pubRegistry.map(pub => pub.id));
 const MASTER_SECRET = "din-hemliga-globala-paniknyckel-2026";
 const MAX_SONG_DURATION = 480;
 const SEARCH_TIMEOUT_MS = 4000;
 const MAX_NEXT_SONG_ATTEMPTS = 3;
+
+function isRegisteredPub(pubId) {
+    return typeof pubId === 'string' && registeredPubIds.has(pubId);
+}
+
+function getGuestPubs() {
+    return pubRegistry
+        .filter(pub => pub.guestVisible)
+        .map(({ id, name }) => ({ id, name }));
+}
 
 function parseYouTubeDuration(durationStr) {
     if (!durationStr) return 0;
@@ -98,7 +118,8 @@ function sparaPubData(pubId) {
     const data = {
         namn: pub.namn, aktivtValv: pub.aktivtValv, aktivTillfalligLista: pub.aktivTillfalligLista,
         qrKrav: pub.qrKrav, statistikKuponger: pub.statistikKuponger, statistikTotalt: pub.statistikTotalt,
-        moments: pub.moments, consumedTickets: pub.consumedTickets || {}, scheduleEnabled: !!pub.scheduleEnabled
+        moments: pub.moments, consumedTickets: pub.consumedTickets || {}, scheduleEnabled: !!pub.scheduleEnabled,
+        bannedSongs: normalizeBannedSongs(pub.bannedSongs)
     };
     fs.writeFileSync(path.join(__dirname, 'data', `${pubId}.json`), JSON.stringify(data, null, 2));
 }
@@ -111,11 +132,12 @@ function hämtaPubData(pubId) {
             namn: `${pubId.toUpperCase()} Jukebox`, aktivtValv: '', aktivTillfalligLista: '', qrKrav: false,
             statistikKuponger: 0, statistikTotalt: 0,
             scheduleEnabled: true,
+            bannedSongs: {},
             moments: {
                 "pause": { title: "TYST / PAUS", category: "drift", type: "pause", isLocked: true, schedule: { enabled: false, time: "01:30", weekdays: [] } },
                 "lastcall": { videoId: "Ryt_mY8u9p8", title: "Last Call", songTitle: "Last Call", thumbnail: "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg", defaultMessage: "Sista beställningen i baren! 🔔", category: "drift", schedule: { enabled: false, time: "01:30", weekdays: ['fri', 'sat'] } },
                 "birthday": { videoId: "hS7GAnO146U", title: "Födelsedag", songTitle: "Happy Birthday", thumbnail: "https://img.youtube.com/vi/hS7GAnO146U/0.jpg", defaultMessage: "GRATTIS PÅ FÖDELSEDAGEN! 🎂", category: "firande", schedule: { enabled: false, time: "00:00", weekdays: [] } },
-                "shoutout": { videoId: "dQw4w9WgXcQ", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i houseet! 📢", category: "firande", schedule: { enabled: false, time: "00:00", weekdays: [] } },
+                "shoutout": { videoId: "", title: "Hälsning", songTitle: "Attention", thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg", defaultMessage: "Uppmärksamhet i houseet! 📢", category: "firande", schedule: { enabled: false, time: "00:00", weekdays: [] } },
                 "closing": { videoId: "xGytDsqkQY8", title: "Stängning", songTitle: "Closing Time", thumbnail: "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg", defaultMessage: "Tack för ikväll, vi stänger nu! 🌙", category: "avslut", schedule: { enabled: false, time: "02:00", weekdays: [] } },
                 "tack": { videoId: "h-mXUnmE_Z4", title: "Tack", songTitle: "Thank You", thumbnail: "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg", defaultMessage: "Slut för idag, tack för ikväll!", category: "avslut", schedule: { enabled: false, time: "02:30", weekdays: [] } }
             },
@@ -130,6 +152,7 @@ function hämtaPubData(pubId) {
         pubar[pubId] = { ...d, queue: [], nowPlaying: null, interruptedSong: null, playlistCursor: 0, shuffledMain: [], shuffledTemp: [], activeMoment: null, isTransitioning: false, scheduleEnabled: d.scheduleEnabled !== false };
     }
     const p = pubar[pubId];
+    p.bannedSongs = normalizeBannedSongs(p.bannedSongs);
 
     // Kombinera heliga master-listor med barens egna unika editerbara listor
     const gemensamma = hämtaGemensammaListor();
@@ -149,15 +172,18 @@ function hämtaPubData(pubId) {
 }
 
 function getLinearQueue(pub) {
-    let list = [...pub.queue];
+    let list = filterAvailableSongs(pub, pub.queue);
     let bgStep = pub.playlistCursor;
+    let backgroundScans = 0;
 
-    while (list.length < 15) {
+    while (list.length < 15 && backgroundScans < 1000) {
         const bg = getBackgroundSongAt(pub, bgStep);
-        if (bg) {
+        if (!bg) break;
+        backgroundScans++;
+        if (!isSongBanned(pub, bg.videoId)) {
             list.push({ ...bg, id: 'bg_' + bgStep, isListSong: true });
-            bgStep++;
-        } else break;
+        }
+        bgStep++;
     }
     return list;
 }
@@ -261,6 +287,18 @@ async function korNastaLatLogik(pubId) {
             return korNastaLatLogik(pubId);
         }
 
+        if (isSongBanned(p, vid)) {
+            p.queue = p.queue.filter(song => !isSongBanned(p, song.videoId));
+            if ((p.nextSongAttempts || 0) >= MAX_NEXT_SONG_ATTEMPTS) {
+                p.nowPlaying = null;
+                p.nextSongAttempts = 0;
+                broadcastState(pubId);
+                return;
+            }
+            p.isTransitioning = false;
+            return korNastaLatLogik(pubId);
+        }
+
         p.nextSongAttempts = 0;
 
         const lib = libraryManager.getLibrary();
@@ -287,6 +325,13 @@ async function korNastaLatLogik(pubId) {
     }
 }
 
+app.get('/pub', (req, res) => res.sendFile(path.join(__dirname, 'pub-selector.html')));
+app.get('/api/pubs', (req, res) => res.json(getGuestPubs()));
+app.param('pubId', (req, res, next, pubId) => {
+    if (!isRegisteredPub(pubId)) return res.sendStatus(404);
+    next();
+});
+
 app.get('/pub/:pubId/logs', (req, res) => {
     const pubId = req.params.pubId;
     res.json({ pubId, events: readPubLog(pubId) });
@@ -301,7 +346,10 @@ app.get('/pub/:pubId/edit-library', (req, res) => res.sendFile(path.join(__dirna
 
 io.on('connection', (socket) => {
     socket.on('join_pub', async (id) => {
-        if (!id) return;
+        if (!isRegisteredPub(id)) {
+            socket.emit('pub_error', { msg: 'Puben hittades inte.' });
+            return;
+        }
         socket.join(id);
         socket.pubId = id;
         const p = hämtaPubData(id);
@@ -314,6 +362,10 @@ io.on('connection', (socket) => {
     socket.on('addSong', async (d) => {
         if (!socket.pubId) return;
         const p = hämtaPubData(socket.pubId);
+        if (isSongBanned(p, d?.videoId)) {
+            socket.emit('song_banned', { msg: 'Den låten är inte tillgänglig här.' });
+            return;
+        }
         if (p.qrKrav) {
             const t = validateTicket(d.kupongKod);
             if (!t) return socket.emit("kupong_error", { msg: "Ogiltig kod!" });
@@ -326,7 +378,7 @@ io.on('connection', (socket) => {
 
         if (p.queue.length > 0 && p.queue[p.queue.length - 1].uId === d.uId) {
             const bg = getBackgroundSongAt(p, p.playlistCursor);
-            if (bg) {
+            if (bg && !isSongBanned(p, bg.videoId)) {
                 p.queue.push({ ...bg, id: 'bg_inject_' + p.playlistCursor, isListSong: true });
                 p.playlistCursor++;
             }
@@ -403,6 +455,53 @@ io.on('connection', (socket) => {
         p.qrKrav = !!d.qrKrav;
         sparaPubData(socket.pubId);
         broadcastState(socket.pubId);
+    });
+
+    socket.on('staff:get_banned_songs', () => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        socket.emit('staff:banned_songs', getBannedSongEntries(p));
+    });
+
+    socket.on('staff:ban_queued_song', async (data) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        if (!data) return;
+        if (!isValidVideoId(data.videoId) || typeof data.id !== 'string') return;
+
+        const queuedSong = getLinearQueue(p).find(song => song.id === data.id && song.videoId === data.videoId);
+        const currentSong = p.nowPlaying?.id === data.id && p.nowPlaying?.videoId === data.videoId ? p.nowPlaying : null;
+        const targetSong = queuedSong || currentSong;
+        if (!targetSong) return;
+
+        setSongBan(p, data.videoId, targetSong.title, true);
+        p.queue = p.queue.filter(song => !isSongBanned(p, song.videoId));
+
+        if (p.interruptedSong && isSongBanned(p, p.interruptedSong.videoId)) {
+            p.interruptedSong = null;
+        }
+        if (p.nowPlaying && isSongBanned(p, p.nowPlaying.videoId)) {
+            p.nowPlaying = null;
+            p.activeMoment = null;
+            p.interruptedSong = null;
+        }
+
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+        socket.emit('staff:banned_songs', getBannedSongEntries(p));
+        if (!p.nowPlaying && !p.activeMoment) await korNastaLatLogik(socket.pubId);
+    });
+
+    socket.on('staff:unban_song', (data) => {
+        if (!socket.pubId) return;
+        const p = hämtaPubData(socket.pubId);
+        if (!data) return;
+        if (!isValidVideoId(data.videoId) || !isSongBanned(p, data.videoId)) return;
+
+        setSongBan(p, data.videoId, '', false);
+        sparaPubData(socket.pubId);
+        broadcastState(socket.pubId);
+        socket.emit('staff:banned_songs', getBannedSongEntries(p));
     });
 
     socket.on('admin:toggle_schedule', (d) => {
@@ -501,7 +600,7 @@ io.on('connection', (socket) => {
         Object.values(lib).forEach(song => {
             if (suggestions.length >= 5) return;
             const artist = song.artist || '';
-            if (artist && libraryManager.normalizeSearchText(artist).includes(q) && !seenArtists.has(artist.toLowerCase())) {
+            if (!isSongBanned(p, song.videoId) && artist && libraryManager.normalizeSearchText(artist).includes(q) && !seenArtists.has(artist.toLowerCase())) {
                 seenArtists.add(artist.toLowerCase());
                 suggestions.push({ type: 'artist', label: artist, query: artist });
             }
@@ -510,6 +609,7 @@ io.on('connection', (socket) => {
         // 2. Matcha låtar om vi har plats kvar
         Object.values(lib).forEach(song => {
             if (suggestions.length >= 5) return;
+            if (isSongBanned(p, song.videoId)) return;
             const fullTitle = `${song.artist || ''} - ${song.title || ''}`;
             if (libraryManager.normalizeSearchText(fullTitle).includes(q)) {
                 suggestions.push({ type: 'song', label: fullTitle, query: fullTitle, videoId: song.videoId, thumbnail: song.thumbnail });
@@ -521,12 +621,13 @@ io.on('connection', (socket) => {
 
     socket.on('search', async (d) => {
         if (!socket.pubId || !d) return;
+        const p = hämtaPubData(socket.pubId);
         const offset = Number(d.offset) || 0;
         const limit = Number(d.limit) || 5;
         const query = d.query || '';
 
         try {
-            const allLocal = libraryManager.searchLibrary(query, 50);
+            const allLocal = filterAvailableSongs(p, libraryManager.searchLibrary(query, 50));
             let results = allLocal.slice(offset, offset + limit).map(r => ({
                 id: r.videoId,
                 videoId: r.videoId,
@@ -548,7 +649,7 @@ io.on('connection', (socket) => {
                 })(), SEARCH_TIMEOUT_MS, []);
 
                 const seenVideoIds = new Set(results.map(r => r.videoId));
-                const missingFromDb = youtubeResults.filter(r => !seenVideoIds.has(r.videoId));
+                const missingFromDb = youtubeResults.filter(r => !seenVideoIds.has(r.videoId) && !isSongBanned(p, r.videoId));
 
                 if (missingFromDb.length > 0) {
                     libraryManager.enrichLibraryFromSearch(missingFromDb);
@@ -560,6 +661,7 @@ io.on('connection', (socket) => {
             socket.emit('searchResults', {
                 offset,
                 limit,
+                source: d.source || '',
                 results: results.map(r => ({
                     videoId: r.videoId,
                     title: r.title,
@@ -711,12 +813,18 @@ if (require.main === module) {
 }
 
 module.exports = {
+    filterAvailableSongs,
+    getBannedSongEntries,
     flattenId,
+    getGuestPubs,
+    isRegisteredPub,
     parseYouTubeDuration,
     resolveVideoId,
     korNastaLatLogik,
     buildPayload,
     withTimeout,
     findAvailablePort,
+    isSongBanned,
+    isValidVideoId,
     startServer
 };

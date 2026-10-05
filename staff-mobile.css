@@ -1,9 +1,24 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
     margin: 0;
+    position: relative;
+    isolation: isolate;
     background: #000;
     color: #eee;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: #000;
+    background-image: linear-gradient(rgba(0, 0, 0, .64), rgba(0, 0, 0, .82)), url("/foxbox-neon-mobile.jpg");
+    background-repeat: no-repeat;
+    background-position: center, center center;
+    background-size: 100% 100%, min(300px, 78vw) auto;
 }
 
 .mobile-container {

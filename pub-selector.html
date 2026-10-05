@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12231f">
+  <meta name="robots" content="noindex">
+  <title>Välj pub | Rock-Ola</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f1f1e9;
+      --muted: #aeb9b1;
+      --surface: #12231f;
+      --line: #40534b;
+      --mint: #8be0be;
+      --coral: #f28f72;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(125deg, transparent 0 57%, rgb(242 143 114 / 5%) 57% 57.2%, transparent 57.2%),
+        radial-gradient(ellipse at 80% 100%, #263b34 0, var(--surface) 54%);
+      font-family: "Trebuchet MS", sans-serif;
+    }
+
+    main {
+      width: min(100% - 40px, 520px);
+      margin: 0 auto;
+      padding: max(32px, env(safe-area-inset-top)) 0 32px;
+    }
+
+    .wordmark {
+      display: inline-block;
+      margin-bottom: 40px;
+      color: var(--mint);
+      font-family: Georgia, serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--coral);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 48px;
+      font-weight: 400;
+      line-height: 1.05;
+    }
+
+    .intro {
+      margin: 14px 0 28px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    #pub-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid var(--line);
+    }
+
+    #pub-list a {
+      display: flex;
+      min-height: 72px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 4px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    #pub-list a::after {
+      color: var(--mint);
+      content: "→";
+      font-size: 24px;
+      font-weight: 400;
+    }
+
+    #pub-list a:hover,
+    #pub-list a:focus-visible { color: var(--mint); }
+
+    #status {
+      min-height: 24px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      main { animation: arrive 450ms ease-out both; }
+      @keyframes arrive {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="wordmark" href="/" aria-label="Rock-Ola startsidan">Rock-Ola</a>
+    <p class="eyebrow">GÄSTERNAS JUKEBOX</p>
+    <h1>Vilken pub är du på?</h1>
+    <p class="intro">Välj pub för att se musiken och önska en låt.</p>
+    <p id="status" role="status" aria-live="polite">Hämtar pubar…</p>
+    <ul id="pub-list" aria-label="Tillgängliga pubar" hidden></ul>
+  </main>
+  <script>
+    const status = document.getElementById('status');
+    const pubList = document.getElementById('pub-list');
+
+    fetch('/api/pubs')
+      .then(response => {
+        if (!response.ok) throw new Error('Kunde inte hämta pubar.');
+        return response.json();
+      })
+      .then(pubs => {
+        if (!Array.isArray(pubs) || pubs.length === 0) {
+          status.textContent = 'Inga pubar är tillgängliga just nu.';
+          return;
+        }
+
+        pubs.forEach(pub => {
+          const item = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = `/pub/${encodeURIComponent(pub.id)}/mobile`;
+          link.textContent = pub.name;
+          item.append(link);
+          pubList.append(item);
+        });
+
+        status.textContent = '';
+        pubList.hidden = false;
+      })
+      .catch(() => {
+        status.textContent = 'Publistan kunde inte laddas. Försök igen.';
+      });
+  </script>
+</body>
+</html>
