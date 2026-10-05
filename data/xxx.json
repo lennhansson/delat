@@ -1,0 +1,91 @@
+{
+  "namn": "XXX Jukebox",
+  "aktivtValv": "Fleetwood_Mac",
+  "aktivTillfalligLista": "Creedence_Clearwater_Revival",
+  "qrKrav": false,
+  "statistikKuponger": 0,
+  "statistikTotalt": 7,
+  "moments": {
+    "pause": {
+      "title": "TYST / PAUS",
+      "category": "drift",
+      "type": "pause",
+      "isLocked": true
+    },
+    "lastcall": {
+      "videoId": "Ryt_mY8u9p8",
+      "title": "Last Call",
+      "songTitle": "Last Call",
+      "thumbnail": "https://img.youtube.com/vi/Ryt_mY8u9p8/0.jpg",
+      "defaultMessage": "Sista beställningen i baren! 🔔",
+      "category": "drift",
+      "type": "lastcall",
+      "schedule": {
+        "enabled": true,
+        "time": "01:30",
+        "weekdays": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ]
+      }
+    },
+    "birthday": {
+      "videoId": "i8o956Fd-os",
+      "title": "Födelsedag",
+      "songTitle": "Best Happy Birthday Song 🎁 Celebrate Your Day 🎉",
+      "thumbnail": "https://i.ytimg.com/vi/i8o956Fd-os/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLDJD3USl7Z12CRTljiDukMbYjd5DA",
+      "defaultMessage": "GRATTIS PÅ FÖDELSEDAGEN! 🎂",
+      "category": "firande"
+    },
+    "shoutout": {
+      "videoId": "",
+      "title": "Hälsning",
+      "songTitle": "Attention",
+      "thumbnail": "",
+      "defaultMessage": "Uppmärksamhet i huset! 📢",
+      "category": "firande"
+    },
+    "closing": {
+      "videoId": "xGytDsqkQY8",
+      "title": "Stängning",
+      "songTitle": "Closing Time",
+      "thumbnail": "https://img.youtube.com/vi/xGytDsqkQY8/0.jpg",
+      "defaultMessage": "Tack för ikväll, vi stänger nu! 🌙",
+      "category": "avslut"
+    },
+    "tack": {
+      "videoId": "h-mXUnmE_Z4",
+      "title": "Tack",
+      "songTitle": "Thank You",
+      "thumbnail": "https://img.youtube.com/vi/h-mXUnmE_Z4/0.jpg",
+      "defaultMessage": "Slut för idag, tack för ikväll!",
+      "category": "avslut"
+    },
+    "avslut_hit_the_road_jack!_1785674456967": {
+      "category": "avslut",
+      "videoId": "uSiHqxgE2d0",
+      "title": "Avslut  Hit the road Jack!",
+      "songTitle": "Ray Charles - Hit The Road Jack (Official Lyrics Video)",
+      "thumbnail": "https://i.ytimg.com/vi/uSiHqxgE2d0/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBmXL7bfkYkoFOOjMS37Q0bvNL6mQ",
+      "defaultMessage": "dags att gå, eller stanna och städa."
+    }
+  },
+  "consumedTickets": {},
+  "scheduleEnabled": true,
+  "bannedSongs": {
+    "igrTDWRxGs0": {
+      "title": "Derya Yıldırım & Grup Şimşek - Bal"
+    },
+    "WXTIJzPg1H4": {
+      "title": "Altın Gün - Goca Dünya"
+    },
+    "DBS1gwoX2V8": {
+      "title": "Arif Sağ - Su Su"
+    }
+  }
+}
