@@ -128,14 +128,15 @@ function normalizeSearchText(value) {
 function searchLibrary(query, limit = 5) {
     const q = normalizeSearchText(query);
     if (!q) return [];
+    const queryWords = q.split(' ').filter(Boolean);
 
     const results = Object.values(library)
         .filter(song => {
             const artist = song.artist || "";
             const title = song.title || "";
             const videoId = song.videoId || "";
-            const haystack = `${artist} ${title} ${videoId}`.toLowerCase();
-            return haystack.includes(q);
+            const haystack = normalizeSearchText(`${artist} ${title} ${videoId}`);
+            return queryWords.every(word => haystack.includes(word));
         })
         .slice(0, limit)
         .map(song => ({

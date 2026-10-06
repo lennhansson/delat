@@ -14,6 +14,8 @@ let nuvarandeKupongKod = "";
 let nuvarandeQuery = "";
 let nuvarandeOffset = 0;
 let debounceTimer = null;
+let senasteFörslag = [];
+let senasteSökResultat = [];
 
 socket.on('connect', () => {
     socket.emit("join_pub", pubId);
@@ -80,6 +82,8 @@ socket.on("suggestResults", (data) => {
     if (!suggestBox) return;
 
     const suggestions = data.suggestions || [];
+    senasteFörslag = suggestions;
+
     if (suggestions.length === 0) {
         suggestBox.style.display = "none";
         suggestBox.innerHTML = "";
@@ -87,18 +91,25 @@ socket.on("suggestResults", (data) => {
     }
 
     suggestBox.style.display = "block";
-    suggestBox.innerHTML = suggestions.map(item => {
+    suggestBox.innerHTML = suggestions.map((item, idx) => {
         const tagKlass = item.type === 'artist' ? 'artist' : 'song';
         const tagText = item.type === 'artist' ? '🎤 ARTIST' : '🎵 LÅT';
-        const safeQuery = item.query.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        const safeLabel = (item.label || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         return `
-            <div class="suggest-item" onclick="valjForslag('${safeQuery}')">
+            <div class="suggest-item" onclick="valjForslagIndex(${idx})">
                 <span class="suggest-tag ${tagKlass}">${tagText}</span>
-                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.label}</span>
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeLabel}</span>
             </div>
         `;
     }).join("");
 });
+
+function valjForslagIndex(index) {
+    const item = senasteFörslag[index];
+    if (item && item.query) {
+        valjForslag(item.query);
+    }
+}
 
 function valjForslag(queryText) {
     const queryInput = document.getElementById("query");
@@ -140,13 +151,23 @@ socket.on("searchResults", (data) => {
     if (!resultsContainer) return;
 
     const isLoadMore = (data.offset || 0) > 0;
-    const itemsHtml = (data.results || []).map(s => {
-        const escapedTitle = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+    const items = data.results || [];
+
+    if (!isLoadMore) {
+        senasteSökResultat = items;
+    } else {
+        senasteSökResultat = [...senasteSökResultat, ...items];
+    }
+
+    const startIdx = isLoadMore ? (senasteSökResultat.length - items.length) : 0;
+    const itemsHtml = items.map((s, idx) => {
+        const globalIdx = startIdx + idx;
+        const safeTitle = (s.title || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         return `
-            <div class="song-row" onclick="önskaLåt('${s.videoId}','${escapedTitle}','${s.thumbnail}')">
+            <div class="song-row" onclick="önskaLåtIndex(${globalIdx})">
                 <img src="${s.thumbnail}" class="song-thumb">
                 <div class="song-info">
-                    <div class="song-title">${s.title}</div>
+                    <div class="song-title">${safeTitle}</div>
                 </div>
             </div>
         `;
@@ -170,6 +191,12 @@ socket.on("searchResults", (data) => {
         resultsContainer.innerHTML += loadMoreBtnHtml;
     }
 });
+
+function önskaLåtIndex(index) {
+    const s = senasteSökResultat[index];
+    if (!s) return;
+    önskaLåt(s.videoId, s.title, s.thumbnail);
+}
 
 function önskaLåt(videoId, title, thumbnail) {
     socket.emit("addSong", { pubId, videoId, title, thumbnail, kupongKod: nuvarandeKupongKod, uId: uId });

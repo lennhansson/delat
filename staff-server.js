@@ -587,8 +587,10 @@ io.on('connection', (socket) => {
         else broadcastState(socket.pubId);
     });
 
-    socket.on('suggest', (d) => {
-        if (!socket.pubId || !d || !d.query) return;
+socket.on('suggest', (d) => {
+    if (!socket.pubId || !d || !d.query) return;
+    const p = hämtaPubData(socket.pubId);
+
         const q = libraryManager.normalizeSearchText(d.query);
         if (!q || q.length < 3) return socket.emit('suggestResults', { suggestions: [] });
 
